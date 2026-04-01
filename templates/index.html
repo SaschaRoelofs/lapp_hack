@@ -40,9 +40,11 @@
       </div>
       <nav class="ml-auto flex items-center gap-1">
         <a href="/" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-white/10 text-white">Optimierer</a>
-        <a href="/data" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Kabeldaten</a>
-        <a href="/shop" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Shop</a>
+        <a href="/search" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Suche</a>
         <a href="/analyze" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Analyse</a>
+        <a href="/settings" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </a>
       </nav>
     </div>
   </header>
@@ -51,18 +53,8 @@
 
     <!-- Input Section -->
     <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="bg-gray-50 border-b border-gray-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="bg-gray-50 border-b border-gray-200 px-6 py-4">
         <h2 class="text-lg font-semibold text-gray-700">Eingabeparameter</h2>
-        <div class="flex items-center gap-3">
-          <label class="text-sm font-medium text-gray-600 whitespace-nowrap">Produkt:</label>
-          <select x-model="selectedProductId" @change="selectProduct(selectedProductId)"
-            class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none min-w-[260px]">
-            <option value="">— Manuell konfiguriert —</option>
-            <template x-for="p in products" :key="p.id">
-              <option :value="p.id" x-text="p.name"></option>
-            </template>
-          </select>
-        </div>
       </div>
 
       <!-- Schematic Diagram -->
@@ -116,11 +108,8 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-600 mb-1">Belastete Adern</label>
-              <select x-model.number="params.loaded_cores"
+              <input type="number" x-model.number="params.loaded_cores" step="1" min="1"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
-                <option value="2">2</option>
-                <option value="3">3</option>
-              </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-600 mb-1">Systemspannung [V]</label>
@@ -142,26 +131,6 @@
               <input type="number" x-model.number="params.hours_per_day" step="0.5" min="0" max="24"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">Strompreis [€/kWh]</label>
-              <input type="number" x-model.number="params.energy_price_eur_per_kwh" step="0.01" min="0"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">Max. Spannungsfall [%]</label>
-              <input type="number" x-model.number="params.max_voltage_drop_percent" step="0.1" min="0"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">CO2 Strom [kg/kWh]</label>
-              <input type="number" x-model.number="params.electricity_emission_factor_kg_per_kwh" step="0.001" min="0"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">CO2 Kupfer [kg/kg]</label>
-              <input type="number" x-model.number="params.copper_emission_factor_kg_per_kg" step="0.001" min="0"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
-            </div>
             <div class="flex items-center gap-3 pt-5">
               <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" x-model="params.ac_3phase" class="sr-only peer">
@@ -176,40 +145,141 @@
         <div>
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Kabeloptionen</h3>
-            <span x-show="selectedProductName" x-cloak class="text-xs text-lapp-600 font-medium px-2 py-1 bg-orange-50 rounded-full" x-text="'aus ' + selectedProductName"></span>
           </div>
-          <div class="overflow-x-auto border border-gray-200 rounded-lg">
+          <!-- Search bar -->
+          <div class="mb-4 relative" @click.away="shopDropdownOpen = false">
+            <div class="relative">
+              <input type="text" x-model="shopQuery" @input.debounce.400ms="searchShop()" @focus="if(shopResults.length) shopDropdownOpen = true"
+                placeholder="Kabel suchen, z.B. ÖLFLEX 191 CY ..."
+                class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+              <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+              </svg>
+              <svg x-show="shopSearching" x-cloak class="absolute right-3 top-2.5 animate-spin h-4 w-4 text-lapp-600" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"/></svg>
+              <button x-show="shopQuery.length > 0" x-cloak @click="clearShopProduct()" class="absolute right-3 top-2 text-gray-400 hover:text-red-500 text-lg leading-none">&times;</button>
+            </div>
+            <!-- Search Results Dropdown -->
+            <div x-show="shopDropdownOpen && shopResults.length > 0" x-cloak
+              class="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-80 overflow-y-auto">
+              <template x-for="p in shopResults" :key="p.base_product_code">
+                <button @click="selectShopProduct(p); shopDropdownOpen = false"
+                  class="w-full text-left px-4 py-2.5 hover:bg-gray-50 border-b border-gray-100 flex items-center gap-3 transition-colors">
+                  <img x-show="p.image_url" :src="p.image_url" class="w-10 h-10 object-contain rounded bg-gray-50 flex-shrink-0" alt="">
+                  <div class="min-w-0">
+                    <div class="text-sm font-medium text-gray-800 truncate" x-text="p.name"></div>
+                    <div class="text-xs text-gray-400 truncate" x-text="p.variant_count + ' Varianten' + (p.from_price ? ' · ab ' + p.from_price : '')"></div>
+                  </div>
+                </button>
+              </template>
+            </div>
+          </div>
+          <!-- Product Image -->
+          <div x-show="selectedProductImage" x-cloak class="mb-4 flex items-center gap-4 bg-gray-50 rounded-xl border border-gray-200 p-3">
+            <img :src="selectedProductImage" class="w-20 h-20 object-contain rounded-lg bg-white p-1" alt="">
+            <div>
+              <div class="text-sm font-semibold text-gray-800" x-text="selectedProductName"></div>
+              <div class="text-xs text-gray-400 mt-0.5" x-text="filteredOptions.length + ' von ' + options.length + ' Varianten'"></div>
+            </div>
+          </div>
+          <!-- Empty state -->
+          <div x-show="options.length === 0 && !shopLoadingOptions && !shopQuery" class="flex flex-col items-center justify-center py-12 text-gray-400">
+            <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+            </svg>
+            <p class="text-sm">Kabel suchen und auswählen</p>
+          </div>
+          <!-- Loading state -->
+          <div x-show="shopLoadingOptions" x-cloak class="flex items-center justify-center py-12 text-gray-400">
+            <svg class="animate-spin w-6 h-6 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+            <span class="text-sm">Lade Kabelvarianten…</span>
+          </div>
+          <div x-show="filteredOptions.length > 0" class="overflow-x-auto border border-gray-200 rounded-lg">
             <table class="w-full text-sm">
-              <thead class="bg-gray-50 text-gray-600">
+              <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
                 <tr>
-                  <th class="px-2 py-2 text-left">mm²</th>
-                  <th class="px-2 py-2 text-left">Ω/km</th>
-                  <th class="px-2 py-2 text-left">kg/km</th>
-                  <th class="px-2 py-2 text-left">€/m</th>
-                  <th class="px-2 py-2 text-left">A</th>
-                  <th class="px-2 py-2 w-10"></th>
+                  <th class="px-3 py-2 text-left cursor-pointer hover:text-lapp-600" @click="optSortCol === 'name' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'name', optSortDir = 'asc')">
+                    Name <span x-show="optSortCol==='name'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-left cursor-pointer hover:text-lapp-600" @click="optSortCol === 'article_number' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'article_number', optSortDir = 'asc')">
+                    Artikelnr. <span x-show="optSortCol==='article_number'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-center">Adern</th>
+                  <th class="px-3 py-2 text-center">PE</th>
+                  <th class="px-3 py-2 text-right cursor-pointer hover:text-lapp-600" @click="optSortCol === 'cross_section_mm2' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'cross_section_mm2', optSortDir = 'asc')">
+                    mm² <span x-show="optSortCol==='cross_section_mm2'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-right cursor-pointer hover:text-lapp-600" @click="optSortCol === 'outer_diameter_mm' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'outer_diameter_mm', optSortDir = 'asc')">
+                    ⌀ mm <span x-show="optSortCol==='outer_diameter_mm'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-right cursor-pointer hover:text-lapp-600" @click="optSortCol === 'copper_mass_kg_per_km' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'copper_mass_kg_per_km', optSortDir = 'asc')">
+                    Cu kg/km <span x-show="optSortCol==='copper_mass_kg_per_km'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-right cursor-pointer hover:text-lapp-600" @click="optSortCol === 'weight_kg_per_km' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'weight_kg_per_km', optSortDir = 'asc')">
+                    Gew. kg/km <span x-show="optSortCol==='weight_kg_per_km'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-right cursor-pointer hover:text-lapp-600" @click="optSortCol === 'cable_price_eur_per_m' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'cable_price_eur_per_m', optSortDir = 'asc')">
+                    €/m <span x-show="optSortCol==='cable_price_eur_per_m'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-center">Status</th>
+                  <th class="px-3 py-2 text-center">Link</th>
                 </tr>
               </thead>
               <tbody>
-                <template x-for="(opt, i) in options" :key="i">
-                  <tr class="border-t border-gray-100">
-                    <td class="px-1 py-1"><input type="number" x-model.number="opt.cross_section_mm2" step="0.5" class="w-16 border border-gray-200 rounded px-1 py-1 text-sm"></td>
-                    <td class="px-1 py-1"><input type="number" x-model.number="opt.resistance_ohm_per_km" step="0.01" class="w-16 border border-gray-200 rounded px-1 py-1 text-sm"></td>
-                    <td class="px-1 py-1"><input type="number" x-model.number="opt.copper_mass_kg_per_km" step="1" class="w-16 border border-gray-200 rounded px-1 py-1 text-sm"></td>
-                    <td class="px-1 py-1"><input type="number" x-model.number="opt.cable_price_eur_per_m" step="0.1" class="w-16 border border-gray-200 rounded px-1 py-1 text-sm"></td>
-                    <td class="px-1 py-1"><input type="number" x-model.number="opt.ampacity_a" step="1" class="w-16 border border-gray-200 rounded px-1 py-1 text-sm"></td>
-                    <td class="px-1 py-1 text-center">
-                      <button @click="options.splice(i, 1)" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+                <template x-for="(opt, i) in pagedOptions" :key="optionsPage + '-' + i">
+                  <tr class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td class="px-3 py-1.5 text-sm font-medium text-gray-800" x-text="opt.name"></td>
+                    <td class="px-3 py-1.5 font-mono text-xs text-gray-600" x-text="opt.article_number"></td>
+                    <td class="px-3 py-1.5 text-center" x-text="opt.num_cores || '-'"></td>
+                    <td class="px-3 py-1.5 text-center">
+                      <span x-show="opt.protective_conductor === 'Ja'" class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">G</span>
+                      <span x-show="opt.protective_conductor === 'Nein'" class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">X</span>
+                    </td>
+                    <td class="px-3 py-1.5 text-right" x-text="opt.cross_section || opt.cross_section_mm2"></td>
+                    <td class="px-3 py-1.5 text-right text-gray-500" x-text="opt.outer_diameter_mm != null ? numFmt1.format(opt.outer_diameter_mm) : '-'"></td>
+                    <td class="px-3 py-1.5 text-right" x-text="opt.copper_mass_kg_per_km != null ? numFmt1.format(opt.copper_mass_kg_per_km) : '-'"></td>
+                    <td class="px-3 py-1.5 text-right" x-text="opt.weight_kg_per_km != null ? numFmt1.format(opt.weight_kg_per_km) : '-'"></td>
+                    <td class="px-3 py-1.5 text-right">
+                      <span x-show="opt.cable_price_eur_per_m > 0" class="font-semibold text-gray-800" x-text="priceFmt.format(opt.cable_price_eur_per_m) + ' €/m'"></span>
+                      <span x-show="!opt.cable_price_eur_per_m || opt.cable_price_eur_per_m === 0" class="text-gray-300">—</span>
+                    </td>
+                    <td class="px-3 py-1.5 text-center">
+                      <span x-show="opt.orderable && !opt.end_of_sales" class="inline-block w-2 h-2 rounded-full bg-green-500" title="Bestellbar"></span>
+                      <span x-show="opt.end_of_sales" class="inline-block w-2 h-2 rounded-full bg-red-500" title="Auslaufartikel"></span>
+                      <span x-show="!opt.orderable && !opt.end_of_sales" class="inline-block w-2 h-2 rounded-full bg-yellow-500" title="Nicht bestellbar"></span>
+                    </td>
+                    <td class="px-3 py-1.5 text-center">
+                      <a x-show="opt.url" :href="opt.url" target="_blank" class="text-lapp-600 hover:text-lapp-700">
+                        <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </a>
                     </td>
                   </tr>
                 </template>
               </tbody>
             </table>
           </div>
-          <button @click="options.push({cross_section_mm2: 0, resistance_ohm_per_km: 0, copper_mass_kg_per_km: 0, cable_price_eur_per_m: 0, ampacity_a: null})"
-            class="mt-2 text-sm text-lapp-600 hover:text-lapp-700 font-medium">
-            + Zeile hinzufügen
-          </button>
+          <!-- Filtered-out info -->
+          <div x-show="options.length > 0 && filteredOptions.length === 0" class="flex flex-col items-center justify-center py-8 text-gray-400">
+            <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/>
+            </svg>
+            <p class="text-sm">Alle Varianten durch Betriebsparameter herausgefiltert</p>
+            <p class="text-xs mt-1">Strom oder Aderzahl anpassen</p>
+          </div>
+          <!-- Pagination -->
+          <div x-show="optionsTotalPages > 1" class="flex items-center justify-between mt-2 text-xs text-gray-500">
+            <span x-text="filteredOptions.length + ' von ' + options.length + ' Varianten'"></span>
+            <div class="flex items-center gap-1">
+              <button @click="optionsPage = Math.max(0, optionsPage - 1)" :disabled="optionsPage === 0"
+                class="px-2 py-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed">&lsaquo;</button>
+              <template x-for="p in optionsTotalPages" :key="p">
+                <button @click="optionsPage = p - 1" class="px-2 py-1 rounded transition-colors"
+                  :class="optionsPage === p - 1 ? 'bg-lapp-600 text-white' : 'hover:bg-gray-100'" x-text="p"></button>
+              </template>
+              <button @click="optionsPage = Math.min(optionsTotalPages - 1, optionsPage + 1)" :disabled="optionsPage >= optionsTotalPages - 1"
+                class="px-2 py-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed">&rsaquo;</button>
+            </div>
+          </div>
+          </div>
         </div>
       </div>
 
@@ -217,7 +287,7 @@
       <div class="px-6 pb-6">
         <button @click="calculate()"
           class="w-full bg-lapp-600 hover:bg-lapp-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-sm"
-          :disabled="loading" :class="{'opacity-60 cursor-wait': loading}">
+          :disabled="loading || filteredOptions.length === 0" :class="{'opacity-60 cursor-not-allowed': loading || filteredOptions.length === 0}">
           <span x-show="!loading">Berechnen</span>
           <span x-show="loading" x-cloak>Berechne...</span>
         </button>
@@ -366,50 +436,116 @@
   </footer>
 
   <script>
-    const DEFAULT_OPTIONS = {{ default_options | tojson }};
     const DEFAULT_PARAMS = {{ default_params | tojson }};
 
     // Chart instances (destroyed & recreated on each calculation)
     let chartTCO = null, chartCO2 = null, chartVDrop = null, chartPayback = null;
 
     const numFmt = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const numFmt1 = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const priceFmt = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 
     function optimizer() {
       return {
         params: { ...DEFAULT_PARAMS },
-        options: DEFAULT_OPTIONS.map(o => ({ ...o })),
+        options: [],
         result: null,
         loading: false,
-        products: [],
-        selectedProductId: '',
+        shopQuery: '',
+        shopResults: [],
+        shopSearching: false,
+        shopLoadingOptions: false,
+        shopDropdownOpen: false,
         selectedProductName: '',
+        selectedBaseCode: '',
+        selectedProductImage: '',
+        optionsPage: 0,
+        optionsPerPage: 8,
+        optSortCol: 'cross_section_mm2',
+        optSortDir: 'asc',
+
+        get filteredOptions() {
+          return this.options.filter(o => {
+            // Filter by number of cores: must have at least loaded_cores
+            const cores = parseInt(o.num_cores);
+            if (!isNaN(cores) && cores < this.params.loaded_cores) return false;
+            // Filter by ampacity: variant must handle the operating current
+            if (o.ampacity_a != null && this.params.current_a > 0 && o.ampacity_a < this.params.current_a) return false;
+            return true;
+          });
+        },
+        get sortedOptions() {
+          const col = this.optSortCol;
+          const dir = this.optSortDir === 'asc' ? 1 : -1;
+          return [...this.filteredOptions].sort((a, b) => {
+            let va = a[col], vb = b[col];
+            if (va == null) return 1;
+            if (vb == null) return -1;
+            if (typeof va === 'string') return va.localeCompare(vb, 'de') * dir;
+            return (va - vb) * dir;
+          });
+        },
+        get pagedOptions() {
+          const totalPages = this.optionsTotalPages;
+          if (totalPages > 0 && this.optionsPage >= totalPages) {
+            this.optionsPage = totalPages - 1;
+          }
+          const start = this.optionsPage * this.optionsPerPage;
+          return this.sortedOptions.slice(start, start + this.optionsPerPage);
+        },
+        get optionsTotalPages() {
+          return Math.ceil(this.filteredOptions.length / this.optionsPerPage);
+        },
 
         async init() {
-          await this.loadProducts();
-          this.calculate();
+          const s = JSON.parse(localStorage.getItem('lapp_settings') || '{}');
+          if (s.energy_price_eur_per_kwh !== undefined) this.params.energy_price_eur_per_kwh = s.energy_price_eur_per_kwh;
+          if (s.max_voltage_drop_percent !== undefined) this.params.max_voltage_drop_percent = s.max_voltage_drop_percent;
+          if (s.electricity_emission_factor_kg_per_kwh !== undefined) this.params.electricity_emission_factor_kg_per_kwh = s.electricity_emission_factor_kg_per_kwh;
+          if (s.copper_emission_factor_kg_per_kg !== undefined) this.params.copper_emission_factor_kg_per_kg = s.copper_emission_factor_kg_per_kg;
         },
 
-        async loadProducts() {
+        async searchShop() {
+          const q = this.shopQuery.trim();
+          if (q.length < 2) { this.shopResults = []; return; }
+          this.shopSearching = true;
           try {
-            const resp = await fetch('/api/products');
-            this.products = await resp.json();
-          } catch (e) { console.error('Failed to load products:', e); }
+            const resp = await fetch('/api/shop/search?q=' + encodeURIComponent(q) + '&page_size=10');
+            const data = await resp.json();
+            this.shopResults = data.products || [];
+            this.shopDropdownOpen = this.shopResults.length > 0;
+            // open the dropdown via Alpine scope
+          } catch (e) { console.error('Shop search error:', e); }
+          finally { this.shopSearching = false; }
         },
 
-        async selectProduct(productId) {
-          if (!productId) {
-            this.selectedProductName = '';
-            this.options = DEFAULT_OPTIONS.map(o => ({ ...o }));
-            return;
-          }
+        async selectShopProduct(product) {
+          this.selectedBaseCode = product.base_product_code;
+          this.selectedProductName = product.name;
+          this.selectedProductImage = product.image_url || '';
+          this.shopQuery = product.name;
+          this.shopResults = [];
+          this.shopLoadingOptions = true;
           try {
-            const resp = await fetch('/api/product-cable-options/' + encodeURIComponent(productId));
+            const resp = await fetch('/api/shop/product/' + encodeURIComponent(product.base_product_code) + '/cable-options');
             if (!resp.ok) throw new Error(await resp.text());
             const opts = await resp.json();
-            if (opts.length > 0) this.options = opts;
-            const prod = this.products.find(p => p.id === parseInt(productId));
-            this.selectedProductName = prod ? prod.name : '';
+            if (opts.length > 0) {
+              this.options = opts;
+              this.optionsPage = 0;
+            }
           } catch (e) { console.error('Failed to load cable options:', e); }
+          finally { this.shopLoadingOptions = false; }
+        },
+
+        clearShopProduct() {
+          this.selectedProductName = '';
+          this.selectedBaseCode = '';
+          this.selectedProductImage = '';
+          this.shopQuery = '';
+          this.options = [];
+          this.optionsPage = 0;
+          this.result = null;
         },
 
         fmt(v) {
@@ -422,7 +558,7 @@
             const resp = await fetch('/api/calculate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ params: this.params, options: this.options }),
+              body: JSON.stringify({ params: this.params, options: this.filteredOptions }),
             });
             if (!resp.ok) throw new Error(await resp.text());
             this.result = await resp.json();

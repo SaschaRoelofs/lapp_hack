@@ -129,15 +129,30 @@ async def index(request: Request):
         request=request,
         name="index.html",
         context={
-            "default_options": DEFAULT_OPTIONS,
             "default_params": DEFAULT_PARAMS,
         },
     )
 
 
-@app.get("/shop", response_class=HTMLResponse)
-async def shop_page(request: Request):
-    return templates.TemplateResponse(request=request, name="shop.html")
+@app.get("/search", response_class=HTMLResponse)
+async def search_page(request: Request):
+    return templates.TemplateResponse(request=request, name="search.html")
+
+
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="settings.html",
+        context={
+            "defaults": {
+                "energy_price_eur_per_kwh": DEFAULT_PARAMS["energy_price_eur_per_kwh"],
+                "max_voltage_drop_percent": DEFAULT_PARAMS["max_voltage_drop_percent"],
+                "electricity_emission_factor_kg_per_kwh": DEFAULT_PARAMS["electricity_emission_factor_kg_per_kwh"],
+                "copper_emission_factor_kg_per_kg": DEFAULT_PARAMS["copper_emission_factor_kg_per_kg"],
+            },
+        },
+    )
 
 
 @app.post("/api/calculate", response_model=CalculateResponse)
@@ -186,15 +201,6 @@ def _get_db():
     return conn
 
 
-# ---------------------------------------------------------------------------
-# Data-viewer endpoints
-# ---------------------------------------------------------------------------
-
-@app.get("/data", response_class=HTMLResponse)
-async def data_viewer(request: Request):
-    return templates.TemplateResponse(request=request, name="data.html")
-
-
 @app.get("/api/products")
 async def api_products():
     conn = _get_db()
@@ -217,31 +223,6 @@ async def api_product_detail(product_id: int):
     ).fetchall()
     conn.close()
     return {"product": dict(product), "cables": [dict(c) for c in cables]}
-
-
-@app.get("/api/cables")
-async def api_cables(
-    product_id: Optional[int] = None,
-    search: Optional[str] = None,
-):
-    conn = _get_db()
-    query = """
-        SELECT c.*, p.name as product_name
-        FROM cables c JOIN products p ON c.product_id = p.id
-        WHERE 1=1
-    """
-    query_params: list = []
-    if product_id is not None:
-        query += " AND c.product_id = ?"
-        query_params.append(product_id)
-    if search:
-        query += " AND (c.article_number LIKE ? OR c.product_variant LIKE ? OR p.name LIKE ?)"
-        term = f"%{search}%"
-        query_params.extend([term, term, term])
-    query += " ORDER BY p.name, c.product_variant, c.cross_section_mm2, c.num_cores"
-    rows = conn.execute(query, query_params).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
 
 
 # ---------------------------------------------------------------------------

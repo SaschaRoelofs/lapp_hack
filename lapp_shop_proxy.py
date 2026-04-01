@@ -281,36 +281,45 @@ async def get_cable_options_from_shop(base_product_code: str) -> list[dict]:
     Get optimizer-ready cable options from a Lapp shop product.
     Maps shop variants to the format expected by the optimizer.
     """
-    from optimizer import CableOption  # noqa: F811 – local import to avoid circular
-
     product = await get_product_clean(base_product_code)
+
+    # Collect variants with valid cross-section
+    valid_variants = [v for v in product["variants"] if (v.get("cross_section_mm2") or 0) > 0]
+
+    # Fetch prices for all variants in parallel
+    article_codes = [v.get("article_number", "") for v in valid_variants]
+    prices = await get_variant_prices([c for c in article_codes if c])
+    price_map = {p["article_number"]: p.get("price_per_meter") for p in prices if "error" not in p}
+
+    from app import STANDARD_RESISTANCE_OHM_PER_KM, STANDARD_AMPACITY_A
+
     options = []
-
-    for v in product["variants"]:
-        cs = v.get("cross_section_mm2")
-        if not cs or cs <= 0:
-            continue
-
-        # Look up standard resistance
-        from app import STANDARD_RESISTANCE_OHM_PER_KM, STANDARD_AMPACITY_A
-
+    for v in valid_variants:
+        cs = v["cross_section_mm2"]
         resistance = STANDARD_RESISTANCE_OHM_PER_KM.get(
             cs, round(17.241 / cs, 3) if cs > 0 else 0
         )
         ampacity = STANDARD_AMPACITY_A.get(cs)
         copper = v.get("copper_index_kg_per_km", 0) or 0
+        art_nr = v.get("article_number", "")
+        price_per_m = price_map.get(art_nr) or 0
 
         options.append({
-            "article_number": v.get("article_number", ""),
+            "article_number": art_nr,
             "name": v.get("name", ""),
             "cross_section_mm2": cs,
+            "cross_section": v.get("cross_section", ""),
             "resistance_ohm_per_km": resistance,
             "copper_mass_kg_per_km": copper,
-            "cable_price_eur_per_m": 0,  # price requires login
+            "cable_price_eur_per_m": price_per_m,
             "ampacity_a": ampacity,
             "num_cores": v.get("num_cores", ""),
+            "protective_conductor": v.get("protective_conductor", ""),
             "outer_diameter_mm": v.get("outer_diameter_mm"),
             "weight_kg_per_km": v.get("weight_kg_per_km"),
+            "url": v.get("url", ""),
+            "orderable": v.get("orderable", False),
+            "end_of_sales": v.get("end_of_sales", False),
         })
 
     return options
