@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leitungsquerschnitt-Optimierer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            lapp: { 600: '#e95e0f', 700: '#c94e0a' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+    .chart-container { position: relative; height: 320px; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen" x-data="optimizer()">
+
+  <!-- Header -->
+  <header class="bg-gray-900 text-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 py-5 flex items-center gap-4">
+      <div class="bg-lapp-600 rounded-lg p-2">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Leitungsquerschnitt-Optimierer</h1>
+        <p class="text-gray-400 text-sm">TCO- &amp; CO2-Optimierung von Kupferleitungen</p>
+      </div>
+      <nav class="ml-auto flex items-center gap-1">
+        <a href="/" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-white/10 text-white">Optimierer</a>
+        <a href="/data" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Kabeldaten</a>
+        <a href="/shop" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Shop</a>
+        <a href="/analyze" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Analyse</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+
+    <!-- Input Section -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-gray-50 border-b border-gray-200 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 class="text-lg font-semibold text-gray-700">Eingabeparameter</h2>
+        <div class="flex items-center gap-3">
+          <label class="text-sm font-medium text-gray-600 whitespace-nowrap">Produkt:</label>
+          <select x-model="selectedProductId" @change="selectProduct(selectedProductId)"
+            class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none min-w-[260px]">
+            <option value="">— Manuell konfiguriert —</option>
+            <template x-for="p in products" :key="p.id">
+              <option :value="p.id" x-text="p.name"></option>
+            </template>
+          </select>
+        </div>
+      </div>
+
+      <!-- Schematic Diagram -->
+      <div class="px-6 pt-6">
+        <div class="bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl border border-gray-200 p-4 overflow-x-auto">
+          <svg viewBox="0 0 700 150" class="w-full mx-auto" style="min-width: 500px; max-height: 180px;" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="dimL" viewBox="0 0 6 6" refX="0" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M6,0 L0,3 L6,6" fill="#9ca3af"/></marker>
+              <marker id="dimR" viewBox="0 0 6 6" refX="6" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#9ca3af"/></marker>
+            </defs>
+            <!-- Source -->
+            <rect x="15" y="12" width="90" height="85" rx="10" fill="white" stroke="#d1d5db" stroke-width="1.5"/>
+            <text x="60" y="46" text-anchor="middle" font-size="22" font-weight="700" fill="#374151" x-text="params.ac_3phase ? '3~' : '1~'"></text>
+            <text x="60" y="72" text-anchor="middle" font-size="13" font-weight="600" fill="#e95e0f" x-text="(params.system_voltage_v||400)+' V'"></text>
+            <text x="60" y="116" text-anchor="middle" font-size="10" fill="#9ca3af">Netz</text>
+            <!-- Conductors -->
+            <line x1="105" y1="32" x2="545" y2="32" stroke="#e95e0f" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="105" y1="50" x2="545" y2="50" stroke="#e95e0f" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="105" y1="68" x2="545" y2="68" stroke="#e95e0f" stroke-width="2.5" stroke-linecap="round" x-show="params.loaded_cores >= 3"/>
+            <line x1="105" y1="88" x2="545" y2="88" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="8 4" stroke-linecap="round"/>
+            <text x="120" y="86" font-size="8" fill="#16a34a" font-weight="600">PE</text>
+            <!-- Dimension -->
+            <line x1="140" y1="112" x2="500" y2="112" stroke="#9ca3af" stroke-width="1" marker-start="url(#dimL)" marker-end="url(#dimR)"/>
+            <rect x="272" y="102" width="96" height="18" rx="3" fill="white"/>
+            <text x="320" y="116" text-anchor="middle" font-size="14" font-weight="700" fill="#e95e0f" x-text="params.length_m+' m'"></text>
+            <text x="320" y="142" text-anchor="middle" font-size="11" fill="#6b7280" font-style="italic" x-text="selectedProductName || ''"></text>
+            <!-- Load -->
+            <circle cx="595" cy="52" r="40" fill="white" stroke="#d1d5db" stroke-width="1.5"/>
+            <text x="595" y="48" text-anchor="middle" font-size="26" font-weight="700" fill="#374151">M</text>
+            <text x="595" y="70" text-anchor="middle" font-size="13" font-weight="600" fill="#e95e0f" x-text="params.current_a+' A'"></text>
+            <text x="595" y="116" text-anchor="middle" font-size="10" fill="#9ca3af">Last</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Left: Operating Parameters -->
+        <div>
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Betriebsparameter</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Leitungslänge [m]</label>
+              <input type="number" x-model.number="params.length_m" step="1" min="1"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Betriebsstrom [A]</label>
+              <input type="number" x-model.number="params.current_a" step="0.1" min="0"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Belastete Adern</label>
+              <select x-model.number="params.loaded_cores"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Systemspannung [V]</label>
+              <input type="number" x-model.number="params.system_voltage_v" step="1"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Nutzungsdauer [Jahre]</label>
+              <input type="number" x-model.number="params.years" step="1" min="1"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Betriebstage / Jahr</label>
+              <input type="number" x-model.number="params.days_per_year" step="1" min="1"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Stunden / Tag</label>
+              <input type="number" x-model.number="params.hours_per_day" step="0.5" min="0" max="24"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Strompreis [€/kWh]</label>
+              <input type="number" x-model.number="params.energy_price_eur_per_kwh" step="0.01" min="0"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Max. Spannungsfall [%]</label>
+              <input type="number" x-model.number="params.max_voltage_drop_percent" step="0.1" min="0"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">CO2 Strom [kg/kWh]</label>
+              <input type="number" x-model.number="params.electricity_emission_factor_kg_per_kwh" step="0.001" min="0"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">CO2 Kupfer [kg/kg]</label>
+              <input type="number" x-model.number="params.copper_emission_factor_kg_per_kg" step="0.001" min="0"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div class="flex items-center gap-3 pt-5">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" x-model="params.ac_3phase" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-lapp-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lapp-600"></div>
+                <span class="ml-2 text-sm font-medium text-gray-600">AC Dreiphasig</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Cable Options Table -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Kabeloptionen</h3>
+            <span x-show="selectedProductName" x-cloak class="text-xs text-lapp-600 font-medium px-2 py-1 bg-orange-50 rounded-full" x-text="'aus ' + selectedProductName"></span>
+          </div>
+          <div class="overflow-x-auto border border-gray-200 rounded-lg">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 text-gray-600">
+                <tr>
+                  <th class="px-2 py-2 text-left">mm²</th>
+                  <th class="px-2 py-2 text-left">Ω/km</th>
+                  <th class="px-2 py-2 text-left">kg/km</th>
+                  <th class="px-2 py-2 text-left">€/m</th>
+                  <th class="px-2 py-2 text-left">A</th>
+                  <th class="px-2 py-2 w-10"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="(opt, i) in options" :key="i">
+                  <tr class="border-t border-gray-100">
+                    <td class="px-1 py-1"><input type="number" x-model.number="opt.cross_section_mm2" step="0.5" class="w-16 border border-gray-200 rounded px-1 py-1 text-sm"></td>
+                    <td class="px-1 py-1"><input type="number" x-model.number="opt.resistance_ohm_per_km" step="0.01" class="w-16 border border-gray-200 rounded px-1 py-1 text-sm"></td>
+                    <td class="px-1 py-1"><input type="number" x-model.number="opt.copper_mass_kg_per_km" step="1" class="w-16 border border-gray-200 rounded px-1 py-1 text-sm"></td>
+                    <td class="px-1 py-1"><input type="number" x-model.number="opt.cable_price_eur_per_m" step="0.1" class="w-16 border border-gray-200 rounded px-1 py-1 text-sm"></td>
+                    <td class="px-1 py-1"><input type="number" x-model.number="opt.ampacity_a" step="1" class="w-16 border border-gray-200 rounded px-1 py-1 text-sm"></td>
+                    <td class="px-1 py-1 text-center">
+                      <button @click="options.splice(i, 1)" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <button @click="options.push({cross_section_mm2: 0, resistance_ohm_per_km: 0, copper_mass_kg_per_km: 0, cable_price_eur_per_m: 0, ampacity_a: null})"
+            class="mt-2 text-sm text-lapp-600 hover:text-lapp-700 font-medium">
+            + Zeile hinzufügen
+          </button>
+        </div>
+      </div>
+
+      <!-- Calculate Button -->
+      <div class="px-6 pb-6">
+        <button @click="calculate()"
+          class="w-full bg-lapp-600 hover:bg-lapp-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors shadow-sm"
+          :disabled="loading" :class="{'opacity-60 cursor-wait': loading}">
+          <span x-show="!loading">Berechnen</span>
+          <span x-show="loading" x-cloak>Berechne...</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Results Section (hidden until first calculation) -->
+    <template x-if="result">
+      <div class="space-y-8">
+
+        <!-- Metric Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- TCO Optimum -->
+          <div class="bg-white rounded-xl shadow-sm border-l-4 border-emerald-500 p-5">
+            <div class="text-sm text-gray-500 font-medium">TCO-Optimum</div>
+            <template x-if="result.optimum.tco">
+              <div>
+                <div class="text-2xl font-bold text-emerald-600" x-text="result.optimum.tco.cross_section_mm2 + ' mm²'"></div>
+                <div class="text-sm text-gray-500 mt-1">
+                  TCO: <span class="font-semibold text-gray-700" x-text="fmt(result.optimum.tco.tco_eur) + ' €'"></span>
+                  &middot; CO2: <span class="font-semibold text-gray-700" x-text="fmt(result.optimum.tco.co2_total_kg) + ' kg'"></span>
+                </div>
+              </div>
+            </template>
+            <template x-if="!result.optimum.tco">
+              <div class="text-sm text-red-500 mt-1">Kein zulässiger Querschnitt</div>
+            </template>
+          </div>
+
+          <!-- CO2 Optimum -->
+          <div class="bg-white rounded-xl shadow-sm border-l-4 border-blue-500 p-5">
+            <div class="text-sm text-gray-500 font-medium">CO2-Optimum</div>
+            <template x-if="result.optimum.co2">
+              <div>
+                <div class="text-2xl font-bold text-blue-600" x-text="result.optimum.co2.cross_section_mm2 + ' mm²'"></div>
+                <div class="text-sm text-gray-500 mt-1">
+                  TCO: <span class="font-semibold text-gray-700" x-text="fmt(result.optimum.co2.tco_eur) + ' €'"></span>
+                  &middot; CO2: <span class="font-semibold text-gray-700" x-text="fmt(result.optimum.co2.co2_total_kg) + ' kg'"></span>
+                </div>
+              </div>
+            </template>
+            <template x-if="!result.optimum.co2">
+              <div class="text-sm text-red-500 mt-1">Kein zulässiger Querschnitt</div>
+            </template>
+          </div>
+
+          <!-- Payback -->
+          <div class="bg-white rounded-xl shadow-sm border-l-4 border-amber-500 p-5">
+            <div class="text-sm text-gray-500 font-medium">Amortisation (TCO-Opt. vs. Min.)</div>
+            <template x-if="result.optimum.payback_tco_years !== null && result.optimum.payback_tco_years !== undefined">
+              <div>
+                <div class="text-2xl font-bold text-amber-600" x-text="fmt(result.optimum.payback_tco_years) + ' Jahre'"></div>
+                <div class="text-sm text-gray-500 mt-1" x-show="result.optimum.smallest_admissible">
+                  Gegenüber <span class="font-semibold" x-text="result.optimum.smallest_admissible?.cross_section_mm2 + ' mm²'"></span>
+                </div>
+              </div>
+            </template>
+            <template x-if="result.optimum.payback_tco_years === null || result.optimum.payback_tco_years === undefined">
+              <div class="text-sm text-gray-400 mt-1">Keine Amortisation / identisch</div>
+            </template>
+          </div>
+        </section>
+
+        <!-- Results Table -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="bg-gray-50 border-b border-gray-200 px-6 py-4">
+            <h2 class="text-lg font-semibold text-gray-700">Ergebnisübersicht</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+                <tr>
+                  <th class="px-4 py-3 text-left">mm²</th>
+                  <th class="px-4 py-3 text-center">Zulässig</th>
+                  <th class="px-4 py-3 text-right">P<sub>Verlust</sub> [W]</th>
+                  <th class="px-4 py-3 text-right">E<sub>Verlust</sub> [kWh]</th>
+                  <th class="px-4 py-3 text-right">Kabelpreis [€]</th>
+                  <th class="px-4 py-3 text-right">Verlustkosten [€]</th>
+                  <th class="px-4 py-3 text-right">TCO [€]</th>
+                  <th class="px-4 py-3 text-right">CO2 ges. [kg]</th>
+                  <th class="px-4 py-3 text-right">ΔU [%]</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="row in result.rows" :key="row.cross_section_mm2">
+                  <tr class="border-t border-gray-100 transition-colors"
+                      :class="{
+                        'bg-emerald-50': result.optimum.tco && row.cross_section_mm2 === result.optimum.tco.cross_section_mm2 && row.admissible,
+                        'bg-blue-50': result.optimum.co2 && row.cross_section_mm2 === result.optimum.co2.cross_section_mm2 && row.admissible && !(result.optimum.tco && row.cross_section_mm2 === result.optimum.tco.cross_section_mm2),
+                        'bg-red-50 text-red-400': !row.admissible
+                      }">
+                    <td class="px-4 py-2 font-medium" x-text="row.cross_section_mm2"></td>
+                    <td class="px-4 py-2 text-center">
+                      <span x-show="row.admissible" class="text-emerald-500 font-bold">&#10003;</span>
+                      <span x-show="!row.admissible" class="text-red-400 cursor-help" :title="row.rejection_reason">&#10007;</span>
+                    </td>
+                    <td class="px-4 py-2 text-right" x-text="fmt(row.p_loss_w)"></td>
+                    <td class="px-4 py-2 text-right" x-text="fmt(row.energy_loss_kwh)"></td>
+                    <td class="px-4 py-2 text-right" x-text="fmt(row.cable_price_eur)"></td>
+                    <td class="px-4 py-2 text-right" x-text="fmt(row.loss_cost_eur)"></td>
+                    <td class="px-4 py-2 text-right font-semibold" x-text="fmt(row.tco_eur)"></td>
+                    <td class="px-4 py-2 text-right" x-text="fmt(row.co2_total_kg)"></td>
+                    <td class="px-4 py-2 text-right" x-text="row.voltage_drop_percent !== null ? fmt(row.voltage_drop_percent) : '-'"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <div class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex gap-6 text-xs text-gray-500">
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-200 inline-block"></span> TCO-Optimum</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-200 inline-block"></span> CO2-Optimum</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-red-200 inline-block"></span> Unzulässig</span>
+          </div>
+        </section>
+
+        <!-- Charts -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- TCO Breakdown -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">TCO-Aufschlüsselung</h3>
+            <div class="chart-container"><canvas id="chartTCO"></canvas></div>
+          </div>
+          <!-- CO2 Breakdown -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">CO2-Aufschlüsselung</h3>
+            <div class="chart-container"><canvas id="chartCO2"></canvas></div>
+          </div>
+          <!-- Voltage Drop -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Spannungsfall</h3>
+            <div class="chart-container"><canvas id="chartVDrop"></canvas></div>
+          </div>
+          <!-- Payback Timeline -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Amortisationsverlauf</h3>
+            <div class="chart-container"><canvas id="chartPayback"></canvas></div>
+          </div>
+        </section>
+      </div>
+    </template>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-400 text-center text-sm py-6 mt-12">
+    LAPP Hackathon 2026 &middot; Leitungsquerschnitt-Optimierer
+  </footer>
+
+  <script>
+    const DEFAULT_OPTIONS = {{ default_options | tojson }};
+    const DEFAULT_PARAMS = {{ default_params | tojson }};
+
+    // Chart instances (destroyed & recreated on each calculation)
+    let chartTCO = null, chartCO2 = null, chartVDrop = null, chartPayback = null;
+
+    const numFmt = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    function optimizer() {
+      return {
+        params: { ...DEFAULT_PARAMS },
+        options: DEFAULT_OPTIONS.map(o => ({ ...o })),
+        result: null,
+        loading: false,
+        products: [],
+        selectedProductId: '',
+        selectedProductName: '',
+
+        async init() {
+          await this.loadProducts();
+          this.calculate();
+        },
+
+        async loadProducts() {
+          try {
+            const resp = await fetch('/api/products');
+            this.products = await resp.json();
+          } catch (e) { console.error('Failed to load products:', e); }
+        },
+
+        async selectProduct(productId) {
+          if (!productId) {
+            this.selectedProductName = '';
+            this.options = DEFAULT_OPTIONS.map(o => ({ ...o }));
+            return;
+          }
+          try {
+            const resp = await fetch('/api/product-cable-options/' + encodeURIComponent(productId));
+            if (!resp.ok) throw new Error(await resp.text());
+            const opts = await resp.json();
+            if (opts.length > 0) this.options = opts;
+            const prod = this.products.find(p => p.id === parseInt(productId));
+            this.selectedProductName = prod ? prod.name : '';
+          } catch (e) { console.error('Failed to load cable options:', e); }
+        },
+
+        fmt(v) {
+          return numFmt.format(v);
+        },
+
+        async calculate() {
+          this.loading = true;
+          try {
+            const resp = await fetch('/api/calculate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ params: this.params, options: this.options }),
+            });
+            if (!resp.ok) throw new Error(await resp.text());
+            this.result = await resp.json();
+            // Wait for Alpine to render the canvas elements
+            this.$nextTick(() => this.renderCharts());
+          } catch (e) {
+            console.error(e);
+            alert('Fehler bei der Berechnung: ' + e.message);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        renderCharts() {
+          const rows = this.result.rows;
+          const labels = rows.map(r => r.cross_section_mm2 + ' mm²');
+          const admissible = rows.map(r => r.admissible);
+          const tcoOpt = this.result.optimum.tco?.cross_section_mm2;
+          const co2Opt = this.result.optimum.co2?.cross_section_mm2;
+
+          // Destroy existing charts
+          [chartTCO, chartCO2, chartVDrop, chartPayback].forEach(c => c?.destroy());
+
+          // Color helpers
+          const barAlpha = (base, adm) => adm.map(a => a ? base : base.replace(')', ', 0.35)').replace('rgb', 'rgba'));
+          const cableColor = 'rgb(59, 130, 246)';   // blue
+          const lossColor  = 'rgb(249, 115, 22)';   // orange
+          const co2InitColor = 'rgb(156, 163, 175)'; // gray
+          const co2LossColor = 'rgb(239, 68, 68)';   // red
+
+          // Highlight borders for optima
+          const borderTCO = rows.map(r => r.cross_section_mm2 === tcoOpt ? 'rgb(16, 185, 129)' : 'transparent');
+          const borderCO2 = rows.map(r => r.cross_section_mm2 === co2Opt ? 'rgb(59, 130, 246)' : 'transparent');
+
+          // --- Chart 1: TCO ---
+          chartTCO = new Chart(document.getElementById('chartTCO'), {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'Kabelpreis [€]',
+                  data: rows.map(r => r.cable_price_eur),
+                  backgroundColor: barAlpha(cableColor, admissible),
+                  borderColor: borderTCO,
+                  borderWidth: rows.map(r => r.cross_section_mm2 === tcoOpt ? 3 : 0),
+                },
+                {
+                  label: 'Verlustkosten [€]',
+                  data: rows.map(r => r.loss_cost_eur),
+                  backgroundColor: barAlpha(lossColor, admissible),
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom' } },
+              scales: {
+                x: { stacked: true },
+                y: { stacked: true, title: { display: true, text: 'Euro [€]' } },
+              },
+            },
+          });
+
+          // --- Chart 2: CO2 ---
+          chartCO2 = new Chart(document.getElementById('chartCO2'), {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'CO2 Kupfer [kg]',
+                  data: rows.map(r => r.co2_initial_kg),
+                  backgroundColor: barAlpha(co2InitColor, admissible),
+                  borderColor: borderCO2,
+                  borderWidth: rows.map(r => r.cross_section_mm2 === co2Opt ? 3 : 0),
+                },
+                {
+                  label: 'CO2 Verluste [kg]',
+                  data: rows.map(r => r.co2_loss_kg),
+                  backgroundColor: barAlpha(co2LossColor, admissible),
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom' } },
+              scales: {
+                x: { stacked: true },
+                y: { stacked: true, title: { display: true, text: 'kg CO2' } },
+              },
+            },
+          });
+
+          // --- Chart 3: Voltage Drop ---
+          const maxDrop = this.params.max_voltage_drop_percent;
+          chartVDrop = new Chart(document.getElementById('chartVDrop'), {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [{
+                label: 'Spannungsfall [%]',
+                data: rows.map(r => r.voltage_drop_percent),
+                backgroundColor: rows.map(r =>
+                  r.voltage_drop_percent !== null && maxDrop && r.voltage_drop_percent > maxDrop
+                    ? 'rgba(239, 68, 68, 0.7)'
+                    : 'rgba(16, 185, 129, 0.7)'
+                ),
+              }],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                annotation: undefined,
+              },
+              scales: {
+                y: {
+                  title: { display: true, text: 'Spannungsfall [%]' },
+                  beginAtZero: true,
+                },
+              },
+            },
+            plugins: maxDrop ? [{
+              id: 'limitLine',
+              afterDraw(chart) {
+                const yScale = chart.scales.y;
+                const y = yScale.getPixelForValue(maxDrop);
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.strokeStyle = 'rgb(239, 68, 68)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 4]);
+                ctx.beginPath();
+                ctx.moveTo(chart.chartArea.left, y);
+                ctx.lineTo(chart.chartArea.right, y);
+                ctx.stroke();
+                ctx.fillStyle = 'rgb(239, 68, 68)';
+                ctx.font = '11px sans-serif';
+                ctx.fillText('Max ' + maxDrop + ' %', chart.chartArea.right - 70, y - 6);
+                ctx.restore();
+              }
+            }] : [],
+          });
+
+          // --- Chart 4: Payback Timeline ---
+          const smallest = this.result.optimum.smallest_admissible;
+          const tcoRow = this.result.optimum.tco;
+          const years = this.params.years;
+
+          if (smallest && tcoRow && smallest.cross_section_mm2 !== tcoRow.cross_section_mm2) {
+            const yearLabels = [];
+            const lineMin = [];
+            const lineTCO = [];
+            const annualLossMin = smallest.loss_cost_eur / years;
+            const annualLossTCO = tcoRow.loss_cost_eur / years;
+            for (let y = 0; y <= years; y++) {
+              yearLabels.push('Jahr ' + y);
+              lineMin.push(smallest.cable_price_eur + annualLossMin * y);
+              lineTCO.push(tcoRow.cable_price_eur + annualLossTCO * y);
+            }
+            chartPayback = new Chart(document.getElementById('chartPayback'), {
+              type: 'line',
+              data: {
+                labels: yearLabels,
+                datasets: [
+                  {
+                    label: smallest.cross_section_mm2 + ' mm² (Min.)',
+                    data: lineMin,
+                    borderColor: 'rgb(249, 115, 22)',
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                    fill: false,
+                    tension: 0.1,
+                  },
+                  {
+                    label: tcoRow.cross_section_mm2 + ' mm² (TCO-Opt.)',
+                    data: lineTCO,
+                    borderColor: 'rgb(16, 185, 129)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: false,
+                    tension: 0.1,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: {
+                  y: { title: { display: true, text: 'Kumulative Kosten [€]' }, beginAtZero: true },
+                },
+              },
+            });
+          } else {
+            chartPayback = new Chart(document.getElementById('chartPayback'), {
+              type: 'line',
+              data: { labels: [], datasets: [] },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  title: { display: true, text: 'Minimal zulässig = TCO-Optimum', font: { size: 14 } },
+                },
+              },
+            });
+          }
+        },
+      };
+    }
+  </script>
+</body>
+</html>
