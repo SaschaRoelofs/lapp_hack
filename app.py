@@ -21,6 +21,8 @@ from optimizer import (
     payback_years,
 )
 from schematic_analyzer import analyze_pdf
+from machine_analyzer import build_machine_graph
+from machine_db import build_machine_graph_from_db
 from lapp_shop_proxy import router as shop_router
 
 app = FastAPI(title="Leitungsquerschnitt-Optimierer")
@@ -124,7 +126,26 @@ class CalculateResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
+async def index(request: Request, data: Optional[str] = Query(None)):
+    if data:
+        import base64
+        import gzip
+        import json
+        try:
+            # Handle potentially unpadded base64
+            padded_data = data + '=' * (-len(data) % 4)
+            decoded_bytes = base64.urlsafe_b64decode(padded_data)
+            unzipped_bytes = gzip.decompress(decoded_bytes)
+            parsed_data = json.loads(unzipped_bytes.decode('utf-8'))
+        except Exception as e:
+            parsed_data = {"error": str(e)}
+        
+        return templates.TemplateResponse(
+            request=request,
+            name="eplan.html",
+            context={"eplan_data": parsed_data}
+        )
+
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -297,6 +318,53 @@ async def api_product_cable_options(product_id: int):
 @app.get("/analyze", response_class=HTMLResponse)
 async def analyze_page(request: Request):
     return templates.TemplateResponse(request=request, name="analyze.html")
+
+
+@app.get("/machine", response_class=HTMLResponse)
+async def machine_page(request: Request):
+    return templates.TemplateResponse(request=request, name="machine.html")
+
+
+@app.get("/api/machine-db")
+async def api_machine_db():
+    from fastapi import HTTPException
+
+    try:
+        return build_machine_graph_from_db()
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/api/analyze-machine")
+async def api_analyze_machine(
+    file: UploadFile = File(...),
+):
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+
+    pdf_bytes = await file.read()
+
+    if len(pdf_bytes) > 50 * 1024 * 1024:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 50 MB.")
+
+    graph = build_machine_graph(pdf_bytes)
+    return graph.to_dict()
+
+
+@app.get("/api/machine-fixture")
+async def api_machine_fixture():
+    """Load the pre-built golden fixture JSON (for testing without PDF upload)."""
+    import json
+    fixture_path = Path(__file__).parent / "machine_graph_kkt_cboxx100.json"
+    if not fixture_path.exists():
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Fixture not found. Run build_fixture.py first.")
+    with open(fixture_path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 @app.post("/api/analyze")

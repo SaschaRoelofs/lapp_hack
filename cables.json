@@ -1,0 +1,1664 @@
+{
+    "cableCount": 27,
+    "cables": [
+        {
+            "name": "+A1-WD1",
+            "type": "",
+            "crossSection": "6",
+            "wiresAndCrossSection": "2X6",
+            "length": "2,472 m",
+            "usedWires": "2",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "de_DE@NYY-O 2X6;en_US@NYY-O 2X6;es_ES@NYY-O 2X6;fr_FR@NYY-O 2X6;nl_NL@NYY-O 2X6;sv_SE@NYY-O 2X6;da_DK@NYY-O 2X6;ru_RU@NYY-O 2X6;zh_CN@NYY-O 2X6;pl_PL@NYY-O 2X6;pt_BR@NYY-O 2X6;cs_CZ@NYY-O 2X6;it_IT@NYY-O 2X6;hu_HU@NYY-O 2X6;pt_PT@NYY-O 2X6;ko_KR@NYY-O 2X6;ja_JP@NYY-O 2X6;tr_TR@NYY-O 2X6;",
+            "articlePartNr": "EPL.2x6CABLE",
+            "wireCount": 2,
+            "wires": [
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "2,23",
+                    "from": "+A1-WD1",
+                    "to": "+A1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+A1-WD1",
+                    "to": "+A1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+A1-WD2",
+            "type": "",
+            "crossSection": "15",
+            "wiresAndCrossSection": "3G1,5",
+            "length": "2,385 m",
+            "usedWires": "3",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "de_DE@Anschlussleitung für Einspeisung, 3-polig, 100-240 V, L: 3000 mm;en_US@Connection cable for LED system light;cs_CZ@Přív. kabel,3-žil,oranž,3000mm,s konekt.;da_DK@Tilslutningsledning, til strømforsyning, 3-polet, 100-240 V, længde 3000 mm, UL;fi_FI@Connection cable for LED system light;fr_FR@Connection cable for LED system light;hu_HU@Connection cable for LED system light;it_IT@SZ Cavo Di Alimentazione 100/240V 3000Mm;nl_NL@SZ Aansluitkabel (oranje) voor systeemverlichting LED, 3-polig, 100-240 V, L=3000 mm;no_NO@Tilkoblingsledning, 3-polet, 100-240 V, lengde 3000 mm, UL;pl_PL@Kabel przyłączeniowy, do zasilacza, 3-bieg., 100-240 V, długość 3000 mm, UL;pt_PT@SZ Power supply 3 pole;ru_RU@Connection cable for LED system light;sv_SE@Anslutningskabel, förnNätdel, 3-polig, 100-240 V, längd 3000 mm UL;",
+            "articlePartNr": "RIT.2500400",
+            "wireCount": 3,
+            "wires": [
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "15",
+                    "wireLength": "2,36",
+                    "from": "+A1-WD2",
+                    "to": "+A1-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "15",
+                    "wireLength": "2,39",
+                    "from": "+A1-WD2",
+                    "to": "+A1-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "15",
+                    "wireLength": "2,37",
+                    "from": "+A1-WD2",
+                    "to": "+A1-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+A2-WD1",
+            "type": "",
+            "crossSection": "15",
+            "wiresAndCrossSection": "5G1,5",
+            "length": "2,244 m",
+            "usedWires": "5",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 5G1,5;da_DK@ÖLFLEX® CLASSIC 100 5G1,5;de_DE@ÖLFLEX® CLASSIC 100 5G1,5;en_EN@ÖLFLEX® CLASSIC 100 5G1,5;en_US@ÖLFLEX® CLASSIC 100 5G1,5;es_ES@ÖLFLEX® CLASSIC 100 5G1,5;fr_FR@ÖLFLEX® CLASSIC 100 5G1,5;it_IT@ÖLFLEX® CLASSIC 100 5G1,5;ja_JP@ÖLFLEX® CLASSIC 100 5G1,5;ko_KR@ÖLFLEX® CLASSIC 100 5G1,5;nl_NL@ÖLFLEX® CLASSIC 100 5G1,5;no_NO@ÖLFLEX® CLASSIC 100 5G1,5;pl_PL@ÖLFLEX® CLASSIC 100 5G1,5;pt_PT@ÖLFLEX® CLASSIC 100 5G1,5;ro_RO@ÖLFLEX® CLASSIC 100 5G1,5;ru_RU@ÖLFLEX® CLASSIC 100 5G1,5;sv_SE@ÖLFLEX® CLASSIC 100 5G1,5;tr_TR@ÖLFLEX® CLASSIC 100 5G1,5;zh_CN@ÖLFLEX® CLASSIC 100 5G1,5;",
+            "articlePartNr": "LAPP.00100664",
+            "wireCount": 5,
+            "wires": [
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD1",
+                    "to": "+A2-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD1",
+                    "to": "+A2-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GY",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD1",
+                    "to": "+A2-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD1",
+                    "to": "+A2-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD1",
+                    "to": "+A2-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+A2-WD2",
+            "type": "",
+            "crossSection": "15",
+            "wiresAndCrossSection": "4G1,5",
+            "length": "2,244 m",
+            "usedWires": "4",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 4G1,5;da_DK@ÖLFLEX® CLASSIC 100 4G1,5;de_DE@ÖLFLEX® CLASSIC 100 4G1,5;en_EN@ÖLFLEX® CLASSIC 100 4G1,5;en_US@ÖLFLEX® CLASSIC 100 4G1,5;es_ES@ÖLFLEX® CLASSIC 100 4G1,5;fr_FR@ÖLFLEX® CLASSIC 100 4G1,5;it_IT@ÖLFLEX® CLASSIC 100 4G1,5;ja_JP@ÖLFLEX® CLASSIC 100 4G1,5;ko_KR@ÖLFLEX® CLASSIC 100 4G1,5;nl_NL@ÖLFLEX® CLASSIC 100 4G1,5;no_NO@ÖLFLEX® CLASSIC 100 4G1,5;pl_PL@ÖLFLEX® CLASSIC 100 4G1,5;pt_PT@ÖLFLEX® CLASSIC 100 4G1,5;ro_RO@ÖLFLEX® CLASSIC 100 4G1,5;ru_RU@ÖLFLEX® CLASSIC 100 4G1,5;sv_SE@ÖLFLEX® CLASSIC 100 4G1,5;tr_TR@ÖLFLEX® CLASSIC 100 4G1,5;zh_CN@ÖLFLEX® CLASSIC 100 4G1,5;",
+            "articlePartNr": "LAPP.00100654",
+            "wireCount": 4,
+            "wires": [
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD2",
+                    "to": "+A2-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD2",
+                    "to": "+A2-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GY",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD2",
+                    "to": "+A2-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD2",
+                    "to": "+A2-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+A2-WD3",
+            "type": "",
+            "crossSection": "15",
+            "wiresAndCrossSection": "3G1,5",
+            "length": "2,244 m",
+            "usedWires": "3",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 3G1,5;da_DK@ÖLFLEX® CLASSIC 100 3G1,5;de_DE@ÖLFLEX® CLASSIC 100 3G1,5;en_EN@ÖLFLEX® CLASSIC 100 3G1,5;en_US@ÖLFLEX® CLASSIC 100 3G1,5;es_ES@ÖLFLEX® CLASSIC 100 3G1,5;fr_FR@ÖLFLEX® CLASSIC 100 3G1,5;it_IT@ÖLFLEX® CLASSIC 100 3G1,5;ja_JP@ÖLFLEX® CLASSIC 100 3G1,5;ko_KR@ÖLFLEX® CLASSIC 100 3G1,5;nl_NL@ÖLFLEX® CLASSIC 100 3G1,5;no_NO@ÖLFLEX® CLASSIC 100 3G1,5;pl_PL@ÖLFLEX® CLASSIC 100 3G1,5;pt_PT@ÖLFLEX® CLASSIC 100 3G1,5;ro_RO@ÖLFLEX® CLASSIC 100 3G1,5;ru_RU@ÖLFLEX® CLASSIC 100 3G1,5;sv_SE@ÖLFLEX® CLASSIC 100 3G1,5;tr_TR@ÖLFLEX® CLASSIC 100 3G1,5;zh_CN@ÖLFLEX® CLASSIC 100 3G1,5;",
+            "articlePartNr": "LAPP.0010064",
+            "wireCount": 3,
+            "wires": [
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD3",
+                    "to": "+A2-WD3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD3",
+                    "to": "+A2-WD3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD3",
+                    "to": "+A2-WD3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+A2-WD4",
+            "type": "",
+            "crossSection": "15",
+            "wiresAndCrossSection": "3G1,5",
+            "length": "2,244 m",
+            "usedWires": "3",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 3G1,5;da_DK@ÖLFLEX® CLASSIC 100 3G1,5;de_DE@ÖLFLEX® CLASSIC 100 3G1,5;en_EN@ÖLFLEX® CLASSIC 100 3G1,5;en_US@ÖLFLEX® CLASSIC 100 3G1,5;es_ES@ÖLFLEX® CLASSIC 100 3G1,5;fr_FR@ÖLFLEX® CLASSIC 100 3G1,5;it_IT@ÖLFLEX® CLASSIC 100 3G1,5;ja_JP@ÖLFLEX® CLASSIC 100 3G1,5;ko_KR@ÖLFLEX® CLASSIC 100 3G1,5;nl_NL@ÖLFLEX® CLASSIC 100 3G1,5;no_NO@ÖLFLEX® CLASSIC 100 3G1,5;pl_PL@ÖLFLEX® CLASSIC 100 3G1,5;pt_PT@ÖLFLEX® CLASSIC 100 3G1,5;ro_RO@ÖLFLEX® CLASSIC 100 3G1,5;ru_RU@ÖLFLEX® CLASSIC 100 3G1,5;sv_SE@ÖLFLEX® CLASSIC 100 3G1,5;tr_TR@ÖLFLEX® CLASSIC 100 3G1,5;zh_CN@ÖLFLEX® CLASSIC 100 3G1,5;",
+            "articlePartNr": "LAPP.0010064",
+            "wireCount": 3,
+            "wires": [
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD4",
+                    "to": "+A2-WD4",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD4",
+                    "to": "+A2-WD4",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "",
+                    "wireLength": "2,24",
+                    "from": "+A2-WD4",
+                    "to": "+A2-WD4",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+A2-WD5",
+            "type": "",
+            "crossSection": "15",
+            "wiresAndCrossSection": "3G1,5",
+            "length": "2,502 m",
+            "usedWires": "3",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "de_DE@Anschlussleitung für Einspeisung, 3-polig, 100-240 V, L: 3000 mm;en_US@Connection cable for LED system light;cs_CZ@Přív. kabel,3-žil,oranž,3000mm,s konekt.;da_DK@Tilslutningsledning, til strømforsyning, 3-polet, 100-240 V, længde 3000 mm, UL;fi_FI@Connection cable for LED system light;fr_FR@Connection cable for LED system light;hu_HU@Connection cable for LED system light;it_IT@SZ Cavo Di Alimentazione 100/240V 3000Mm;nl_NL@SZ Aansluitkabel (oranje) voor systeemverlichting LED, 3-polig, 100-240 V, L=3000 mm;no_NO@Tilkoblingsledning, 3-polet, 100-240 V, lengde 3000 mm, UL;pl_PL@Kabel przyłączeniowy, do zasilacza, 3-bieg., 100-240 V, długość 3000 mm, UL;pt_PT@SZ Power supply 3 pole;ru_RU@Connection cable for LED system light;sv_SE@Anslutningskabel, förnNätdel, 3-polig, 100-240 V, längd 3000 mm UL;",
+            "articlePartNr": "RIT.2500400",
+            "wireCount": 3,
+            "wires": [
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "15",
+                    "wireLength": "2,48",
+                    "from": "+A2-WD5",
+                    "to": "+A2-WD5",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "15",
+                    "wireLength": "2,5",
+                    "from": "+A2-WD5",
+                    "to": "+A2-WD5",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "15",
+                    "wireLength": "2,49",
+                    "from": "+A2-WD5",
+                    "to": "+A2-WD5",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+A2-WG1",
+            "type": "",
+            "crossSection": "75",
+            "wiresAndCrossSection": "40G0,75",
+            "length": "2,244 m",
+            "usedWires": "14",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 40G0,75;da_DK@ÖLFLEX® CLASSIC 100 40G0,75;de_DE@ÖLFLEX® CLASSIC 100 40G0,75;en_EN@ÖLFLEX® CLASSIC 100 40G0,75;en_US@ÖLFLEX® CLASSIC 100 40G0,75;es_ES@ÖLFLEX® CLASSIC 100 40G0,75;fr_FR@ÖLFLEX® CLASSIC 100 40G0,75;it_IT@ÖLFLEX® CLASSIC 100 40G0,75;ja_JP@ÖLFLEX® CLASSIC 100 40G0,75;ko_KR@ÖLFLEX® CLASSIC 100 40G0,75;nl_NL@ÖLFLEX® CLASSIC 100 40G0,75;no_NO@ÖLFLEX® CLASSIC 100 40G0,75;pl_PL@ÖLFLEX® CLASSIC 100 40G0,75;pt_PT@ÖLFLEX® CLASSIC 100 40G0,75;ro_RO@ÖLFLEX® CLASSIC 100 40G0,75;ru_RU@ÖLFLEX® CLASSIC 100 40G0,75;sv_SE@ÖLFLEX® CLASSIC 100 40G0,75;tr_TR@ÖLFLEX® CLASSIC 100 40G0,75;zh_CN@ÖLFLEX® CLASSIC 100 40G0,75;",
+            "articlePartNr": "LAPP.0010036",
+            "wireCount": 14,
+            "wires": [
+                {
+                    "wireNumber": "WH",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GY",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "VT",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "RD",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "PK",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "OG",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "TR",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BG",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BKWH",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GYBK",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BNBK",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG1",
+                    "to": "+A2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+A2-WG2",
+            "type": "",
+            "crossSection": "75",
+            "wiresAndCrossSection": "3G0,75",
+            "length": "2,244 m",
+            "usedWires": "2",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 3G0,75;da_DK@ÖLFLEX® CLASSIC 100 3G0,75;de_DE@ÖLFLEX® CLASSIC 100 3G0,75;en_EN@ÖLFLEX® CLASSIC 100 3G0,75;en_US@ÖLFLEX® CLASSIC 100 3G0,75;es_ES@ÖLFLEX® CLASSIC 100 3G0,75;fr_FR@ÖLFLEX® CLASSIC 100 3G0,75;it_IT@ÖLFLEX® CLASSIC 100 3G0,75;ja_JP@ÖLFLEX® CLASSIC 100 3G0,75;ko_KR@ÖLFLEX® CLASSIC 100 3G0,75;nl_NL@ÖLFLEX® CLASSIC 100 3G0,75;no_NO@ÖLFLEX® CLASSIC 100 3G0,75;pl_PL@ÖLFLEX® CLASSIC 100 3G0,75;pt_PT@ÖLFLEX® CLASSIC 100 3G0,75;ro_RO@ÖLFLEX® CLASSIC 100 3G0,75;ru_RU@ÖLFLEX® CLASSIC 100 3G0,75;sv_SE@ÖLFLEX® CLASSIC 100 3G0,75;tr_TR@ÖLFLEX® CLASSIC 100 3G0,75;zh_CN@ÖLFLEX® CLASSIC 100 3G0,75;",
+            "articlePartNr": "LAPP.00100224",
+            "wireCount": 2,
+            "wires": [
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG2",
+                    "to": "+A2-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "75",
+                    "wireLength": "",
+                    "from": "+A2-WG2",
+                    "to": "+A2-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B1-WG1",
+            "type": "",
+            "crossSection": "",
+            "wiresAndCrossSection": "2x2x",
+            "length": "",
+            "usedWires": "0",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "de_DE@Patchkabel;en_US@Patch cable;zh_CN@尾缆;es_ES@Cable patch;fr_FR@Câble de jonction;it_IT@Cavo patch;ru_RU@Патч-кабель;nl_NL@Patchkabels;tr_TR@Patch kablosu;hu_HU@Patch kábel;pl_PL@Kabel połączeniowy;da_DK@Patchkabel;cs_CZ@Síťový kabel;",
+            "articlePartNr": "PXC.2832629",
+            "wireCount": 1,
+            "wires": [
+                {
+                    "wireNumber": "",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B1-WG1",
+                    "to": "+B1-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B1-WG2",
+            "type": "",
+            "crossSection": "75",
+            "wiresAndCrossSection": "4X0,75",
+            "length": "4,018 m",
+            "usedWires": "4",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 4X0,75;da_DK@ÖLFLEX® CLASSIC 100 4X0,75;de_DE@ÖLFLEX® CLASSIC 100 4X0,75;en_EN@ÖLFLEX® CLASSIC 100 4X0,75;en_US@ÖLFLEX® CLASSIC 100 4X0,75;es_ES@ÖLFLEX® CLASSIC 100 4X0,75;fr_FR@ÖLFLEX® CLASSIC 100 4X0,75;it_IT@ÖLFLEX® CLASSIC 100 4X0,75;ja_JP@ÖLFLEX® CLASSIC 100 4X0,75;ko_KR@ÖLFLEX® CLASSIC 100 4X0,75;nl_NL@ÖLFLEX® CLASSIC 100 4X0,75;no_NO@ÖLFLEX® CLASSIC 100 4X0,75;pl_PL@ÖLFLEX® CLASSIC 100 4X0,75;pt_PT@ÖLFLEX® CLASSIC 100 4X0,75;ro_RO@ÖLFLEX® CLASSIC 100 4X0,75;ru_RU@ÖLFLEX® CLASSIC 100 4X0,75;sv_SE@ÖLFLEX® CLASSIC 100 4X0,75;tr_TR@ÖLFLEX® CLASSIC 100 4X0,75;zh_CN@ÖLFLEX® CLASSIC 100 4X0,75;",
+            "articlePartNr": "LAPP.00101264",
+            "wireCount": 4,
+            "wires": [
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "4,02",
+                    "from": "+B1-WG2",
+                    "to": "+B1-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "3,99",
+                    "from": "+B1-WG2",
+                    "to": "+B1-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GY",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B1-WG2",
+                    "to": "+B1-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B1-WG2",
+                    "to": "+B1-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B1.X1-WD1",
+            "type": "",
+            "crossSection": "15",
+            "wiresAndCrossSection": "5x1,5",
+            "length": "3,404 m",
+            "usedWires": "5",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "de_DE@ÖLFLEX 140 5G1,5;en_US@ÖLFLEX 140 5G1,5;pl_PL@ÖLFLEX 140 5G1,5;es_ES@ÖLFLEX 140 5G1,5;fr_FR@ÖLFLEX 140 5G1,5;nl_NL@ÖLFLEX 140 5G1,5;sv_SE@ÖLFLEX 140 5G1,5;da_DK@ÖLFLEX 140 5G1,5;ru_RU@ÖLFLEX 140 5G1,5;zh_CN@ÖLFLEX 140 5G1,5;pt_BR@ÖLFLEX 140 5G1,5;cs_CZ@ÖLFLEX 140 5G1,5;it_IT@ÖLFLEX 140 5G1,5;hu_HU@ÖLFLEX 140 5G1,5;pt_PT@ÖLFLEX 140 5G1,5;ko_KR@ÖLFLEX 140 5G1,5;ja_JP@ÖLFLEX 140 5G1,5;tr_TR@ÖLFLEX 140 5G1,5;ro_RO@ÖLFLEX 140 5G1,5;",
+            "articlePartNr": "LAPP.0011028",
+            "wireCount": 5,
+            "wires": [
+                {
+                    "wireNumber": "1",
+                    "crossSection": "",
+                    "wireLength": "3,4",
+                    "from": "+B1.X1-WD1",
+                    "to": "+B1.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "2",
+                    "crossSection": "",
+                    "wireLength": "3,4",
+                    "from": "+B1.X1-WD1",
+                    "to": "+B1.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "3",
+                    "crossSection": "",
+                    "wireLength": "3,4",
+                    "from": "+B1.X1-WD1",
+                    "to": "+B1.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "4",
+                    "crossSection": "",
+                    "wireLength": "3,4",
+                    "from": "+B1.X1-WD1",
+                    "to": "+B1.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "",
+                    "wireLength": "3,4",
+                    "from": "+B1.X1-WD1",
+                    "to": "+B1.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B1.X1-WD2",
+            "type": "",
+            "crossSection": "25",
+            "wiresAndCrossSection": "5G2,5",
+            "length": "1,778 m",
+            "usedWires": "5",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 H 5G2,5;da_DK@ÖLFLEX® CLASSIC 100 H 5G2,5;de_DE@ÖLFLEX® CLASSIC 100 H 5G2,5;en_EN@ÖLFLEX® CLASSIC 100 H 5G2,5;en_US@ÖLFLEX® CLASSIC 100 H 5G2,5;es_ES@ÖLFLEX® CLASSIC 100 H 5G2,5;fr_FR@ÖLFLEX® CLASSIC 100 H 5G2,5;it_IT@ÖLFLEX® CLASSIC 100 H 5G2,5;ja_JP@ÖLFLEX® CLASSIC 100 H 5G2,5;ko_KR@ÖLFLEX® CLASSIC 100 H 5G2,5;nl_NL@ÖLFLEX® CLASSIC 100 H 5G2,5;no_NO@ÖLFLEX® CLASSIC 100 H 5G2,5;pl_PL@ÖLFLEX® CLASSIC 100 H 5G2,5;pt_PT@ÖLFLEX® CLASSIC 100 H 5G2,5;ro_RO@ÖLFLEX® CLASSIC 100 H 5G2,5;ru_RU@ÖLFLEX® CLASSIC 100 H 5G2,5;sv_SE@ÖLFLEX® CLASSIC 100 H 5G2,5;tr_TR@ÖLFLEX® CLASSIC 100 H 5G2,5;zh_CN@ÖLFLEX® CLASSIC 100 H 5G2,5;",
+            "articlePartNr": "LAPP.0014159",
+            "wireCount": 5,
+            "wires": [
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "25",
+                    "wireLength": "1,78",
+                    "from": "+B1.X1-WD2",
+                    "to": "+B1.X1-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "25",
+                    "wireLength": "1,78",
+                    "from": "+B1.X1-WD2",
+                    "to": "+B1.X1-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GY",
+                    "crossSection": "25",
+                    "wireLength": "1,78",
+                    "from": "+B1.X1-WD2",
+                    "to": "+B1.X1-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "25",
+                    "wireLength": "1,78",
+                    "from": "+B1.X1-WD2",
+                    "to": "+B1.X1-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "25",
+                    "wireLength": "1,78",
+                    "from": "+B1.X1-WD2",
+                    "to": "+B1.X1-WD2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B1.X1-WG1",
+            "type": "",
+            "crossSection": "",
+            "wiresAndCrossSection": "2x2x",
+            "length": "",
+            "usedWires": "0",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "de_DE@Patchkabel;en_US@Patch cable;zh_CN@尾缆;es_ES@Cable patch;fr_FR@Câble de jonction;it_IT@Cavo patch;ru_RU@Патч-кабель;nl_NL@Patchkabels;tr_TR@Patch kablosu;hu_HU@Patch kábel;pl_PL@Kabel połączeniowy;da_DK@Patchkabel;cs_CZ@Síťový kabel;",
+            "articlePartNr": "PXC.2832629",
+            "wireCount": 1,
+            "wires": [
+                {
+                    "wireNumber": "",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B1.X1-WG1",
+                    "to": "+B1.X1-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B1.X1-WG2",
+            "type": "",
+            "crossSection": "34",
+            "wiresAndCrossSection": "3x0,34",
+            "length": "0,657 m",
+            "usedWires": "3",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "de_DE@S/A-Kabel: Buchse M12 auf freies Leitungsende;fr_FR@Cordon C/A équipé d'une fiche M12;es_ES@Cable S/A: conector hembra M12 a extremo libre;ru_RU@S/A кабель: гнездо M12, свободный конец;cs_CZ@S/A kabel: zásuvka M12, volný konec kabelu;it_IT@Cavo S/A: connettore femmina M12 / estremità cavo libera;pl_PL@Przewód S/A: gniazdo M12 na wolny koniec przewodu;en_EN@S/A cable: M12 socket on free conductor end;en_US@S/A cable: M12 socket on free conductor end;",
+            "articlePartNr": "LAPP.22260257",
+            "wireCount": 3,
+            "wires": [
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "0,66",
+                    "from": "+B1.X1-WG2",
+                    "to": "+B1.X1-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "",
+                    "wireLength": "0,66",
+                    "from": "+B1.X1-WG2",
+                    "to": "+B1.X1-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "0,66",
+                    "from": "+B1.X1-WG2",
+                    "to": "+B1.X1-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B1.X1-WZ1",
+            "type": "",
+            "crossSection": "25",
+            "wiresAndCrossSection": "6G2,5/0,75",
+            "length": "0,657 m",
+            "usedWires": "6",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;da_DK@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;de_DE@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;en_EN@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;en_US@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;es_ES@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;fr_FR@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;it_IT@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;ja_JP@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;ko_KR@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;nl_NL@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;no_NO@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;pl_PL@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;pt_PT@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;ro_RO@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;ru_RU@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;sv_SE@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;tr_TR@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;zh_CN@ÖLFLEX® SERVO 700 4G2,5+(2x0,75)FDF;",
+            "articlePartNr": "LAPP.0036026",
+            "wireCount": 7,
+            "wires": [
+                {
+                    "wireNumber": "2",
+                    "crossSection": "75",
+                    "wireLength": "0,66",
+                    "from": "+B1.X1-WZ1",
+                    "to": "+B1.X1-WZ1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "1",
+                    "crossSection": "75",
+                    "wireLength": "0,66",
+                    "from": "+B1.X1-WZ1",
+                    "to": "+B1.X1-WZ1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "3",
+                    "crossSection": "25",
+                    "wireLength": "0,66",
+                    "from": "+B1.X1-WZ1",
+                    "to": "+B1.X1-WZ1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "4",
+                    "crossSection": "25",
+                    "wireLength": "0,66",
+                    "from": "+B1.X1-WZ1",
+                    "to": "+B1.X1-WZ1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "5",
+                    "crossSection": "25",
+                    "wireLength": "0,66",
+                    "from": "+B1.X1-WZ1",
+                    "to": "+B1.X1-WZ1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "25",
+                    "wireLength": "0,66",
+                    "from": "+B1.X1-WZ1",
+                    "to": "+B1.X1-WZ1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "SH1",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B1.X1-WZ1",
+                    "to": "+B1.X1-WZ1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B2-WG1",
+            "type": "",
+            "crossSection": "75",
+            "wiresAndCrossSection": "4X0,75",
+            "length": "2,158 m",
+            "usedWires": "4",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 4X0,75;da_DK@ÖLFLEX® CLASSIC 100 4X0,75;de_DE@ÖLFLEX® CLASSIC 100 4X0,75;en_EN@ÖLFLEX® CLASSIC 100 4X0,75;en_US@ÖLFLEX® CLASSIC 100 4X0,75;es_ES@ÖLFLEX® CLASSIC 100 4X0,75;fr_FR@ÖLFLEX® CLASSIC 100 4X0,75;it_IT@ÖLFLEX® CLASSIC 100 4X0,75;ja_JP@ÖLFLEX® CLASSIC 100 4X0,75;ko_KR@ÖLFLEX® CLASSIC 100 4X0,75;nl_NL@ÖLFLEX® CLASSIC 100 4X0,75;no_NO@ÖLFLEX® CLASSIC 100 4X0,75;pl_PL@ÖLFLEX® CLASSIC 100 4X0,75;pt_PT@ÖLFLEX® CLASSIC 100 4X0,75;ro_RO@ÖLFLEX® CLASSIC 100 4X0,75;ru_RU@ÖLFLEX® CLASSIC 100 4X0,75;sv_SE@ÖLFLEX® CLASSIC 100 4X0,75;tr_TR@ÖLFLEX® CLASSIC 100 4X0,75;zh_CN@ÖLFLEX® CLASSIC 100 4X0,75;",
+            "articlePartNr": "LAPP.00101264",
+            "wireCount": 4,
+            "wires": [
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "2,16",
+                    "from": "+B2-WG1",
+                    "to": "+B2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "2,13",
+                    "from": "+B2-WG1",
+                    "to": "+B2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GY",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B2-WG1",
+                    "to": "+B2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B2-WG1",
+                    "to": "+B2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B2.X1-WD1",
+            "type": "",
+            "crossSection": "15",
+            "wiresAndCrossSection": "5x1,5",
+            "length": "1,864 m",
+            "usedWires": "5",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "de_DE@ÖLFLEX 140 5G1,5;en_US@ÖLFLEX 140 5G1,5;pl_PL@ÖLFLEX 140 5G1,5;es_ES@ÖLFLEX 140 5G1,5;fr_FR@ÖLFLEX 140 5G1,5;nl_NL@ÖLFLEX 140 5G1,5;sv_SE@ÖLFLEX 140 5G1,5;da_DK@ÖLFLEX 140 5G1,5;ru_RU@ÖLFLEX 140 5G1,5;zh_CN@ÖLFLEX 140 5G1,5;pt_BR@ÖLFLEX 140 5G1,5;cs_CZ@ÖLFLEX 140 5G1,5;it_IT@ÖLFLEX 140 5G1,5;hu_HU@ÖLFLEX 140 5G1,5;pt_PT@ÖLFLEX 140 5G1,5;ko_KR@ÖLFLEX 140 5G1,5;ja_JP@ÖLFLEX 140 5G1,5;tr_TR@ÖLFLEX 140 5G1,5;ro_RO@ÖLFLEX 140 5G1,5;",
+            "articlePartNr": "LAPP.0011028",
+            "wireCount": 5,
+            "wires": [
+                {
+                    "wireNumber": "1",
+                    "crossSection": "",
+                    "wireLength": "1,86",
+                    "from": "+B2.X1-WD1",
+                    "to": "+B2.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "2",
+                    "crossSection": "",
+                    "wireLength": "1,86",
+                    "from": "+B2.X1-WD1",
+                    "to": "+B2.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "3",
+                    "crossSection": "",
+                    "wireLength": "1,86",
+                    "from": "+B2.X1-WD1",
+                    "to": "+B2.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "4",
+                    "crossSection": "",
+                    "wireLength": "1,86",
+                    "from": "+B2.X1-WD1",
+                    "to": "+B2.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "",
+                    "wireLength": "1,86",
+                    "from": "+B2.X1-WD1",
+                    "to": "+B2.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B2.X1-WG1",
+            "type": "",
+            "crossSection": "",
+            "wiresAndCrossSection": "2x2x",
+            "length": "",
+            "usedWires": "0",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "de_DE@Netzwerkkabel;en_US@Network cable;zh_CN@网络电缆;es_ES@Cable de red;fr_FR@Câble de réseau;it_IT@Cavo di rete;ru_RU@Сетевой кабель;nl_NL@Netwerkkabel;tr_TR@Ağ kablosu;hu_HU@Hálózati kábel;pl_PL@Kabel sieciowy;da_DK@Netværkskabel;cs_CZ@Síťový kabel;pt_PT@Cabo de rede;sv_SE@Nätverkskabel;ko_KR@네트워크 케이블;no_NO@Nettverkskabel;",
+            "articlePartNr": "PXC.1404303",
+            "wireCount": 1,
+            "wires": [
+                {
+                    "wireNumber": "",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B2.X1-WG1",
+                    "to": "+B2.X1-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B2.X1-WG3",
+            "type": "",
+            "crossSection": "34",
+            "wiresAndCrossSection": "3x0,34",
+            "length": "0,337 m",
+            "usedWires": "3",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "de_DE@S/A-Kabel: Buchse M12 auf freies Leitungsende;fr_FR@Cordon C/A équipé d'une fiche M12;es_ES@Cable S/A: conector hembra M12 a extremo libre;ru_RU@S/A кабель: гнездо M12, свободный конец;cs_CZ@S/A kabel: zásuvka M12, volný konec kabelu;it_IT@Cavo S/A: connettore femmina M12 / estremità cavo libera;pl_PL@Przewód S/A: gniazdo M12 na wolny koniec przewodu;en_EN@S/A cable: M12 socket on free conductor end;en_US@S/A cable: M12 socket on free conductor end;",
+            "articlePartNr": "LAPP.22260257",
+            "wireCount": 3,
+            "wires": [
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "0,34",
+                    "from": "+B2.X1-WG3",
+                    "to": "+B2.X1-WG3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "",
+                    "wireLength": "0,34",
+                    "from": "+B2.X1-WG3",
+                    "to": "+B2.X1-WG3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "0,34",
+                    "from": "+B2.X1-WG3",
+                    "to": "+B2.X1-WG3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B2.X1-WZ2",
+            "type": "",
+            "crossSection": "25",
+            "wiresAndCrossSection": "6G2,5/1",
+            "length": "2,173 m",
+            "usedWires": "6",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);da_DK@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);de_DE@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);en_EN@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);en_US@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);es_ES@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);fr_FR@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);it_IT@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);ja_JP@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);ko_KR@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);nl_NL@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);no_NO@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);pl_PL@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);pt_PT@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);ro_RO@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);ru_RU@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);sv_SE@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);tr_TR@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);zh_CN@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);",
+            "articlePartNr": "LAPP.0036061",
+            "wireCount": 8,
+            "wires": [
+                {
+                    "wireNumber": "1",
+                    "crossSection": "",
+                    "wireLength": "1,99",
+                    "from": "+B2.X1-WZ2",
+                    "to": "+B2.X1-WZ2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "2",
+                    "crossSection": "",
+                    "wireLength": "1,99",
+                    "from": "+B2.X1-WZ2",
+                    "to": "+B2.X1-WZ2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "3",
+                    "crossSection": "",
+                    "wireLength": "1,99",
+                    "from": "+B2.X1-WZ2",
+                    "to": "+B2.X1-WZ2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "",
+                    "wireLength": "1,93",
+                    "from": "+B2.X1-WZ2",
+                    "to": "+B2.X1-WZ2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "5",
+                    "crossSection": "",
+                    "wireLength": "2,17",
+                    "from": "+B2.X1-WZ2",
+                    "to": "+B2.X1-WZ2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "6",
+                    "crossSection": "",
+                    "wireLength": "2,17",
+                    "from": "+B2.X1-WZ2",
+                    "to": "+B2.X1-WZ2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "SH",
+                    "crossSection": "",
+                    "wireLength": "1,93",
+                    "from": "+B2.X1-WZ2",
+                    "to": "+B2.X1-WZ2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "SH1",
+                    "crossSection": "",
+                    "wireLength": "1,93",
+                    "from": "+B2.X1-WZ2",
+                    "to": "+B2.X1-WZ2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B2.X1-WZ3",
+            "type": "",
+            "crossSection": "25",
+            "wiresAndCrossSection": "6G2,5/1",
+            "length": "0,337 m",
+            "usedWires": "6",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);da_DK@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);de_DE@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);en_EN@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);en_US@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);es_ES@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);fr_FR@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);it_IT@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);ja_JP@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);ko_KR@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);nl_NL@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);no_NO@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);pl_PL@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);pt_PT@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);ro_RO@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);ru_RU@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);sv_SE@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);tr_TR@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);zh_CN@ÖLFLEX® FD ROBUST 756 C 4 G 2,5+(2x1);",
+            "articlePartNr": "LAPP.0036061",
+            "wireCount": 8,
+            "wires": [
+                {
+                    "wireNumber": "1",
+                    "crossSection": "25",
+                    "wireLength": "0,34",
+                    "from": "+B2.X1-WZ3",
+                    "to": "+B2.X1-WZ3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "2",
+                    "crossSection": "25",
+                    "wireLength": "0,34",
+                    "from": "+B2.X1-WZ3",
+                    "to": "+B2.X1-WZ3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "3",
+                    "crossSection": "25",
+                    "wireLength": "0,34",
+                    "from": "+B2.X1-WZ3",
+                    "to": "+B2.X1-WZ3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "25",
+                    "wireLength": "0,34",
+                    "from": "+B2.X1-WZ3",
+                    "to": "+B2.X1-WZ3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "5",
+                    "crossSection": "1",
+                    "wireLength": "0,34",
+                    "from": "+B2.X1-WZ3",
+                    "to": "+B2.X1-WZ3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "6",
+                    "crossSection": "1",
+                    "wireLength": "0,34",
+                    "from": "+B2.X1-WZ3",
+                    "to": "+B2.X1-WZ3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "SH",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B2.X1-WZ3",
+                    "to": "+B2.X1-WZ3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "SH1",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B2.X1-WZ3",
+                    "to": "+B2.X1-WZ3",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B3-WG1",
+            "type": "",
+            "crossSection": "75",
+            "wiresAndCrossSection": "4X0,75",
+            "length": "2,018 m",
+            "usedWires": "4",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 4X0,75;da_DK@ÖLFLEX® CLASSIC 100 4X0,75;de_DE@ÖLFLEX® CLASSIC 100 4X0,75;en_EN@ÖLFLEX® CLASSIC 100 4X0,75;en_US@ÖLFLEX® CLASSIC 100 4X0,75;es_ES@ÖLFLEX® CLASSIC 100 4X0,75;fr_FR@ÖLFLEX® CLASSIC 100 4X0,75;it_IT@ÖLFLEX® CLASSIC 100 4X0,75;ja_JP@ÖLFLEX® CLASSIC 100 4X0,75;ko_KR@ÖLFLEX® CLASSIC 100 4X0,75;nl_NL@ÖLFLEX® CLASSIC 100 4X0,75;no_NO@ÖLFLEX® CLASSIC 100 4X0,75;pl_PL@ÖLFLEX® CLASSIC 100 4X0,75;pt_PT@ÖLFLEX® CLASSIC 100 4X0,75;ro_RO@ÖLFLEX® CLASSIC 100 4X0,75;ru_RU@ÖLFLEX® CLASSIC 100 4X0,75;sv_SE@ÖLFLEX® CLASSIC 100 4X0,75;tr_TR@ÖLFLEX® CLASSIC 100 4X0,75;zh_CN@ÖLFLEX® CLASSIC 100 4X0,75;",
+            "articlePartNr": "LAPP.00101264",
+            "wireCount": 4,
+            "wires": [
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "1,99",
+                    "from": "+B3-WG1",
+                    "to": "+B3-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "2,02",
+                    "from": "+B3-WG1",
+                    "to": "+B3-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GY",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B3-WG1",
+                    "to": "+B3-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B3-WG1",
+                    "to": "+B3-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B3-WG2",
+            "type": "",
+            "crossSection": "75",
+            "wiresAndCrossSection": "4X0,75",
+            "length": "2,018 m",
+            "usedWires": "4",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 4X0,75;da_DK@ÖLFLEX® CLASSIC 100 4X0,75;de_DE@ÖLFLEX® CLASSIC 100 4X0,75;en_EN@ÖLFLEX® CLASSIC 100 4X0,75;en_US@ÖLFLEX® CLASSIC 100 4X0,75;es_ES@ÖLFLEX® CLASSIC 100 4X0,75;fr_FR@ÖLFLEX® CLASSIC 100 4X0,75;it_IT@ÖLFLEX® CLASSIC 100 4X0,75;ja_JP@ÖLFLEX® CLASSIC 100 4X0,75;ko_KR@ÖLFLEX® CLASSIC 100 4X0,75;nl_NL@ÖLFLEX® CLASSIC 100 4X0,75;no_NO@ÖLFLEX® CLASSIC 100 4X0,75;pl_PL@ÖLFLEX® CLASSIC 100 4X0,75;pt_PT@ÖLFLEX® CLASSIC 100 4X0,75;ro_RO@ÖLFLEX® CLASSIC 100 4X0,75;ru_RU@ÖLFLEX® CLASSIC 100 4X0,75;sv_SE@ÖLFLEX® CLASSIC 100 4X0,75;tr_TR@ÖLFLEX® CLASSIC 100 4X0,75;zh_CN@ÖLFLEX® CLASSIC 100 4X0,75;",
+            "articlePartNr": "LAPP.00101264",
+            "wireCount": 4,
+            "wires": [
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "2,02",
+                    "from": "+B3-WG2",
+                    "to": "+B3-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "1,99",
+                    "from": "+B3-WG2",
+                    "to": "+B3-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GY",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B3-WG2",
+                    "to": "+B3-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+B3-WG2",
+                    "to": "+B3-WG2",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+B3.X1-WD1",
+            "type": "",
+            "crossSection": "15",
+            "wiresAndCrossSection": "5x1,5",
+            "length": "1,774 m",
+            "usedWires": "5",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "de_DE@ÖLFLEX 140 5G1,5;en_US@ÖLFLEX 140 5G1,5;pl_PL@ÖLFLEX 140 5G1,5;es_ES@ÖLFLEX 140 5G1,5;fr_FR@ÖLFLEX 140 5G1,5;nl_NL@ÖLFLEX 140 5G1,5;sv_SE@ÖLFLEX 140 5G1,5;da_DK@ÖLFLEX 140 5G1,5;ru_RU@ÖLFLEX 140 5G1,5;zh_CN@ÖLFLEX 140 5G1,5;pt_BR@ÖLFLEX 140 5G1,5;cs_CZ@ÖLFLEX 140 5G1,5;it_IT@ÖLFLEX 140 5G1,5;hu_HU@ÖLFLEX 140 5G1,5;pt_PT@ÖLFLEX 140 5G1,5;ko_KR@ÖLFLEX 140 5G1,5;ja_JP@ÖLFLEX 140 5G1,5;tr_TR@ÖLFLEX 140 5G1,5;ro_RO@ÖLFLEX 140 5G1,5;",
+            "articlePartNr": "LAPP.0011028",
+            "wireCount": 5,
+            "wires": [
+                {
+                    "wireNumber": "1",
+                    "crossSection": "",
+                    "wireLength": "1,77",
+                    "from": "+B3.X1-WD1",
+                    "to": "+B3.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "2",
+                    "crossSection": "",
+                    "wireLength": "1,77",
+                    "from": "+B3.X1-WD1",
+                    "to": "+B3.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "3",
+                    "crossSection": "",
+                    "wireLength": "1,77",
+                    "from": "+B3.X1-WD1",
+                    "to": "+B3.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "4",
+                    "crossSection": "",
+                    "wireLength": "1,77",
+                    "from": "+B3.X1-WD1",
+                    "to": "+B3.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "",
+                    "wireLength": "1,77",
+                    "from": "+B3.X1-WD1",
+                    "to": "+B3.X1-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+C2-WD1",
+            "type": "",
+            "crossSection": "75",
+            "wiresAndCrossSection": "3G0,75",
+            "length": "7,364 m",
+            "usedWires": "3",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 3G0,75;da_DK@ÖLFLEX® CLASSIC 100 3G0,75;de_DE@ÖLFLEX® CLASSIC 100 3G0,75;en_EN@ÖLFLEX® CLASSIC 100 3G0,75;en_US@ÖLFLEX® CLASSIC 100 3G0,75;es_ES@ÖLFLEX® CLASSIC 100 3G0,75;fr_FR@ÖLFLEX® CLASSIC 100 3G0,75;it_IT@ÖLFLEX® CLASSIC 100 3G0,75;ja_JP@ÖLFLEX® CLASSIC 100 3G0,75;ko_KR@ÖLFLEX® CLASSIC 100 3G0,75;nl_NL@ÖLFLEX® CLASSIC 100 3G0,75;no_NO@ÖLFLEX® CLASSIC 100 3G0,75;pl_PL@ÖLFLEX® CLASSIC 100 3G0,75;pt_PT@ÖLFLEX® CLASSIC 100 3G0,75;ro_RO@ÖLFLEX® CLASSIC 100 3G0,75;ru_RU@ÖLFLEX® CLASSIC 100 3G0,75;sv_SE@ÖLFLEX® CLASSIC 100 3G0,75;tr_TR@ÖLFLEX® CLASSIC 100 3G0,75;zh_CN@ÖLFLEX® CLASSIC 100 3G0,75;",
+            "articlePartNr": "LAPP.00100224",
+            "wireCount": 3,
+            "wires": [
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "7,36",
+                    "from": "+C2-WD1",
+                    "to": "+C2-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "7,36",
+                    "from": "+C2-WD1",
+                    "to": "+C2-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GNYE",
+                    "crossSection": "",
+                    "wireLength": "7,36",
+                    "from": "+C2-WD1",
+                    "to": "+C2-WD1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        },
+        {
+            "name": "+C2-WG1",
+            "type": "",
+            "crossSection": "75",
+            "wiresAndCrossSection": "4X0,75",
+            "length": "7,321 m",
+            "usedWires": "4",
+            "currentCapacity": "",
+            "ratedVoltage": "",
+            "articleDescription": "cs_CZ@ÖLFLEX® CLASSIC 100 4X0,75;da_DK@ÖLFLEX® CLASSIC 100 4X0,75;de_DE@ÖLFLEX® CLASSIC 100 4X0,75;en_EN@ÖLFLEX® CLASSIC 100 4X0,75;en_US@ÖLFLEX® CLASSIC 100 4X0,75;es_ES@ÖLFLEX® CLASSIC 100 4X0,75;fr_FR@ÖLFLEX® CLASSIC 100 4X0,75;it_IT@ÖLFLEX® CLASSIC 100 4X0,75;ja_JP@ÖLFLEX® CLASSIC 100 4X0,75;ko_KR@ÖLFLEX® CLASSIC 100 4X0,75;nl_NL@ÖLFLEX® CLASSIC 100 4X0,75;no_NO@ÖLFLEX® CLASSIC 100 4X0,75;pl_PL@ÖLFLEX® CLASSIC 100 4X0,75;pt_PT@ÖLFLEX® CLASSIC 100 4X0,75;ro_RO@ÖLFLEX® CLASSIC 100 4X0,75;ru_RU@ÖLFLEX® CLASSIC 100 4X0,75;sv_SE@ÖLFLEX® CLASSIC 100 4X0,75;tr_TR@ÖLFLEX® CLASSIC 100 4X0,75;zh_CN@ÖLFLEX® CLASSIC 100 4X0,75;",
+            "articlePartNr": "LAPP.00101264",
+            "wireCount": 4,
+            "wires": [
+                {
+                    "wireNumber": "BU",
+                    "crossSection": "",
+                    "wireLength": "7,32",
+                    "from": "+C2-WG1",
+                    "to": "+C2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BN",
+                    "crossSection": "",
+                    "wireLength": "7,3",
+                    "from": "+C2-WG1",
+                    "to": "+C2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "BK",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+C2-WG1",
+                    "to": "+C2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                },
+                {
+                    "wireNumber": "GY",
+                    "crossSection": "",
+                    "wireLength": "",
+                    "from": "+C2-WG1",
+                    "to": "+C2-WG1",
+                    "wireColor": "",
+                    "colorNumber": "",
+                    "potential": "",
+                    "signalName": ""
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maschinenvisualisierung</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            lapp: { 600: '#e95e0f', 700: '#c94e0a' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+
+    /* Graph styles */
+    .graph-container { position: relative; overflow: hidden; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; }
+    .graph-svg { cursor: grab; }
+    .graph-svg:active { cursor: grabbing; }
+    .graph-svg .node rect { cursor: pointer; transition: filter 0.15s; }
+    .graph-svg .node rect:hover { filter: brightness(0.92); }
+    .graph-svg .node text { pointer-events: none; }
+    .graph-svg .edgePath path { fill: none; stroke-width: 2; }
+    .graph-svg .edgeLabel text { font-size: 11px; fill: #64748b; }
+
+    .subsystem-box { rx: 12; ry: 12; stroke-dasharray: 6 3; }
+
+    /* Component type colors */
+    .comp-motor     { fill: #dbeafe; stroke: #3b82f6; }
+    .comp-sensor    { fill: #dcfce7; stroke: #22c55e; }
+    .comp-protection{ fill: #fef3c7; stroke: #f59e0b; }
+    .comp-controller{ fill: #ede9fe; stroke: #8b5cf6; }
+    .comp-switch    { fill: #fce7f3; stroke: #ec4899; }
+    .comp-transformer{ fill: #e0e7ff; stroke: #6366f1; }
+    .comp-heater    { fill: #fee2e2; stroke: #ef4444; }
+    .comp-assembly  { fill: #f0fdf4; stroke: #16a34a; }
+    .comp-cable     { fill: #f1f5f9; stroke: #94a3b8; }
+
+    /* Detail panel */
+    .detail-panel { max-height: calc(100vh - 200px); overflow-y: auto; }
+
+    /* Legend */
+    .legend-dot { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; display: inline-block; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen" x-data="machineViz()" x-init="init()" x-cloak>
+
+  <!-- Header -->
+  <header class="bg-gray-900 text-white shadow-lg">
+    <div class="max-w-full mx-auto px-4 py-5 flex items-center gap-4">
+      <div class="bg-lapp-600 rounded-lg p-2">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Maschinenvisualisierung</h1>
+        <p class="text-gray-400 text-sm">Interaktive Darstellung aus EPLAN-Schaltplänen</p>
+      </div>
+      <nav class="ml-auto flex items-center gap-1">
+        <a href="/" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Optimierer</a>
+        <a href="/search" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Suche</a>
+        <a href="/analyze" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Analyse</a>
+        <a href="/machine" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-white/10 text-white">Maschine</a>
+        <a href="/settings" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-full mx-auto px-4 py-6">
+
+    <!-- Upload section (shown when no data) -->
+    <template x-if="!graphData">
+      <section class="max-w-3xl mx-auto">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="bg-gray-50 border-b border-gray-200 px-6 py-4">
+            <h2 class="text-lg font-semibold text-gray-700">Maschine aus SQLite laden</h2>
+          </div>
+          <div class="p-6">
+            <div class="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-10 transition-colors"
+                 :class="dragOver ? 'border-lapp-600 bg-orange-50' : 'border-gray-300 bg-gray-50'"
+                 @dragover.prevent="dragOver = true"
+                 @dragleave.prevent="dragOver = false"
+                 @drop.prevent="handleDrop($event)">
+              <svg class="w-16 h-16 mb-4" :class="dragOver ? 'text-lapp-600' : 'text-gray-400'" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+              </svg>
+              <p class="text-gray-600 font-medium mb-2">Die Maschinenansicht wird direkt aus dem SQLite-Snapshot erzeugt.</p>
+              <p class="text-gray-400 text-sm mb-4">Fallbacks bleiben verfuegbar, falls kein Snapshot geladen werden kann.</p>
+              <div class="flex flex-wrap items-center justify-center gap-3">
+                <button @click="loadDatabaseGraph()" class="bg-lapp-600 hover:bg-lapp-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+                  Snapshot laden
+                </button>
+                <button @click="loadFixture()" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+                Demo laden (KKT cBoxX 100)
+                </button>
+                <label class="cursor-pointer bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 font-medium py-2 px-6 rounded-lg transition-colors">
+                  PDF waehlen
+                  <input type="file" accept=".pdf" class="hidden" @change="handleFile($event)">
+                </label>
+              </div>
+            </div>
+
+            <!-- Loading -->
+            <div x-show="loading" class="mt-6 text-center">
+              <div class="inline-flex items-center gap-3 bg-blue-50 text-blue-700 px-6 py-3 rounded-lg">
+                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                <span class="font-medium" x-text="loadingMessage"></span>
+              </div>
+              <p class="text-sm text-gray-500 mt-2">SQLite-Snapshot, Demo-Fixture oder PDF-Analyse stehen als Datenquellen zur Verfuegung.</p>
+            </div>
+
+            <!-- Error -->
+            <div x-show="error" class="mt-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm" x-text="error"></div>
+          </div>
+        </div>
+      </section>
+    </template>
+
+    <!-- Main visualization (shown when data loaded) -->
+    <template x-if="graphData">
+      <div class="flex gap-4" style="height: calc(100vh - 170px);">
+
+        <!-- Left sidebar: Info + Legend + Subsystems -->
+        <aside class="w-72 flex-shrink-0 space-y-4 overflow-y-auto">
+
+          <!-- Technical data card -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4" x-show="graphData.data_source">
+            <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Quelle</h3>
+            <div class="space-y-1 text-sm" x-show="graphData.data_source">
+              <div class="flex justify-between"><span class="text-gray-500">Snapshot</span><span class="font-medium" x-text="graphData.data_source?.label"></span></div>
+              <div class="flex justify-between"><span class="text-gray-500">Import</span><span class="font-medium" x-text="formatImportedAt(graphData.data_source?.imported_at)"></span></div>
+              <div class="flex justify-between"><span class="text-gray-500">Quelle</span><span class="font-medium truncate max-w-36 text-right" :title="graphData.data_source?.source_dir" x-text="graphData.data_source?.source_dir"></span></div>
+            </div>
+          </div>
+
+          <!-- Technical data card -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Technische Daten</h3>
+            <div class="space-y-1 text-sm">
+              <template x-if="graphData.technical_data.model">
+                <div class="flex justify-between"><span class="text-gray-500">Modell</span><span class="font-medium" x-text="graphData.technical_data.model"></span></div>
+              </template>
+              <template x-if="graphData.technical_data.rated_voltage">
+                <div class="flex justify-between"><span class="text-gray-500">Spannung</span><span class="font-medium" x-text="graphData.technical_data.rated_voltage"></span></div>
+              </template>
+              <template x-if="graphData.technical_data.connected_load">
+                <div class="flex justify-between"><span class="text-gray-500">Leistung</span><span class="font-medium" x-text="graphData.technical_data.connected_load"></span></div>
+              </template>
+              <template x-if="graphData.technical_data.full_load_current">
+                <div class="flex justify-between"><span class="text-gray-500">Strom</span><span class="font-medium" x-text="graphData.technical_data.full_load_current"></span></div>
+              </template>
+              <template x-if="graphData.technical_data.frequency">
+                <div class="flex justify-between"><span class="text-gray-500">Frequenz</span><span class="font-medium" x-text="graphData.technical_data.frequency"></span></div>
+              </template>
+              <template x-if="graphData.technical_data.enclosure_type">
+                <div class="flex justify-between"><span class="text-gray-500">Schutzart</span><span class="font-medium" x-text="graphData.technical_data.enclosure_type"></span></div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Übersicht</h3>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <div class="bg-blue-50 rounded-lg p-2 text-center">
+                <div class="text-xl font-bold text-blue-700" x-text="graphData.components.length"></div>
+                <div class="text-xs text-blue-600">Komponenten</div>
+              </div>
+              <div class="bg-green-50 rounded-lg p-2 text-center">
+                <div class="text-xl font-bold text-green-700" x-text="graphData.connections.filter(c => c.connection_type !== 'fg_chain').length"></div>
+                <div class="text-xs text-green-600">Kabel</div>
+              </div>
+              <div class="bg-purple-50 rounded-lg p-2 text-center">
+                <div class="text-xl font-bold text-purple-700" x-text="graphData.subsystems.length"></div>
+                <div class="text-xs text-purple-600">Subsysteme</div>
+              </div>
+              <div class="bg-indigo-50 rounded-lg p-2 text-center">
+                <div class="text-xl font-bold text-indigo-700" x-text="graphData.connections.filter(c => c.connection_type === 'fg_chain').length"></div>
+                <div class="text-xs text-indigo-600">FG-Ketten</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Legende</h3>
+            <div class="space-y-1 text-xs">
+              <div class="flex items-center gap-2"><span class="legend-dot" style="background:#dbeafe;border-color:#3b82f6"></span> Motor / Aktor</div>
+              <div class="flex items-center gap-2"><span class="legend-dot" style="background:#dcfce7;border-color:#22c55e"></span> Sensor</div>
+              <div class="flex items-center gap-2"><span class="legend-dot" style="background:#fef3c7;border-color:#f59e0b"></span> Schutzgerät</div>
+              <div class="flex items-center gap-2"><span class="legend-dot" style="background:#ede9fe;border-color:#8b5cf6"></span> Steuerung</div>
+              <div class="flex items-center gap-2"><span class="legend-dot" style="background:#fce7f3;border-color:#ec4899"></span> Schalter / Schütz</div>
+              <div class="flex items-center gap-2"><span class="legend-dot" style="background:#e0e7ff;border-color:#6366f1"></span> Netzteil / Trafo</div>
+              <div class="flex items-center gap-2"><span class="legend-dot" style="background:#fee2e2;border-color:#ef4444"></span> Heizung</div>
+              <div class="flex items-center gap-2"><span class="legend-dot" style="background:#f0fdf4;border-color:#16a34a"></span> Baugruppe</div>
+              <div class="flex items-center gap-2"><span class="legend-dot" style="background:#f1f5f9;border-color:#94a3b8"></span> Kabel</div>
+              <div class="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
+                <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#64748b" stroke-width="2.5"/></svg>
+                <span>Kabelverbindung</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <svg width="28" height="10"><line x1="0" y1="5" x2="28" y2="5" stroke="#a5b4fc" stroke-width="1.5" stroke-dasharray="5 3"/></svg>
+                <span>Funktionsgruppe</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subsystem filter -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Subsysteme</h3>
+            <div class="space-y-1">
+              <button @click="filterSubsystem = ''; renderGraph()"
+                      class="w-full text-left px-2 py-1 rounded text-sm transition-colors"
+                      :class="filterSubsystem === '' ? 'bg-lapp-600 text-white' : 'hover:bg-gray-100 text-gray-700'">
+                Alle anzeigen
+              </button>
+              <template x-for="sub in graphData.subsystems" :key="sub.name">
+                <button @click="filterSubsystem = sub.name; renderGraph()"
+                        class="w-full text-left px-2 py-1 rounded text-sm transition-colors flex justify-between items-center"
+                        :class="filterSubsystem === sub.name ? 'bg-lapp-600 text-white' : 'hover:bg-gray-100 text-gray-700'">
+                  <span x-text="sub.name_de || sub.name"></span>
+                  <span class="text-xs opacity-60" x-text="sub.component_ids.length + ' / ' + (sub.cable_count || 0)"></span>
+                </button>
+              </template>
+            </div>
+          </div>
+
+          <!-- Upload new -->
+          <div class="text-center">
+            <label class="cursor-pointer text-sm text-gray-500 hover:text-lapp-600 transition-colors underline">
+              Neuen Schaltplan laden
+              <input type="file" accept=".pdf" class="hidden" @change="handleFile($event)">
+            </label>
+          </div>
+        </aside>
+
+        <!-- Center: Graph visualization -->
+        <div class="flex-1 flex flex-col gap-4">
+          <!-- Toolbar -->
+          <div class="flex items-center gap-2">
+            <button @click="zoomIn()" class="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">
+              <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            </button>
+            <button @click="zoomOut()" class="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">
+              <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+            </button>
+            <button @click="resetView()" class="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">Reset</button>
+            <div class="ml-auto flex items-center gap-2">
+              <label class="text-sm text-gray-600">Ansicht:</label>
+              <select x-model="viewMode" @change="selectedComponent = null; selectedFgGroup = null; selectedCable = null; renderGraph()" class="border border-gray-300 rounded-lg px-2 py-1 text-sm">
+                <option value="subsystem">Funktionsgruppen</option>
+                <option value="all">Alle Geräte</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- SVG Graph -->
+          <div class="graph-container flex-1" id="graphContainer" style="min-height: 600px"
+               @wheel.prevent="handleWheel($event)"
+               @mousedown="startPan($event)"
+               @mousemove="doPan($event)"
+               @mouseup="endPan()"
+               @mouseleave="endPan()">
+            <svg class="graph-svg" width="100%" height="100%" id="graphSvg">
+              <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+                </marker>
+                <marker id="arrowhead-fg" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                  <polygon points="0 0, 8 3, 0 6" fill="#a5b4fc"/>
+                </marker>
+              </defs>
+              <g id="graphGroup" :transform="`translate(${panX},${panY}) scale(${zoom})`">
+              </g>
+            </svg>
+          </div>
+
+          <!-- Warnings -->
+          <template x-if="graphData.warnings && graphData.warnings.length > 0">
+            <div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">
+              <template x-for="w in graphData.warnings">
+                <p class="text-sm text-amber-700" x-text="w"></p>
+              </template>
+            </div>
+          </template>
+
+          <!-- Error display (for render errors) -->
+          <div x-show="error" class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm" x-text="error"></div>
+        </div>
+
+        <!-- Right sidebar: Component detail or FG Group detail -->
+        <aside class="w-80 flex-shrink-0" x-show="selectedComponent || selectedFgGroup || selectedCable" x-transition>
+
+          <!-- Cable detail panel -->
+          <template x-if="selectedCable && !selectedComponent && !selectedFgGroup">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
+              <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-700" x-text="selectedCable.cable_name"></h3>
+                <button @click="selectedCable = null" class="text-gray-400 hover:text-gray-600">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div class="p-4 space-y-3 text-sm">
+                <div>
+                  <div class="text-gray-500 text-xs">Artikelbezeichnung</div>
+                  <div class="font-medium text-gray-800" x-text="selectedCable.cable_type || '–'"></div>
+                </div>
+                <div>
+                  <div class="text-gray-500 text-xs">Artikelnummer</div>
+                  <div class="font-mono text-gray-800" x-text="selectedCable.sap_number || '–'"></div>
+                </div>
+                <div>
+                  <div class="text-gray-500 text-xs">Spezifikation</div>
+                  <div class="text-gray-800" x-text="selectedCable.cable_spec || '–'"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <div class="text-gray-500 text-xs">Adern</div>
+                    <div class="text-gray-800" x-text="selectedCable.num_cores || '–'"></div>
+                  </div>
+                  <div>
+                    <div class="text-gray-500 text-xs">Querschnitt</div>
+                    <div class="text-gray-800" x-text="selectedCable.cross_section_mm2 ? selectedCable.cross_section_mm2 + ' mm²' : '–'"></div>
+                  </div>
+                  <div>
+                    <div class="text-gray-500 text-xs">Länge</div>
+                    <div class="text-gray-800" x-text="selectedCable.length_m ? selectedCable.length_m + ' m' : '–'"></div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <div class="text-gray-500 text-xs">Von</div>
+                    <div class="font-mono text-gray-800" x-text="'+' + (selectedCable.from_location || '–')"></div>
+                  </div>
+                  <div>
+                    <div class="text-gray-500 text-xs">Nach</div>
+                    <div class="font-mono text-gray-800" x-text="'+' + (selectedCable.to_location || '–')"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+
+          <!-- FG Group detail panel -->
+          <template x-if="selectedFgGroup && !selectedComponent">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
+              <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-700">
+                  <span x-text="'=' + selectedFgGroup.fg"></span>
+                  <span class="text-gray-400 text-sm ml-1" x-text="'(' + selectedFgGroup.subsystem + ')'"></span>
+                </h3>
+                <button @click="selectedFgGroup = null" class="text-gray-400 hover:text-gray-600">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div class="p-4 space-y-3 text-sm">
+                <div class="text-gray-500 text-xs">Funktionsgruppe</div>
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-lg font-bold" x-text="selectedFgGroup.components.length"></span>
+                  <span class="text-gray-600">Geräte</span>
+                </div>
+
+                <!-- Component list -->
+                <div class="text-gray-500 text-xs mb-1">Enthaltene Geräte</div>
+                <div class="max-h-96 overflow-y-auto space-y-1">
+                  <template x-for="comp in selectedFgGroup.components" :key="comp.id">
+                    <div class="bg-gray-50 rounded-lg p-2 text-xs cursor-pointer hover:bg-gray-100 transition-colors"
+                         @click="selectedComponent = comp">
+                      <div class="flex items-center justify-between">
+                        <span class="font-mono font-bold" x-text="comp.designation"></span>
+                        <span class="inline-block px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                              :class="typeColorClass(comp.component_type)"
+                              x-text="typeLabel(comp.component_type)"></span>
+                      </div>
+                      <div class="text-gray-600" x-text="comp.description_de"></div>
+                      <div class="text-gray-400 font-mono text-[10px]" x-text="comp.full_eplan_name"></div>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Cables for this FG group's location -->
+                <template x-if="selectedFgGroup.components[0]?.related_cables?.length > 0">
+                  <div>
+                    <div class="text-gray-500 text-xs mb-1">Kabel am Standort</div>
+                    <template x-for="cable in selectedFgGroup.components[0].related_cables" :key="cable.cable_name">
+                      <div class="bg-gray-50 rounded-lg p-2 mb-1 text-xs">
+                        <div class="font-medium" x-text="cable.cable_name"></div>
+                        <div class="text-gray-500" x-text="cable.cable_spec"></div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+
+          <!-- Single component detail panel -->
+          <div x-show="selectedComponent">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
+              <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-700" x-text="selectedComponent?.designation"></h3>
+                <button @click="selectedComponent = null" class="text-gray-400 hover:text-gray-600">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            <div class="p-4 space-y-3 text-sm" x-show="selectedComponent">
+              <!-- Type badge -->
+              <div>
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                      :class="typeColorClass(selectedComponent?.component_type)"
+                      x-text="typeLabel(selectedComponent?.component_type)"></span>
+                <span class="text-gray-400 text-xs ml-1" x-text="selectedComponent?.full_eplan_name || selectedComponent?.id"></span>
+              </div>
+
+              <!-- Function group -->
+              <template x-if="selectedComponent?.function_group">
+                <div>
+                  <div class="text-gray-500 text-xs">Funktionsgruppe</div>
+                  <div class="font-medium font-mono" x-text="'=' + selectedComponent.function_group"></div>
+                </div>
+              </template>
+
+              <!-- Descriptions -->
+              <template x-if="selectedComponent?.description_de">
+                <div>
+                  <div class="text-gray-500 text-xs">Bezeichnung</div>
+                  <div class="font-medium" x-text="selectedComponent.description_de"></div>
+                  <div class="text-gray-500" x-text="selectedComponent.description_en" x-show="selectedComponent.description_en"></div>
+                </div>
+              </template>
+
+              <!-- Technical specs -->
+              <template x-if="selectedComponent?.technical_specs">
+                <div>
+                  <div class="text-gray-500 text-xs">Technische Daten</div>
+                  <div class="font-medium font-mono" x-text="selectedComponent.technical_specs"></div>
+                </div>
+              </template>
+
+              <!-- Manufacturer -->
+              <template x-if="selectedComponent?.manufacturer">
+                <div>
+                  <div class="text-gray-500 text-xs">Hersteller</div>
+                  <div class="font-medium" x-text="selectedComponent.manufacturer"></div>
+                </div>
+              </template>
+
+              <!-- Order number -->
+              <template x-if="selectedComponent?.order_number">
+                <div>
+                  <div class="text-gray-500 text-xs">Bestellnummer</div>
+                  <div class="font-medium font-mono" x-text="selectedComponent.order_number"></div>
+                </div>
+              </template>
+
+              <!-- SAP number -->
+              <template x-if="selectedComponent?.sap_number">
+                <div>
+                  <div class="text-gray-500 text-xs">SAP Nummer</div>
+                  <div class="font-medium font-mono" x-text="selectedComponent.sap_number"></div>
+                </div>
+              </template>
+
+              <!-- Location -->
+              <template x-if="selectedComponent?.location">
+                <div>
+                  <div class="text-gray-500 text-xs">Einbauort</div>
+                  <div class="font-medium" x-text="selectedComponent.location === '+SS1' ? 'Schaltschrank' : selectedComponent.location === '+MR1' ? 'Maschinenraum' : selectedComponent.location"></div>
+                </div>
+              </template>
+
+              <!-- Subsystem -->
+              <template x-if="selectedComponent?.subsystem">
+                <div>
+                  <div class="text-gray-500 text-xs">Subsystem</div>
+                  <div class="font-medium" x-text="selectedComponent.subsystem"></div>
+                </div>
+              </template>
+
+              <!-- Connected cables -->
+              <div x-show="getComponentCables(selectedComponent).length > 0">
+                <div class="text-gray-500 text-xs mb-1">Verbundene Kabel</div>
+                <template x-for="cable in getComponentCables(selectedComponent)" :key="cable.cable_name">
+                  <div class="bg-gray-50 rounded-lg p-2 mb-1 text-xs">
+                    <div class="font-medium" x-text="cable.cable_name"></div>
+                    <div class="text-gray-500" x-text="cable.cable_spec"></div>
+                    <div class="text-gray-500" x-text="cable.cable_type" x-show="cable.cable_type && cable.cable_type !== cable.cable_spec"></div>
+                    <template x-if="cable.cross_section_mm2">
+                      <a :href="'/?cs=' + cable.cross_section_mm2 + '&cores=' + (cable.num_cores || 3)"
+                         class="text-lapp-600 hover:underline mt-1 inline-block">
+                        → Querschnitt optimieren
+                      </a>
+                    </template>
+                  </div>
+                </template>
+              </div>
+
+              <!-- I/O assignments for controllers -->
+              <div x-show="getComponentIO(selectedComponent).length > 0">
+                <div class="text-gray-500 text-xs mb-1">I/O-Zuordnung</div>
+                <div class="max-h-48 overflow-y-auto">
+                  <template x-for="io in getComponentIO(selectedComponent)" :key="io.pin + io.function_de">
+                    <div class="flex gap-2 text-xs py-0.5 border-b border-gray-100">
+                      <span class="font-mono font-medium w-8" x-text="io.signal_type"></span>
+                      <span class="font-mono w-6 text-gray-400" x-text="io.pin"></span>
+                      <span class="text-gray-700" x-text="io.function_de"></span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Back to group button -->
+              <template x-if="selectedFgGroup">
+                <button @click="selectedComponent = null"
+                        class="w-full text-center text-xs text-gray-500 hover:text-lapp-600 mt-2 py-1">
+                  ← Zurück zur Gruppe
+                </button>
+              </template>
+            </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </template>
+  </main>
+
+  <script>
+    function machineViz() {
+      return {
+        graphData: null,
+        loading: false,
+        loadingMessage: 'SQLite-Snapshot wird geladen…',
+        error: '',
+        dragOver: false,
+        selectedComponent: null,
+        selectedFgGroup: null,
+        selectedCable: null,
+        filterSubsystem: '',
+        viewMode: 'subsystem',
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        isPanning: false,
+        panStart: { x: 0, y: 0 },
+
+        // Type color mapping
+        TYPE_COLORS: {
+          motor:       { fill: '#dbeafe', stroke: '#3b82f6', text: '#1e40af' },
+          sensor:      { fill: '#dcfce7', stroke: '#22c55e', text: '#166534' },
+          protection:  { fill: '#fef3c7', stroke: '#f59e0b', text: '#92400e' },
+          controller:  { fill: '#ede9fe', stroke: '#8b5cf6', text: '#5b21b6' },
+          switch:      { fill: '#fce7f3', stroke: '#ec4899', text: '#9d174d' },
+          transformer: { fill: '#e0e7ff', stroke: '#6366f1', text: '#3730a3' },
+          heater:      { fill: '#fee2e2', stroke: '#ef4444', text: '#991b1b' },
+          assembly:    { fill: '#f0fdf4', stroke: '#16a34a', text: '#166534' },
+          cable:       { fill: '#f1f5f9', stroke: '#94a3b8', text: '#334155' },
+        },
+
+        TYPE_LABELS: {
+          motor: 'Motor / Aktor',
+          sensor: 'Sensor',
+          protection: 'Schutzgerät',
+          controller: 'Steuerung',
+          switch: 'Schalter / Schütz',
+          transformer: 'Netzteil',
+          heater: 'Heizung',
+          assembly: 'Baugruppe',
+          cable: 'Kabel',
+        },
+
+        // Subsystem color palette
+        SUB_COLORS: [
+          '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899',
+          '#6366f1', '#ef4444', '#14b8a6', '#f97316', '#06b6d4',
+          '#84cc16', '#a855f7', '#e11d48', '#0891b2', '#65a30d',
+          '#7c3aed', '#dc2626', '#0d9488', '#ea580c', '#2563eb',
+          '#16a34a', '#d97706',
+        ],
+
+        typeColorClass(type) {
+          const map = {
+            motor: 'bg-blue-100 text-blue-800',
+            sensor: 'bg-green-100 text-green-800',
+            protection: 'bg-amber-100 text-amber-800',
+            controller: 'bg-violet-100 text-violet-800',
+            switch: 'bg-pink-100 text-pink-800',
+            transformer: 'bg-indigo-100 text-indigo-800',
+            heater: 'bg-red-100 text-red-800',
+            assembly: 'bg-emerald-100 text-emerald-800',
+            cable: 'bg-slate-100 text-slate-800',
+          };
+          return map[type] || 'bg-gray-100 text-gray-800';
+        },
+
+        async init() {
+          await this.loadDatabaseGraph();
+        },
+
+        formatImportedAt(value) {
+          if (!value) return '';
+          const date = new Date(value);
+          if (Number.isNaN(date.getTime())) return value;
+          return date.toLocaleString('de-DE', {
+            dateStyle: 'short',
+            timeStyle: 'short',
+          });
+        },
+
+        typeLabel(type) {
+          return this.TYPE_LABELS[type] || type || 'Unbekannt';
+        },
+
+        getComponentCables(component) {
+          if (!component || !this.graphData) return [];
+          if (Array.isArray(component.related_cables) && component.related_cables.length > 0) {
+            return component.related_cables;
+          }
+
+          const designation = component.designation;
+          if (!designation) return [];
+          return this.graphData.connections.filter(c => {
+            // Cable name typically contains the component designation after 'W'
+            const short = c.cable_name.includes('-') ? c.cable_name.split('-').slice(1).join('-') : c.cable_name;
+            const target = short.startsWith('W') ? short.substring(1).replace(/-\d+$/, '') : '';
+            return target === designation || c.to_component?.includes(designation) || c.from_component?.includes(designation);
+          });
+        },
+
+        getComponentIO(component) {
+          if (!component || !this.graphData) return [];
+          if (Array.isArray(component.io_assignments) && component.io_assignments.length > 0) {
+            return component.io_assignments;
+          }
+
+          const designation = component.designation;
+          if (!designation) return [];
+          if (designation !== 'K801') return [];
+          return this.graphData.io_assignments;
+        },
+
+        // File handling
+        handleDrop(e) {
+          this.dragOver = false;
+          const file = e.dataTransfer.files[0];
+          if (file) this.uploadFile(file);
+        },
+
+        handleFile(e) {
+          const file = e.target.files[0];
+          if (file) this.uploadFile(file);
+        },
+
+        async uploadFile(file) {
+          if (!file.name.toLowerCase().endsWith('.pdf')) {
+            this.error = 'Nur PDF-Dateien werden unterstützt.';
+            return;
+          }
+          this.loadingMessage = 'Schaltplan wird analysiert…';
+          this.loading = true;
+          this.error = '';
+          this.graphData = null;
+
+          const formData = new FormData();
+          formData.append('file', file);
+
+          try {
+            const resp = await fetch('/api/analyze-machine', { method: 'POST', body: formData });
+            if (!resp.ok) {
+              const err = await resp.json();
+              throw new Error(err.detail || 'Analyse fehlgeschlagen');
+            }
+            this.graphData = await resp.json();
+            this.$nextTick(() => this.renderGraph());
+          } catch (e) {
+            this.error = e.message;
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async loadFixture() {
+          this.loadingMessage = 'Fixture wird geladen…';
+          this.loading = true;
+          this.error = '';
+          this.graphData = null;
+          try {
+            const resp = await fetch('/api/machine-fixture');
+            if (!resp.ok) throw new Error('Fixture nicht gefunden. Bitte build_fixture.py ausführen.');
+            this.graphData = await resp.json();
+            this.$nextTick(() => this.renderGraph());
+          } catch (e) {
+            this.error = e.message;
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async loadDatabaseGraph() {
+          this.loadingMessage = 'SQLite-Snapshot wird geladen…';
+          this.loading = true;
+          this.error = '';
+          this.graphData = null;
+          this.selectedComponent = null;
+          try {
+            const resp = await fetch('/api/machine-db');
+            if (!resp.ok) {
+              const err = await resp.json();
+              throw new Error(err.detail || 'Snapshot konnte nicht geladen werden.');
+            }
+            this.graphData = await resp.json();
+            this.$nextTick(() => this.renderGraph());
+          } catch (e) {
+            this.error = e.message;
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        // Pan & Zoom
+        zoomIn()  { this.zoom = Math.min(3, this.zoom * 1.2); },
+        zoomOut() { this.zoom = Math.max(0.2, this.zoom / 1.2); },
+        resetView() { this.zoom = 1; this.panX = 20; this.panY = 20; },
+        handleWheel(e) {
+          if (e.deltaY < 0) this.zoomIn(); else this.zoomOut();
+        },
+        startPan(e) { this.isPanning = true; this.panStart = { x: e.clientX - this.panX, y: e.clientY - this.panY }; },
+        doPan(e)  { if (this.isPanning) { this.panX = e.clientX - this.panStart.x; this.panY = e.clientY - this.panStart.y; } },
+        endPan()  { this.isPanning = false; },
+
+        // --------------- Graph rendering with Dagre ---------------
+        renderGraph() {
+          if (!this.graphData) return;
+          const el = document.getElementById('graphGroup');
+          if (!el) {
+            // DOM not ready yet (x-if template not rendered), retry
+            setTimeout(() => this.renderGraph(), 50);
+            return;
+          }
+          this.error = '';
+
+          try {
+            const g = new dagre.graphlib.Graph({ compound: true, multigraph: true });
+            g.setGraph({ rankdir: 'LR', nodesep: 30, ranksep: 120, marginx: 30, marginy: 30 });
+            g.setDefaultEdgeLabel(() => ({}));
+
+            const components = this.graphData.components;
+            const connections = this.graphData.connections;
+            const subsystems = this.graphData.subsystems;
+
+            // Build lookup: designation → component
+            const compByDesig = {};
+            components.forEach(c => { compByDesig[c.designation] = c; });
+
+            if (this.viewMode === 'subsystem') {
+              this._renderSubsystemView(g, components, connections, subsystems, compByDesig);
+            } else {
+              this._renderAllView(g, components, connections, compByDesig);
+            }
+
+            dagre.layout(g);
+            this._drawGraph(g);
+          } catch (e) {
+            console.error('renderGraph error:', e);
+            this.error = 'Graph-Rendering fehlgeschlagen: ' + e.message;
+          }
+        },
+
+        _renderSubsystemView(g, components, connections, subsystems, compByDesig) {
+          // Group components by (subsystem, function_group) for a condensed view.
+          // Each FG group becomes one node instead of showing every device.
+
+          // Create subsystem cluster nodes (= locations)
+          const subIdx = {};
+          subsystems.forEach((sub, i) => {
+            subIdx[sub.name] = i;
+            const label = sub.name_de || sub.name;
+            g.setNode('sub_' + i, {
+              label: label,
+              clusterLabelPos: 'top',
+              style: 'fill: transparent',
+              width: 160,
+              height: 60,
+              isSubsystem: true,
+              subIndex: i,
+            });
+          });
+
+          // Group components by subsystem + function_group
+          const fgGroups = {};  // key "loc|fg" → { fg, subsystem, components: [...] }
+          components.forEach(c => {
+            if (this.filterSubsystem && c.subsystem !== this.filterSubsystem) return;
+            const key = c.subsystem + '|' + (c.function_group || '_none');
+            if (!fgGroups[key]) {
+              fgGroups[key] = {
+                fg: c.function_group || '',
+                subsystem: c.subsystem,
+                components: [],
+              };
+            }
+            fgGroups[key].components.push(c);
+          });
+
+          // Create one node per FG group
+          const compByLoc = {};
+          const addedNodes = new Set();
+
+          Object.entries(fgGroups).forEach(([key, group]) => {
+            const nodeId = 'fg_' + key;
+
+            // Summarise the types in this group
+            const typeCounts = {};
+            group.components.forEach(c => {
+              const desc = c.description_de || c.component_type;
+              typeCounts[desc] = (typeCounts[desc] || 0) + 1;
+            });
+            const typeSummary = Object.entries(typeCounts)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 3)
+              .map(([desc, n]) => n > 1 ? `${n}\u00d7 ${desc}` : desc)
+              .join(', ');
+
+            // Pick dominant component type for colour
+            const typeFreq = {};
+            group.components.forEach(c => {
+              typeFreq[c.component_type] = (typeFreq[c.component_type] || 0) + 1;
+            });
+            const dominantType = Object.entries(typeFreq)
+              .sort((a, b) => b[1] - a[1])[0][0];
+            const colors = this.TYPE_COLORS[dominantType] || { fill: '#f1f5f9', stroke: '#94a3b8', text: '#334155' };
+
+            // Label: FG name on top, type summary below
+            const fgLabel = group.fg || group.subsystem;
+            const countLabel = group.components.length > 1
+              ? `${group.components.length} Geräte`
+              : typeSummary;
+            const label = fgLabel + '\n' + (group.components.length > 1 ? typeSummary : (group.components[0].description_de || ''));
+
+            // Wider for groups with many types
+            const nodeWidth = Math.max(150, Math.min(220, typeSummary.length * 6 + 30));
+
+            g.setNode(nodeId, {
+              label: label,
+              width: nodeWidth,
+              height: 50,
+              // Store first component for click, but also array of all
+              component: group.components[0],
+              fgGroup: group,
+              colors: colors,
+            });
+
+            // Mark all component IDs as added (for edge routing)
+            group.components.forEach(c => addedNodes.add(c.id));
+
+            // Track by location for cable edge routing
+            if (!compByLoc[group.subsystem]) compByLoc[group.subsystem] = [];
+            compByLoc[group.subsystem].push(nodeId);
+
+            // Parent to subsystem cluster
+            if (subIdx[group.subsystem] !== undefined && !this.filterSubsystem) {
+              g.setParent(nodeId, 'sub_' + subIdx[group.subsystem]);
+            }
+          });
+
+          // Cable edges only (skip FG chains — they are now collapsed into FG group nodes)
+          this._addCableEdges(g, connections, subsystems, addedNodes, compByLoc, true);
+        },
+
+        _renderAllView(g, components, connections, compByDesig) {
+          const addedNodes = new Set();
+          const compByLoc = {};
+          components.forEach(c => {
+            if (this.filterSubsystem && c.subsystem !== this.filterSubsystem) return;
+
+            const nodeId = 'comp_' + c.id;
+            const colors = this.TYPE_COLORS[c.component_type] || { fill: '#f1f5f9', stroke: '#94a3b8', text: '#334155' };
+            const fgPrefix = c.function_group ? c.function_group + ' ' : '';
+            const descShort = c.description_de ? c.description_de.substring(0, 18) : '';
+
+            if (c.subsystem) {
+              if (!compByLoc[c.subsystem]) compByLoc[c.subsystem] = [];
+              compByLoc[c.subsystem].push(nodeId);
+            }
+
+            g.setNode(nodeId, {
+              label: c.designation + '\n' + fgPrefix + descShort,
+              width: 150,
+              height: 50,
+              component: c,
+              colors: colors,
+            });
+            addedNodes.add(c.id);
+          });
+
+          this._addCableEdges(g, connections, null, addedNodes, compByLoc);
+        },
+
+        _addCableEdges(g, connections, subsystems, addedNodes, compByLoc, skipFgChains) {
+          // compByLoc maps location -> array of component node IDs in that location
+          // We pick a representative node from each location as edge endpoint
+          // (dagre cannot route edges between compound/parent nodes)
+
+          // --- Cable edges between locations (one edge per cable) ---
+          const cableConns = connections.filter(c => c.connection_type === 'cable');
+          cableConns.forEach((conn, idx) => {
+            const fromLoc = conn.from_location || '';
+            const toLoc = conn.to_location || '';
+            if (!fromLoc || !toLoc) return;
+
+            const fromNodes = compByLoc[fromLoc];
+            const toNodes = compByLoc[toLoc];
+            if (!fromNodes || !fromNodes.length || !toNodes || !toNodes.length) return;
+
+            // Distribute cables across different FG-group nodes in the location
+            // to avoid all edges converging on a single node
+            const fromNode = fromNodes[idx % fromNodes.length];
+            const toNode = toNodes[idx % toNodes.length];
+
+            g.setEdge(fromNode, toNode, {
+              label: conn.cable_name,
+              cables: [conn],
+              cableNames: conn.cable_name,
+              edgeType: 'cable',
+              minlen: 2,
+            }, 'cable_' + idx);
+          });
+
+          // --- Function-group chain edges within subsystems ---
+          if (!skipFgChains) {
+            const addedNodeSet = addedNodes instanceof Set ? addedNodes : new Set(addedNodes);
+            let fgIdx = 0;
+            connections.forEach(conn => {
+              if (conn.connection_type !== 'fg_chain') return;
+              const fromId = conn.from_component;
+              const toId = conn.to_component;
+              if (!addedNodeSet.has(fromId) || !addedNodeSet.has(toId)) return;
+
+              const fromNode = 'comp_' + fromId;
+              const toNode = 'comp_' + toId;
+
+              g.setEdge(fromNode, toNode, {
+                label: conn.function_group || '',
+                edgeType: 'fg_chain',
+                functionGroup: conn.function_group,
+                minlen: 1,
+              }, 'fg_' + fgIdx++);
+            });
+          }
+        },
+
+        _drawGraph(g) {
+          const group = document.getElementById('graphGroup');
+          group.innerHTML = '';
+          const self = this;
+
+          // Draw edges first (behind nodes)
+          g.edges().forEach(e => {
+            const edge = g.edge(e);
+            if (!edge.points) return;
+
+            const isFgChain = edge.edgeType === 'fg_chain';
+            const isCable = edge.edgeType === 'cable';
+
+            const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            let d = 'M' + edge.points.map(p => `${p.x},${p.y}`).join(' L');
+            pathEl.setAttribute('d', d);
+            pathEl.setAttribute('fill', 'none');
+
+            if (isFgChain) {
+              // Thin dashed line for function-group chains
+              pathEl.setAttribute('stroke', '#a5b4fc');
+              pathEl.setAttribute('stroke-width', '1.5');
+              pathEl.setAttribute('stroke-dasharray', '5 3');
+              pathEl.setAttribute('marker-end', 'url(#arrowhead-fg)');
+            } else {
+              // Thick solid line for cable connections
+              pathEl.setAttribute('stroke', '#64748b');
+              pathEl.setAttribute('stroke-width', '2.5');
+              pathEl.setAttribute('marker-end', 'url(#arrowhead)');
+            }
+            group.appendChild(pathEl);
+
+            // Edge label
+            if (edge.label) {
+              // Use dagre's label position, or compute midpoint from path
+              let lx = edge.x;
+              let ly = edge.y;
+              if (lx === undefined || ly === undefined) {
+                const mid = edge.points[Math.floor(edge.points.length / 2)];
+                lx = mid.x;
+                ly = mid.y;
+              }
+              if (isFgChain) {
+                // Small FG label (no background pill)
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', lx);
+                text.setAttribute('y', ly + 3);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '9');
+                text.setAttribute('fill', '#818cf8');
+                text.textContent = edge.label;
+                group.appendChild(text);
+              } else if (isCable) {
+                // Background pill for cable label
+                const cableInfo = edge.cables && edge.cables[0];
+                const mainLabel = edge.label;
+                const specLabel = cableInfo ? cableInfo.cable_spec : '';
+
+                const labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                const textLen = Math.max(mainLabel.length, specLabel.length) * 5.5 + 16;
+                const labelH = specLabel ? 28 : 18;
+                labelBg.setAttribute('x', lx - textLen / 2);
+                labelBg.setAttribute('y', ly - labelH / 2 - 1);
+                labelBg.setAttribute('width', textLen);
+                labelBg.setAttribute('height', labelH);
+                labelBg.setAttribute('rx', '6');
+                labelBg.setAttribute('fill', '#f1f5f9');
+                labelBg.setAttribute('stroke', '#cbd5e1');
+                labelBg.setAttribute('stroke-width', '1');
+                labelBg.setAttribute('style', 'cursor:pointer');
+                group.appendChild(labelBg);
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', lx);
+                text.setAttribute('y', specLabel ? ly - 2 : ly + 3);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('font-size', '10');
+                text.setAttribute('font-weight', '600');
+                text.setAttribute('fill', '#475569');
+                text.setAttribute('style', 'cursor:pointer');
+                text.textContent = mainLabel;
+                group.appendChild(text);
+
+                // Click handler for cable detail
+                const openCable = cableInfo
+                  ? () => { self.selectedComponent = null; self.selectedFgGroup = null; self.selectedCable = cableInfo; }
+                  : null;
+                if (openCable) {
+                  labelBg.addEventListener('click', openCable);
+                  text.addEventListener('click', openCable);
+                }
+
+                if (specLabel) {
+                  const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                  text2.setAttribute('x', lx);
+                  text2.setAttribute('y', ly + 10);
+                  text2.setAttribute('text-anchor', 'middle');
+                  text2.setAttribute('font-size', '8');
+                  text2.setAttribute('fill', '#94a3b8');
+                  text2.setAttribute('style', 'cursor:pointer');
+                  text2.textContent = specLabel;
+                  group.appendChild(text2);
+                  if (openCable) { text2.addEventListener('click', openCable); }
+                }
+              }
+
+              // Tooltip with full cable details
+              if (edge.cables) {
+                const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                title.textContent = edge.cables.map(c =>
+                  `${c.cable_name}: ${c.cable_spec}`
+                ).join('\n');
+                pathEl.appendChild(title);
+              }
+              // Tooltip for FG chain
+              if (isFgChain && edge.functionGroup) {
+                const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                title.textContent = `Funktionsgruppe ${edge.functionGroup}`;
+                pathEl.appendChild(title);
+              }
+            }
+          });
+
+          // Draw subsystem boxes (compound nodes)
+          g.nodes().forEach(nodeId => {
+            const node = g.node(nodeId);
+            if (!node || !node.isSubsystem) return;
+
+            // Find bounding box of child nodes
+            const children = g.children(nodeId);
+            if (!children || children.length === 0) return;
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            children.forEach(childId => {
+              const child = g.node(childId);
+              if (child) {
+                minX = Math.min(minX, child.x - child.width / 2);
+                minY = Math.min(minY, child.y - child.height / 2);
+                maxX = Math.max(maxX, child.x + child.width / 2);
+                maxY = Math.max(maxY, child.y + child.height / 2);
+              }
+            });
+
+            if (minX === Infinity) return;
+
+            const pad = 20;
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            const color = this.SUB_COLORS[node.subIndex % this.SUB_COLORS.length];
+            rect.setAttribute('x', minX - pad);
+            rect.setAttribute('y', minY - pad - 18);
+            rect.setAttribute('width', maxX - minX + pad * 2);
+            rect.setAttribute('height', maxY - minY + pad * 2 + 18);
+            rect.setAttribute('rx', '12');
+            rect.setAttribute('ry', '12');
+            rect.setAttribute('fill', color + '10');
+            rect.setAttribute('stroke', color);
+            rect.setAttribute('stroke-width', '1.5');
+            rect.setAttribute('stroke-dasharray', '6 3');
+            rect.setAttribute('pointer-events', 'none');
+            group.appendChild(rect);
+
+            // Subsystem label
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', minX - pad + 10);
+            label.setAttribute('y', minY - pad - 4);
+            label.setAttribute('font-size', '11');
+            label.setAttribute('font-weight', '600');
+            label.setAttribute('fill', color);
+            label.setAttribute('pointer-events', 'none');
+            label.textContent = node.label;
+            group.appendChild(label);
+          });
+
+          // Draw component / FG-group nodes
+          g.nodes().forEach(nodeId => {
+            const node = g.node(nodeId);
+            if (!node || node.isSubsystem || !node.component) return;
+
+            const colors = node.colors;
+            const gNode = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            gNode.setAttribute('class', 'node');
+            gNode.setAttribute('transform', `translate(${node.x - node.width / 2}, ${node.y - node.height / 2})`);
+
+            // Background rect
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('width', node.width);
+            rect.setAttribute('height', node.height);
+            rect.setAttribute('rx', '8');
+            rect.setAttribute('ry', '8');
+            rect.setAttribute('fill', colors.fill);
+            rect.setAttribute('stroke', colors.stroke);
+            rect.setAttribute('stroke-width', '2');
+            gNode.appendChild(rect);
+
+            // Text lines
+            const lines = node.label.split('\n');
+            const text1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text1.setAttribute('x', node.width / 2);
+            text1.setAttribute('y', lines.length > 1 ? 20 : 28);
+            text1.setAttribute('text-anchor', 'middle');
+            text1.setAttribute('font-size', '13');
+            text1.setAttribute('font-weight', '700');
+            text1.setAttribute('fill', colors.text);
+            text1.textContent = lines[0];
+            gNode.appendChild(text1);
+
+            if (lines.length > 1) {
+              const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+              text2.setAttribute('x', node.width / 2);
+              text2.setAttribute('y', 38);
+              text2.setAttribute('text-anchor', 'middle');
+              text2.setAttribute('font-size', '10');
+              text2.setAttribute('fill', '#64748b');
+              text2.textContent = lines[1];
+              gNode.appendChild(text2);
+            }
+
+            // Count badge for FG groups with multiple components
+            if (node.fgGroup && node.fgGroup.components.length > 1) {
+              const count = node.fgGroup.components.length;
+              const badgeX = node.width - 8;
+              const badgeY = -6;
+              const badge = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+              badge.setAttribute('cx', badgeX);
+              badge.setAttribute('cy', badgeY);
+              badge.setAttribute('r', '10');
+              badge.setAttribute('fill', colors.stroke);
+              gNode.appendChild(badge);
+              const badgeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+              badgeText.setAttribute('x', badgeX);
+              badgeText.setAttribute('y', badgeY + 4);
+              badgeText.setAttribute('text-anchor', 'middle');
+              badgeText.setAttribute('font-size', '10');
+              badgeText.setAttribute('font-weight', '700');
+              badgeText.setAttribute('fill', '#fff');
+              badgeText.textContent = count;
+              gNode.appendChild(badgeText);
+            }
+
+            // Click handler
+            gNode.addEventListener('click', () => {
+              if (node.fgGroup) {
+                self.selectedFgGroup = node.fgGroup;
+                self.selectedComponent = null;
+              } else {
+                self.selectedComponent = node.component;
+                self.selectedFgGroup = null;
+              }
+            });
+
+            gNode.style.cursor = 'pointer';
+            group.appendChild(gNode);
+          });
+
+          // Auto-fit view on first render
+          this.resetView();
+        },
+      };
+    }
+  </script>
+</body>
+</html>
