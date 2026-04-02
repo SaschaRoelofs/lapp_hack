@@ -68,7 +68,6 @@
       <nav class="ml-auto flex items-center gap-1">
         <a href="/" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Optimierer</a>
         <a href="/search" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Suche</a>
-        <a href="/analyze" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">Analyse</a>
         <a href="/machine" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-white/10 text-white">Maschine</a>
         <a href="/settings" class="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -87,27 +86,15 @@
             <h2 class="text-lg font-semibold text-gray-700">Maschine aus SQLite laden</h2>
           </div>
           <div class="p-6">
-            <div class="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-10 transition-colors"
-                 :class="dragOver ? 'border-lapp-600 bg-orange-50' : 'border-gray-300 bg-gray-50'"
-                 @dragover.prevent="dragOver = true"
-                 @dragleave.prevent="dragOver = false"
-                 @drop.prevent="handleDrop($event)">
-              <svg class="w-16 h-16 mb-4" :class="dragOver ? 'text-lapp-600' : 'text-gray-400'" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <div class="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-10 border-gray-300 bg-gray-50">
+              <svg class="w-16 h-16 mb-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
               </svg>
               <p class="text-gray-600 font-medium mb-2">Die Maschinenansicht wird direkt aus dem SQLite-Snapshot erzeugt.</p>
-              <p class="text-gray-400 text-sm mb-4">Fallbacks bleiben verfuegbar, falls kein Snapshot geladen werden kann.</p>
               <div class="flex flex-wrap items-center justify-center gap-3">
                 <button @click="loadDatabaseGraph()" class="bg-lapp-600 hover:bg-lapp-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
                   Snapshot laden
                 </button>
-                <button @click="loadFixture()" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-lg transition-colors">
-                Demo laden (KKT cBoxX 100)
-                </button>
-                <label class="cursor-pointer bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 font-medium py-2 px-6 rounded-lg transition-colors">
-                  PDF waehlen
-                  <input type="file" accept=".pdf" class="hidden" @change="handleFile($event)">
-                </label>
               </div>
             </div>
 
@@ -117,7 +104,7 @@
                 <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                 <span class="font-medium" x-text="loadingMessage"></span>
               </div>
-              <p class="text-sm text-gray-500 mt-2">SQLite-Snapshot, Demo-Fixture oder PDF-Analyse stehen als Datenquellen zur Verfuegung.</p>
+              <p class="text-sm text-gray-500 mt-2">SQLite-Snapshot wird geladen…</p>
             </div>
 
             <!-- Error -->
@@ -237,12 +224,6 @@
           </div>
 
           <!-- Upload new -->
-          <div class="text-center">
-            <label class="cursor-pointer text-sm text-gray-500 hover:text-lapp-600 transition-colors underline">
-              Neuen Schaltplan laden
-              <input type="file" accept=".pdf" class="hidden" @change="handleFile($event)">
-            </label>
-          </div>
         </aside>
 
         <!-- Center: Graph visualization -->
@@ -543,7 +524,6 @@
         loading: false,
         loadingMessage: 'SQLite-Snapshot wird geladen…',
         error: '',
-        dragOver: false,
         selectedComponent: null,
         selectedFgGroup: null,
         selectedCable: null,
@@ -648,63 +628,6 @@
           if (!designation) return [];
           if (designation !== 'K801') return [];
           return this.graphData.io_assignments;
-        },
-
-        // File handling
-        handleDrop(e) {
-          this.dragOver = false;
-          const file = e.dataTransfer.files[0];
-          if (file) this.uploadFile(file);
-        },
-
-        handleFile(e) {
-          const file = e.target.files[0];
-          if (file) this.uploadFile(file);
-        },
-
-        async uploadFile(file) {
-          if (!file.name.toLowerCase().endsWith('.pdf')) {
-            this.error = 'Nur PDF-Dateien werden unterstützt.';
-            return;
-          }
-          this.loadingMessage = 'Schaltplan wird analysiert…';
-          this.loading = true;
-          this.error = '';
-          this.graphData = null;
-
-          const formData = new FormData();
-          formData.append('file', file);
-
-          try {
-            const resp = await fetch('/api/analyze-machine', { method: 'POST', body: formData });
-            if (!resp.ok) {
-              const err = await resp.json();
-              throw new Error(err.detail || 'Analyse fehlgeschlagen');
-            }
-            this.graphData = await resp.json();
-            this.$nextTick(() => this.renderGraph());
-          } catch (e) {
-            this.error = e.message;
-          } finally {
-            this.loading = false;
-          }
-        },
-
-        async loadFixture() {
-          this.loadingMessage = 'Fixture wird geladen…';
-          this.loading = true;
-          this.error = '';
-          this.graphData = null;
-          try {
-            const resp = await fetch('/api/machine-fixture');
-            if (!resp.ok) throw new Error('Fixture nicht gefunden. Bitte build_fixture.py ausführen.');
-            this.graphData = await resp.json();
-            this.$nextTick(() => this.renderGraph());
-          } catch (e) {
-            this.error = e.message;
-          } finally {
-            this.loading = false;
-          }
         },
 
         async loadDatabaseGraph() {
