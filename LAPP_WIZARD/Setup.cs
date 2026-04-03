@@ -798,7 +798,7 @@ public class DataExportAction
         }
         catch
         {
-            return "https://wizard.lapp-hack.de";
+            return "https://lapp-hack.de";
         }
     }
 

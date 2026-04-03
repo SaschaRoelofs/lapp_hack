@@ -338,5 +338,57 @@
     LAPP Hackathon 2026 &middot; Leitungsquerschnitt-Optimierer
   </footer>
 
+  <script>
+    // Transform the markdown-generated Team table into styled cards
+    (function() {
+      const rc = document.getElementById('readme-content');
+      if (!rc) return;
+      const headings = rc.querySelectorAll('h2');
+      let teamH2 = null;
+      for (const h of headings) {
+        if (h.textContent.trim() === 'Team') { teamH2 = h; break; }
+      }
+      if (!teamH2) return;
+      const table = teamH2.nextElementSibling;
+      if (!table || table.tagName !== 'TABLE') return;
+
+      const ths = table.querySelectorAll('thead th');
+      const rows = table.querySelectorAll('tbody tr');
+      const count = ths.length;
+
+      const grid = document.createElement('div');
+      grid.className = 'team-grid';
+
+      for (let i = 0; i < count; i++) {
+        const card = document.createElement('div');
+        card.className = 'team-card';
+
+        const img = ths[i].querySelector('img');
+        if (img) {
+          const cloned = img.cloneNode();
+          cloned.removeAttribute('width');
+          cloned.removeAttribute('height');
+          card.appendChild(cloned);
+        }
+
+        const name = document.createElement('h4');
+        name.textContent = rows[0] ? rows[0].children[i].textContent.trim() : '';
+        card.appendChild(name);
+
+        const field = document.createElement('p');
+        field.textContent = rows[1] ? rows[1].children[i].textContent.trim() : '';
+        card.appendChild(field);
+
+        const org = document.createElement('span');
+        org.textContent = rows[2] ? rows[2].children[i].textContent.trim() : '';
+        card.appendChild(org);
+
+        grid.appendChild(card);
+      }
+
+      table.replaceWith(grid);
+    })();
+  </script>
+
 </body>
 </html>
