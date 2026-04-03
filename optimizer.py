@@ -239,7 +239,7 @@ def main() -> None:
         hours_per_day=16.0,
         energy_price_eur_per_kwh=0.35,
         electricity_emission_factor_kg_per_kwh=0.368,
-        copper_emission_factor_kg_per_kg=3.965,
+        copper_emission_factor_kg_per_kg=3.956,
         max_voltage_drop_percent=3.0,
         system_voltage_v=400.0,
         ac_3phase=True,

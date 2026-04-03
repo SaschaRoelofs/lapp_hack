@@ -382,33 +382,114 @@ async def get_variant_prices(article_codes: list[str]) -> list[dict]:
     return prices
 
 
+VARIANT_TECH_FIELDS = (
+    "code,price(DEFAULT),unitPrice(DEFAULT),priceUnit,priceOnRequest,"
+    "volumePrices(DEFAULT),classifications(FULL)"
+)
+
+
+async def get_variant_price_and_tech(article_code: str) -> dict:
+    """Fetch price AND technical data (resistance from classifications) in one call."""
+    article_code = _normalize_article_code(article_code)
+    client = await _get_client()
+    resp = await client.get(
+        f"{API_BASE}/products/{article_code}",
+        params={**COMMON_PARAMS, "fields": VARIANT_TECH_FIELDS},
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    # --- Price ---
+    price_info = data.get("price", {})
+    unit_price = data.get("unitPrice", {})
+    price_unit = data.get("priceUnit", 1)
+    price_value = price_info.get("value")
+    price_per_m = round(price_value / price_unit, 4) if price_value and price_unit else None
+
+    volume_prices = []
+    for vp in data.get("volumePrices", []):
+        volume_prices.append({
+            "min_quantity": vp.get("minQuantity"),
+            "max_quantity": vp.get("maxQuantity"),
+            "value": vp.get("value"),
+            "formatted": vp.get("formattedValue", ""),
+            "currency": vp.get("currencyIso", "EUR"),
+        })
+
+    # --- Technical data from classifications ---
+    resistance_ohm_per_km: float | None = None
+    for cl in data.get("classifications", []):
+        for feat in cl.get("features", []):
+            code = feat.get("code", "").split(".")[-1]
+            values = feat.get("featureValues", [])
+            if code == "pdm_atr_conductor_res_at_20_max" and values:
+                resistance_ohm_per_km = _parse_numeric(values[0].get("value", ""))
+
+    return {
+        "article_number": data.get("code", article_code),
+        "price_value": price_value,
+        "price_formatted": price_info.get("formattedValue", ""),
+        "price_currency": price_info.get("currencyIso", "EUR"),
+        "price_unit": price_unit,
+        "price_per_meter": price_per_m,
+        "unit_price_value": unit_price.get("value"),
+        "unit_price_formatted": unit_price.get("formattedValue", ""),
+        "price_on_request": data.get("priceOnRequest", False),
+        "volume_prices": volume_prices,
+        "resistance_ohm_per_km": resistance_ohm_per_km,
+    }
+
+
+async def get_variant_prices_and_tech(article_codes: list[str]) -> list[dict]:
+    """Fetch price + technical data for multiple variants in parallel."""
+    tasks = [get_variant_price_and_tech(code) for code in article_codes]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    out = []
+    for code, result in zip(article_codes, results):
+        if isinstance(result, Exception):
+            out.append({"article_number": code, "error": str(result)})
+        else:
+            out.append(result)
+    return out
+
+
 async def get_cable_options_from_shop(base_product_code: str) -> list[dict]:
     """
     Get optimizer-ready cable options from a Lapp shop product.
     Maps shop variants to the format expected by the optimizer.
+    Fetches real resistance values (pdm_atr_conductor_res_at_20_max) from the
+    LAPP API classifications, falling back to the DIN EN 60228 standard table.
     """
     product = await get_product_clean(base_product_code)
 
     # Collect variants with valid cross-section
     valid_variants = [v for v in product["variants"] if (v.get("cross_section_mm2") or 0) > 0]
 
-    # Fetch prices for all variants in parallel
+    # Fetch prices + technical data for all variants in parallel (single call per variant)
     article_codes = [v.get("article_number", "") for v in valid_variants]
-    prices = await get_variant_prices([c for c in article_codes if c])
-    price_map = {p["article_number"]: p.get("price_per_meter") for p in prices if "error" not in p}
+    tech_data = await get_variant_prices_and_tech([c for c in article_codes if c])
+    tech_map = {d["article_number"]: d for d in tech_data if "error" not in d}
 
     from app import STANDARD_RESISTANCE_OHM_PER_KM, STANDARD_AMPACITY_A
 
     options = []
     for v in valid_variants:
         cs = v["cross_section_mm2"]
-        resistance = STANDARD_RESISTANCE_OHM_PER_KM.get(
-            cs, round(17.241 / cs, 3) if cs > 0 else 0
-        )
+        art_nr = v.get("article_number", "")
+        vdata = tech_map.get(art_nr, {})
+
+        # Prefer real resistance from API, fall back to standard table
+        resistance = vdata.get("resistance_ohm_per_km")
+        resistance_source = "api"
+        if resistance is None:
+            resistance = STANDARD_RESISTANCE_OHM_PER_KM.get(
+                cs, round(17.241 / cs, 3) if cs > 0 else 0
+            )
+            resistance_source = "standard_table"
+
         ampacity = STANDARD_AMPACITY_A.get(cs)
         copper = v.get("copper_index_kg_per_km", 0) or 0
-        art_nr = v.get("article_number", "")
-        price_per_m = price_map.get(art_nr) or 0
+        price_per_m = vdata.get("price_per_meter") or 0
 
         options.append({
             "article_number": art_nr,
@@ -416,6 +497,7 @@ async def get_cable_options_from_shop(base_product_code: str) -> list[dict]:
             "cross_section_mm2": cs,
             "cross_section": v.get("cross_section", ""),
             "resistance_ohm_per_km": resistance,
+            "resistance_source": resistance_source,
             "copper_mass_kg_per_km": copper,
             "cable_price_eur_per_m": price_per_m,
             "ampacity_a": ampacity,
