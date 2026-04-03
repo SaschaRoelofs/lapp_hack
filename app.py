@@ -20,7 +20,7 @@ from optimizer import (
     find_optimum,
     payback_years,
 )
-from machine_db import build_machine_graph_from_db
+from machine_db import build_machine_graph_from_json
 from lapp_shop_proxy import router as shop_router
 
 app = FastAPI(title="Leitungsquerschnitt-Optimierer")
@@ -300,7 +300,7 @@ async def api_machine_db():
     from fastapi import HTTPException
 
     try:
-        return build_machine_graph_from_db()
+        return build_machine_graph_from_json()
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

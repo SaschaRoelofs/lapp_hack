@@ -133,26 +133,15 @@
 
           <!-- Technical data card -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Technische Daten</h3>
+            <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Projektdaten</h3>
             <div class="space-y-1 text-sm">
-              <template x-if="graphData.technical_data.model">
-                <div class="flex justify-between"><span class="text-gray-500">Modell</span><span class="font-medium" x-text="graphData.technical_data.model"></span></div>
+              <template x-if="graphData.technical_data.project_name">
+                <div class="flex justify-between"><span class="text-gray-500">Projekt</span><span class="font-medium" x-text="graphData.technical_data.project_name"></span></div>
               </template>
-              <template x-if="graphData.technical_data.rated_voltage">
-                <div class="flex justify-between"><span class="text-gray-500">Spannung</span><span class="font-medium" x-text="graphData.technical_data.rated_voltage"></span></div>
+              <template x-if="graphData.technical_data.export_date">
+                <div class="flex justify-between"><span class="text-gray-500">Export</span><span class="font-medium" x-text="graphData.technical_data.export_date"></span></div>
               </template>
-              <template x-if="graphData.technical_data.connected_load">
-                <div class="flex justify-between"><span class="text-gray-500">Leistung</span><span class="font-medium" x-text="graphData.technical_data.connected_load"></span></div>
-              </template>
-              <template x-if="graphData.technical_data.full_load_current">
-                <div class="flex justify-between"><span class="text-gray-500">Strom</span><span class="font-medium" x-text="graphData.technical_data.full_load_current"></span></div>
-              </template>
-              <template x-if="graphData.technical_data.frequency">
-                <div class="flex justify-between"><span class="text-gray-500">Frequenz</span><span class="font-medium" x-text="graphData.technical_data.frequency"></span></div>
-              </template>
-              <template x-if="graphData.technical_data.enclosure_type">
-                <div class="flex justify-between"><span class="text-gray-500">Schutzart</span><span class="font-medium" x-text="graphData.technical_data.enclosure_type"></span></div>
-              </template>
+
             </div>
           </div>
 

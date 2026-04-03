@@ -1,4 +1,4 @@
-"""Build a proper machine topology from the SQLite EPLAN snapshot.
+"""Build a proper machine topology from the EPLAN JSON project export.
 
 The topology is derived from the EPLAN naming convention:
   =FunctionGroup+Location-DeviceTag
@@ -12,14 +12,13 @@ from __future__ import annotations
 
 import json
 import re
-import sqlite3
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 
-DEFAULT_MACHINE_DB_PATH = Path(__file__).parent / "eplan_exports.db"
+DEFAULT_JSON_PATH = Path(__file__).parent / "ProjektDaten_20260403_082320.json"
 
 # Categories to skip – infrastructure nodes that clutter the graph
 _SKIP_CATEGORIES = frozenset({
@@ -157,21 +156,20 @@ def _parse_cable_location(cable_name: str) -> tuple[str, str]:
     return "", cable_name
 
 
-def _format_cable_spec(row: sqlite3.Row) -> str:
+def _format_cable_spec(row: dict[str, Any]) -> str:
     parts: list[str] = []
-    conductor_count = row["conductor_count_hint"] or row["wire_count"]
+    conductor_count = row.get("conductor_count_hint") or row.get("wire_count")
     if conductor_count:
         parts.append(f"{conductor_count} Adern")
-    hints_json = row["cross_section_hints_json"]
-    if hints_json:
-        hints = json.loads(hints_json)
+    hints = row.get("cross_section_hints", [])
+    if hints:
         if len(hints) > 1:
             parts.append("/".join(f"{v:g}" for v in hints) + " mm\u00b2")
         elif hints:
             parts.append(f"{hints[0]:g} mm\u00b2")
-    elif row["cross_section_mm2"]:
+    elif row.get("cross_section_mm2"):
         parts.append(f"{row['cross_section_mm2']:g} mm\u00b2")
-    if row["length_m"]:
+    if row.get("length_m"):
         parts.append(f"{row['length_m']:g} m")
     return " | ".join(parts)
 
@@ -187,55 +185,118 @@ def _subsystem_sort_key(name: str) -> tuple[Any, ...]:
 
 
 # ---------------------------------------------------------------------------
+# JSON cable/length parsing helpers
+# ---------------------------------------------------------------------------
+
+def _parse_german_float(raw: str | None) -> float | None:
+    """Parse a German-locale float like ``2,472 m`` → 2.472."""
+    if not raw:
+        return None
+    cleaned = re.sub(r"[^\d,.\-]", "", raw.strip())
+    if not cleaned:
+        return None
+    cleaned = cleaned.replace(",", ".")
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def _parse_wires_and_cross_section(spec: str) -> tuple[int | None, list[float]]:
+    """Parse ``wiresAndCrossSection`` like ``3G1,5`` or ``6G2,5/0,75``.
+
+    Returns (conductor_count_hint, cross_section_hints).
+    """
+    if not spec:
+        return None, []
+    # Split on '/' for multi-section cables like "6G2,5/0,75"
+    segments = spec.split("/")
+    conductor_count: int | None = None
+    hints: list[float] = []
+
+    for seg in segments:
+        seg = seg.strip()
+        if not seg:
+            continue
+        m = re.match(r"(\d+)\s*[GgXx]\s*(.+)", seg)
+        if m:
+            count = int(m.group(1))
+            cs_raw = m.group(2).replace(",", ".")
+            if conductor_count is None:
+                conductor_count = count
+            try:
+                hints.append(float(cs_raw))
+            except ValueError:
+                pass
+        else:
+            # Bare cross section like "0,75"
+            cs_raw = seg.replace(",", ".")
+            try:
+                hints.append(float(cs_raw))
+            except ValueError:
+                pass
+    return conductor_count, hints
+
+
+def _parse_cable_json(raw: dict[str, Any]) -> dict[str, Any]:
+    """Convert a JSON cable object into the normalized format used by the graph builder."""
+    cross_section_mm2 = _parse_german_float(raw.get("crossSection"))
+    length_m = _parse_german_float(raw.get("length"))
+    wire_count = raw.get("wireCount", 0) or 0
+
+    conductor_count_hint, cross_section_hints = _parse_wires_and_cross_section(
+        raw.get("wiresAndCrossSection", "")
+    )
+
+    # If wiresAndCrossSection gave us the real cross section, prefer it
+    if cross_section_hints and cross_section_mm2 is None:
+        cross_section_mm2 = cross_section_hints[0]
+    elif cross_section_hints and cross_section_mm2 is not None:
+        # The raw "crossSection" field often lacks the decimal (e.g. "15" means 1.5)
+        # Trust the parsed cross section from wiresAndCrossSection
+        cross_section_mm2 = cross_section_hints[0]
+
+    return {
+        "name": raw["name"],
+        "type": raw.get("type", ""),
+        "cross_section_mm2": cross_section_mm2,
+        "length_m": length_m,
+        "article_description": raw.get("articleDescription", ""),
+        "article_part_nr": raw.get("articlePartNr", ""),
+        "wire_count": wire_count,
+        "conductor_count_hint": conductor_count_hint,
+        "cross_section_hints": cross_section_hints,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Build the machine graph
 # ---------------------------------------------------------------------------
 
-def build_machine_graph_from_db(
-    db_path: str | Path = DEFAULT_MACHINE_DB_PATH,
+def build_machine_graph_from_json(
+    json_path: str | Path = DEFAULT_JSON_PATH,
 ) -> dict[str, Any]:
-    db_path = Path(db_path)
-    if not db_path.exists():
-        raise FileNotFoundError(f"SQLite snapshot not found: {db_path}")
+    json_path = Path(json_path)
+    if not json_path.exists():
+        raise FileNotFoundError(f"JSON export not found: {json_path}")
 
-    conn = sqlite3.connect(str(db_path))
-    conn.row_factory = sqlite3.Row
-    try:
-        dataset_info = conn.execute(
-            "SELECT * FROM dataset_info WHERE id = 1"
-        ).fetchone()
-        if dataset_info is None:
-            raise ValueError("SQLite snapshot does not contain dataset_info.")
+    with open(json_path, "r", encoding="utf-8-sig") as f:
+        data = json.load(f)
 
-        # Load all main device functions (excluding cable/terminal noise)
-        device_rows = conn.execute(
-            """
-            SELECT id, name, category, is_main_function,
-                   function_definition, function_type,
-                   location, mounting_location, part_nr,
-                   description, visible_name,
-                   page_name, page_full_name, function_text
-            FROM functions
-            WHERE is_main_function = 1
-            ORDER BY source_index
-            """
-        ).fetchall()
-
-        # Load cables
-        cable_rows = conn.execute(
-            """
-            SELECT id, name, type, cross_section_raw, cross_section_mm2,
-                   length_m, article_description, article_part_nr,
-                   wire_count, conductor_count_hint, cross_section_hints_json
-            FROM cables
-            ORDER BY source_index
-            """
-        ).fetchall()
-    finally:
-        conn.close()
+    # Filter main functions
+    device_rows = [
+        fn for fn in data.get("functions", [])
+        if fn.get("isMainFunction") == "True"
+    ]
+    raw_cables = data.get("cables", [])
+    raw_connections = data.get("connections", [])
 
     # ------------------------------------------------------------------
     # 1. Parse devices – build lookup structures
     # ------------------------------------------------------------------
+    # Parse cables from JSON into normalized dicts
+    cable_rows = [_parse_cable_json(c) for c in raw_cables]
+
     devices: list[dict[str, Any]] = []
     fg_locations: dict[str, set[str]] = defaultdict(set)  # FG → {locations}
 
@@ -253,8 +314,8 @@ def build_machine_graph_from_db(
         category = row["category"]
         description = (
             _CATEGORY_LABEL.get(category, "")
-            or _pick_localized_text(row["description"])
-            or _pick_localized_text(row["function_text"])
+            or _pick_localized_text(row.get("description", ""))
+            or _pick_localized_text(row.get("functionText", ""))
             or category
         )
 
@@ -266,10 +327,10 @@ def build_machine_graph_from_db(
             "category": category,
             "component_type": _CATEGORY_TYPE.get(category, "assembly"),
             "description": description,
-            "visible_name": row["visible_name"] or "",
-            "part_nr": row["part_nr"] or "",
-            "technical_specs": row["function_type"] or row["function_definition"] or "",
-            "page_ref": row["page_name"] or row["page_full_name"] or "",
+            "visible_name": row.get("visibleName") or "",
+            "part_nr": row.get("partNr") or "",
+            "technical_specs": row.get("functionType") or row.get("functionDefinition") or "",
+            "page_ref": row.get("pageName") or row.get("pageFullName") or "",
         })
 
     # ------------------------------------------------------------------
@@ -353,8 +414,8 @@ def build_machine_graph_from_db(
     for row in cable_rows:
         cable_loc, cable_suffix = _parse_cable_location(row["name"])
         cable_type = (
-            row["type"]
-            or _pick_localized_text(row["article_description"])
+            row.get("type")
+            or _pick_localized_text(row.get("article_description"))
             or "Kabel"
         )
         cable_spec = _format_cable_spec(row)
@@ -370,10 +431,10 @@ def build_machine_graph_from_db(
             "cable_name": row["name"],
             "cable_type": cable_type,
             "cable_spec": cable_spec,
-            "cross_section_mm2": row["cross_section_mm2"],
-            "num_cores": row["conductor_count_hint"] or row["wire_count"],
-            "length_m": row["length_m"],
-            "article_part_nr": row["article_part_nr"] or "",
+            "cross_section_mm2": row.get("cross_section_mm2"),
+            "num_cores": row.get("conductor_count_hint") or row.get("wire_count"),
+            "length_m": row.get("length_m"),
+            "article_part_nr": row.get("article_part_nr") or "",
             "src_loc": src_loc,
             "dst_loc": dst_loc,
         })
@@ -520,30 +581,33 @@ def build_machine_graph_from_db(
     # ------------------------------------------------------------------
     # 7. Assemble final payload
     # ------------------------------------------------------------------
-    imported_at = dataset_info["imported_at"]
+    timestamp_raw = data.get("timestamp", "")
     try:
-        imported_formatted = datetime.fromisoformat(imported_at).strftime(
-            "%d.%m.%Y %H:%M"
-        )
+        imported_dt = datetime.strptime(timestamp_raw, "%Y%m%d_%H%M%S")
+        imported_at = imported_dt.isoformat()
+        imported_formatted = imported_dt.strftime("%d.%m.%Y %H:%M")
     except (ValueError, TypeError):
-        imported_formatted = imported_at or ""
+        imported_at = timestamp_raw
+        imported_formatted = timestamp_raw
 
-    source_name = Path(dataset_info["source_dir"]).name or "EPLAN Snapshot"
+    project_name = data.get("projectName", "EPLAN Export")
+    project_path = data.get("projectPath", "")
+
+    # Count resolved connections (those with non-trivial from/to)
+    resolved_connections_count = sum(
+        1 for c in raw_connections
+        if c.get("from", "+") != "+" and c.get("to", "+") != "+"
+    )
 
     return {
         "technical_data": {
-            "rated_voltage": "",
-            "frequency": "",
-            "control_voltage": "",
-            "connected_load": f"{len(devices)} Geraete",
-            "full_load_current": f"{len(cable_rows)} Kabel",
-            "max_pre_fuse": "",
-            "enclosure_type": f"{dataset_info['resolved_connections_count']}/{dataset_info['connections_count']} aufgeloest",
-            "sccr": "",
-            "model": source_name,
-            "project": dataset_info["source_dir"],
-            "article_no": "",
-            "doc_no": db_path.name,
+            "project_name": project_name,
+            "export_date": imported_formatted,
+            "functions_total": data.get("functionCount", len(device_rows)),
+            "devices_count": len(devices),
+            "cables_count": len(cable_rows),
+            "connections_info": f"{resolved_connections_count} / {len(raw_connections)} aufgel\u00f6st",
+            "subsystems_count": len(subsystems),
         },
         "components": components,
         "connections": connections,
@@ -552,14 +616,14 @@ def build_machine_graph_from_db(
         "warnings": [],
         "pages_analyzed": 0,
         "data_source": {
-            "kind": "sqlite",
-            "label": db_path.name,
-            "source_dir": dataset_info["source_dir"],
+            "kind": "json",
+            "label": json_path.name,
+            "source_dir": project_path,
             "imported_at": imported_at,
             "imported_at_formatted": imported_formatted,
-            "functions_count": dataset_info["functions_count"],
-            "cables_count": dataset_info["cables_count"],
-            "connections_count": dataset_info["connections_count"],
-            "resolved_connections_count": dataset_info["resolved_connections_count"],
+            "functions_count": data.get("functionCount", len(device_rows)),
+            "cables_count": data.get("cableCount", len(raw_cables)),
+            "connections_count": data.get("connectionCount", len(raw_connections)),
+            "resolved_connections_count": resolved_connections_count,
         },
     }
