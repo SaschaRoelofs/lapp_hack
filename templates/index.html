@@ -467,9 +467,9 @@
 
         get filteredOptions() {
           return this.options.filter(o => {
-            // Filter by number of cores: must have at least loaded_cores
+            // Filter by number of cores: must match loaded_cores exactly
             const cores = parseInt(o.num_cores);
-            if (!isNaN(cores) && cores < this.params.loaded_cores) return false;
+            if (!isNaN(cores) && cores !== this.params.loaded_cores) return false;
             // Filter by ampacity: variant must handle the operating current
             if (o.ampacity_a != null && this.params.current_a > 0 && o.ampacity_a < this.params.current_a) return false;
             return true;
