@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net481</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>12.0</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Eplan.EplApi.AFu">
+      <HintPath>..\..\..\..\..\..\Program Files\EPLAN\Platform\2026.0.3\Bin\Eplan.EplApi.AFu.dll</HintPath>
+    </Reference>
+    <Reference Include="Eplan.EplApi.Baseu">
+      <HintPath>..\..\..\..\..\..\Program Files\EPLAN\Platform\2026.0.3\Bin\Eplan.EplApi.Baseu.dll</HintPath>
+    </Reference>
+    <Reference Include="Eplan.EplApi.DataModelu">
+      <HintPath>..\..\..\..\..\..\Program Files\EPLAN\Platform\2026.0.3\Bin\Eplan.EplApi.DataModelu.dll</HintPath>
+    </Reference>
+    <Reference Include="Eplan.EplApi.EServicesu">
+      <HintPath>..\..\..\..\..\..\Program Files\EPLAN\Platform\2026.0.3\Bin\Eplan.EplApi.EServicesu.dll</HintPath>
+    </Reference>
+    <Reference Include="Eplan.EplApi.Guiu">
+      <HintPath>..\..\..\..\..\..\Program Files\EPLAN\Platform\2026.0.3\Bin\Eplan.EplApi.Guiu.dll</HintPath>
+    </Reference>
+    <Reference Include="Eplan.EplApi.HEServicesu">
+      <HintPath>..\..\..\..\..\..\Program Files\EPLAN\Platform\2026.0.3\Bin\Eplan.EplApi.HEServicesu.dll</HintPath>
+    </Reference>
+    <Reference Include="Eplan.EplApi.MasterDatau">
+      <HintPath>..\..\..\..\..\..\Program Files\EPLAN\Platform\2026.0.3\Bin\Eplan.EplApi.MasterDatau.dll</HintPath>
+    </Reference>
+    <Reference Include="Eplan.EplApi.Systemu">
+      <HintPath>..\..\..\..\..\..\Program Files\EPLAN\Platform\2026.0.3\Bin\Eplan.EplApi.Systemu.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3856.49" />
+  </ItemGroup>
+
+</Project>
