@@ -6,26 +6,11 @@
 
 ## Team
 
-<div class="team-grid">
-  <div class="team-card">
-    <img src="/static/team/sascha.jpg" alt="Sascha Roelofs">
-    <h4>Sascha Roelofs</h4>
-    <p>Informatik</p>
-    <span>Hochschule Aalen</span>
-  </div>
-  <div class="team-card">
-    <img src="/static/team/morelle.jpeg" alt="Morelle Fopa Mamene">
-    <h4>Morelle Fopa Mamene</h4>
-    <p>Computer Engineering</p>
-    <span>VDI / Universität Duisburg-Essen</span>
-  </div>
-  <div class="team-card">
-    <img src="/static/team/tobias.jpg" alt="Tobias Eglseder">
-    <h4>Tobias Eglseder</h4>
-    <p>Management</p>
-    <span>JBT</span>
-  </div>
-</div>
+| <img src="static/team/sascha.jpg" width="150"> | <img src="static/team/morelle.jpeg" width="150"> | <img src="static/team/tobias.jpg" width="150"> |
+|:---:|:---:|:---:|
+| **Sascha Roelofs** | **Morelle Fopa Mamene** | **Tobias Eglseder** |
+| Informatik | Computer Engineering | Management |
+| Hochschule Aalen | VDI / Universität Duisburg-Essen | JBT |
 
 ---
 
