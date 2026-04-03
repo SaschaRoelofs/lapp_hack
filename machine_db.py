@@ -283,15 +283,8 @@ def _parse_cable_json(raw: dict[str, Any]) -> dict[str, Any]:
 # Build the machine graph
 # ---------------------------------------------------------------------------
 
-def build_machine_graph_from_json(
-    json_path: str | Path = DEFAULT_JSON_PATH,
-) -> dict[str, Any]:
-    json_path = Path(json_path)
-    if not json_path.exists():
-        raise FileNotFoundError(f"JSON export not found: {json_path}")
-
-    with open(json_path, "r", encoding="utf-8-sig") as f:
-        data = json.load(f)
+def build_machine_graph_from_data(data: dict[str, Any], source_label: str = "upload") -> dict[str, Any]:
+    """Build the machine graph from an already-loaded EPLAN JSON dict."""
 
     # Filter main functions
     device_rows = [
@@ -630,7 +623,7 @@ def build_machine_graph_from_json(
         "pages_analyzed": 0,
         "data_source": {
             "kind": "json",
-            "label": json_path.name,
+            "label": source_label,
             "source_dir": project_path,
             "imported_at": imported_at,
             "imported_at_formatted": imported_formatted,
@@ -640,3 +633,16 @@ def build_machine_graph_from_json(
             "resolved_connections_count": resolved_connections_count,
         },
     }
+
+
+def build_machine_graph_from_json(
+    json_path: str | Path = DEFAULT_JSON_PATH,
+) -> dict[str, Any]:
+    json_path = Path(json_path)
+    if not json_path.exists():
+        raise FileNotFoundError(f"JSON export not found: {json_path}")
+
+    with open(json_path, "r", encoding="utf-8-sig") as f:
+        data = json.load(f)
+
+    return build_machine_graph_from_data(data, source_label=json_path.name)

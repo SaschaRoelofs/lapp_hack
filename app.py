@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
+import uuid
 from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Header, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from typing import Any
 
 from optimizer import (
     CableOption,
@@ -20,7 +23,7 @@ from optimizer import (
     find_optimum,
     payback_years,
 )
-from machine_db import build_machine_graph_from_json
+from machine_db import build_machine_graph_from_json, build_machine_graph_from_data
 from lapp_shop_proxy import router as shop_router
 
 app = FastAPI(title="Leitungsquerschnitt-Optimierer")
@@ -122,6 +125,12 @@ class CalculateResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["Health"])
+async def health():
+    """Liveness check – returns 200 as long as the API process is running."""
+    return {"status": "ok"}
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -312,6 +321,54 @@ async def api_machine_db():
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+# ---------------------------------------------------------------------------
+# Token store – graphs are persisted as <token>.json on disk
+# ---------------------------------------------------------------------------
+_GRAPH_STORE_DIR = Path(__file__).parent / "graph_store"
+_GRAPH_STORE_DIR.mkdir(exist_ok=True)
+
+
+@app.post("/api/machine-db")
+async def api_machine_db_upload(
+    data: dict[str, Any],
+    authorization: Optional[str] = Header(default=None),
+):
+    from fastapi import HTTPException
+
+    # Accept client-provided token from "Authorization: Bearer <token>" header
+    token: Optional[str] = None
+    if authorization and authorization.lower().startswith("bearer "):
+        candidate = authorization[7:].strip()
+        if candidate.isalnum() and len(candidate) <= 64:
+            token = candidate
+    if not token:
+        token = uuid.uuid4().hex
+
+    try:
+        graph = build_machine_graph_from_data(data, source_label=data.get("projectName", "upload"))
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    (_GRAPH_STORE_DIR / f"{token}.json").write_text(
+        json.dumps(graph, ensure_ascii=False), encoding="utf-8"
+    )
+    return {"token": token}
+
+
+@app.get("/api/machine-db/{token}")
+async def api_machine_db_by_token(token: str):
+    from fastapi import HTTPException
+
+    # Restrict token to hex characters to prevent path traversal
+    if not token.isalnum():
+        raise HTTPException(status_code=400, detail="Ungültiger Token.")
+
+    path = _GRAPH_STORE_DIR / f"{token}.json"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Token nicht gefunden.")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

@@ -194,37 +194,50 @@
 
     <!-- Upload section (shown when no data) -->
     <template x-if="!graphData">
-      <section class="max-w-3xl mx-auto">
+      <section class="max-w-3xl mx-auto space-y-4">
+
+        <!-- Token input -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div class="bg-gray-50 border-b border-gray-200 px-6 py-4">
-            <h2 class="text-lg font-semibold text-gray-700">Maschine aus SQLite laden</h2>
+            <h2 class="text-lg font-semibold text-gray-700">Maschine per Token laden</h2>
           </div>
           <div class="p-6">
-            <div class="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-10 border-gray-300 bg-gray-50">
-              <svg class="w-16 h-16 mb-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
-              </svg>
-              <p class="text-gray-600 font-medium mb-2">Die Maschinenansicht wird direkt aus dem SQLite-Snapshot erzeugt.</p>
-              <div class="flex flex-wrap items-center justify-center gap-3">
-                <button @click="loadDatabaseGraph()" class="bg-lapp-600 hover:bg-lapp-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
-                  Snapshot laden
-                </button>
-              </div>
-            </div>
-
-            <!-- Loading -->
-            <div x-show="loading" class="mt-6 text-center">
-              <div class="inline-flex items-center gap-3 bg-blue-50 text-blue-700 px-6 py-3 rounded-lg">
-                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                <span class="font-medium" x-text="loadingMessage"></span>
-              </div>
-              <p class="text-sm text-gray-500 mt-2">SQLite-Snapshot wird geladen…</p>
-            </div>
-
-            <!-- Error -->
-            <div x-show="error" class="mt-4 bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm" x-text="error"></div>
+            <p class="text-sm text-gray-500 mb-4">Token aus EPLAN oder einer früheren Sitzung eingeben.</p>
+            <form @submit.prevent="if (tokenInput.trim()) { loadFromToken(tokenInput.trim()); }" class="flex gap-3">
+              <input
+                type="text"
+                x-model="tokenInput"
+                placeholder="z. B. 3f8a1b2c…"
+                class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-lapp-600"
+                spellcheck="false"
+                autocomplete="off"
+              >
+              <button
+                type="submit"
+                :disabled="!tokenInput.trim() || loading"
+                class="bg-lapp-600 hover:bg-lapp-700 disabled:opacity-50 text-white font-medium py-2 px-5 rounded-lg transition-colors text-sm"
+              >Laden</button>
+            </form>
           </div>
         </div>
+
+        <!-- Loading -->
+        <div x-show="loading" class="text-center">
+          <div class="inline-flex items-center gap-3 bg-blue-50 text-blue-700 px-6 py-3 rounded-lg">
+            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            <span class="font-medium" x-text="loadingMessage"></span>
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div x-show="error" class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-4 text-sm flex items-start gap-3">
+          <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+          <div>
+            <p class="font-semibold mb-1">Fehler beim Laden</p>
+            <p x-text="error"></p>
+          </div>
+        </div>
+
       </section>
     </template>
 
@@ -880,8 +893,9 @@
       return {
         graphData: null,
         loading: false,
-        loadingMessage: 'SQLite-Snapshot wird geladen…',
+        loadingMessage: 'Snapshot wird geladen…',
         error: '',
+        tokenInput: '',
         selectedComponent: null,
         selectedFgGroup: null,
         selectedCable: null,
@@ -980,7 +994,13 @@
             if (cable) this.$nextTick(() => this.highlightCable(cable));
             else this.clearGraphHighlight();
           });
-          await this.loadDatabaseGraph();
+
+          const token = new URLSearchParams(window.location.search).get('token');
+          if (token) {
+            await this.loadFromToken(token);
+          } else {
+            await this.loadDatabaseGraph();
+          }
         },
 
         formatImportedAt(value) {
@@ -1026,7 +1046,7 @@
         },
 
         async loadDatabaseGraph() {
-          this.loadingMessage = 'SQLite-Snapshot wird geladen…';
+          this.loadingMessage = 'Snapshot wird geladen…';
           this.loading = true;
           this.error = '';
           this.graphData = null;
@@ -1036,6 +1056,27 @@
             if (!resp.ok) {
               const err = await resp.json();
               throw new Error(err.detail || 'Snapshot konnte nicht geladen werden.');
+            }
+            this.graphData = await resp.json();
+            this.$nextTick(() => this.renderGraph());
+          } catch (e) {
+            this.error = e.message;
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        async loadFromToken(token) {
+          this.loadingMessage = 'Maschine wird geladen…';
+          this.loading = true;
+          this.error = '';
+          this.graphData = null;
+          this.selectedComponent = null;
+          try {
+            const resp = await fetch('/api/machine-db/' + encodeURIComponent(token));
+            if (!resp.ok) {
+              const err = await resp.json().catch(() => ({}));
+              throw new Error(err.detail || 'Maschine konnte nicht geladen werden.');
             }
             this.graphData = await resp.json();
             this.$nextTick(() => this.renderGraph());
