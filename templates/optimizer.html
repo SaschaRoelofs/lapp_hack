@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leitungsquerschnitt-Optimierer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            lapp: { 600: '#e95e0f', 700: '#c94e0a' },
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak] { display: none !important; }
+    input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+    .chart-container { position: relative; height: 320px; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen antialiased" x-data="optimizer()">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 text-white" style="background:linear-gradient(135deg,#080d1a 0%,#0f1629 40%,#111827 100%);box-shadow:0 4px 30px rgba(0,0,0,0.25)">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center gap-5">
+      <div class="relative">
+        <div class="bg-gradient-to-br from-lapp-600 to-orange-500 rounded-xl p-2.5" style="box-shadow:0 0 24px rgba(233,94,15,0.4),0 4px 12px rgba(0,0,0,0.3)">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+        </div>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold tracking-tight">Leitungsquerschnitt-Optimierer</h1>
+        <p class="text-slate-400 text-xs font-medium tracking-wide">TCO- &amp; CO2-Optimierung von Kupferleitungen</p>
+      </div>
+      <nav class="ml-auto flex items-center gap-1.5">
+        <a href="/" class="inline-flex items-center px-4 py-1.5 rounded-[10px] text-[0.8rem] font-medium text-slate-400 tracking-wide transition-all duration-200 hover:bg-white/[0.07] hover:text-slate-200 hover:-translate-y-px">Home</a>
+        <a href="/optimizer" class="inline-flex items-center px-4 py-1.5 rounded-[10px] text-[0.8rem] font-semibold text-orange-400 bg-orange-500/10 tracking-wide">Optimierer</a>
+        <a href="/search" class="inline-flex items-center px-4 py-1.5 rounded-[10px] text-[0.8rem] font-medium text-slate-400 tracking-wide transition-all duration-200 hover:bg-white/[0.07] hover:text-slate-200 hover:-translate-y-px">Suche</a>
+        <a href="/machine" class="inline-flex items-center px-4 py-1.5 rounded-[10px] text-[0.8rem] font-medium text-slate-400 tracking-wide transition-all duration-200 hover:bg-white/[0.07] hover:text-slate-200 hover:-translate-y-px">Maschine</a>
+        <a href="/settings" class="inline-flex items-center px-3 py-1.5 rounded-[10px] text-[0.8rem] font-medium text-slate-400 tracking-wide transition-all duration-200 hover:bg-white/[0.07] hover:text-slate-200 hover:-translate-y-px" title="Einstellungen">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </a>
+      </nav>
+    </div>
+    <div class="h-px" style="background:linear-gradient(90deg,transparent 5%,rgba(233,94,15,0.2) 30%,rgba(249,115,22,0.3) 50%,rgba(233,94,15,0.2) 70%,transparent 95%)"></div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+
+    <!-- Input Section -->
+    <section class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm overflow-hidden">
+      <div class="bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 px-6 py-4">
+        <h2 class="text-[0.95rem] font-bold text-slate-900 tracking-tight">Eingabeparameter</h2>
+      </div>
+
+      <!-- Schematic Diagram -->
+      <div class="px-6 pt-6">
+        <div class="bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl border border-gray-200 p-4 overflow-x-auto">
+          <svg viewBox="0 0 700 150" class="w-full mx-auto" style="min-width: 500px; max-height: 180px;" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="dimL" viewBox="0 0 6 6" refX="0" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M6,0 L0,3 L6,6" fill="#9ca3af"/></marker>
+              <marker id="dimR" viewBox="0 0 6 6" refX="6" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#9ca3af"/></marker>
+            </defs>
+            <!-- Source -->
+            <rect x="15" y="12" width="90" height="85" rx="10" fill="white" stroke="#d1d5db" stroke-width="1.5"/>
+            <text x="60" y="46" text-anchor="middle" font-size="22" font-weight="700" fill="#374151" x-text="params.ac_3phase ? '3~' : '1~'"></text>
+            <text x="60" y="72" text-anchor="middle" font-size="13" font-weight="600" fill="#e95e0f" x-text="(params.system_voltage_v||400)+' V'"></text>
+            <text x="60" y="116" text-anchor="middle" font-size="10" fill="#9ca3af">Netz</text>
+            <!-- Conductors -->
+            <line x1="105" y1="32" x2="545" y2="32" stroke="#e95e0f" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="105" y1="50" x2="545" y2="50" stroke="#e95e0f" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="105" y1="68" x2="545" y2="68" stroke="#e95e0f" stroke-width="2.5" stroke-linecap="round" x-show="params.loaded_cores >= 3"/>
+            <line x1="105" y1="88" x2="545" y2="88" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="8 4" stroke-linecap="round"/>
+            <text x="120" y="86" font-size="8" fill="#16a34a" font-weight="600">PE</text>
+            <!-- Dimension -->
+            <line x1="140" y1="112" x2="500" y2="112" stroke="#9ca3af" stroke-width="1" marker-start="url(#dimL)" marker-end="url(#dimR)"/>
+            <rect x="272" y="102" width="96" height="18" rx="3" fill="white"/>
+            <text x="320" y="116" text-anchor="middle" font-size="14" font-weight="700" fill="#e95e0f" x-text="params.length_m+' m'"></text>
+            <text x="320" y="142" text-anchor="middle" font-size="11" fill="#6b7280" font-style="italic" x-text="selectedProductName || ''"></text>
+            <!-- Load -->
+            <circle cx="595" cy="52" r="40" fill="white" stroke="#d1d5db" stroke-width="1.5"/>
+            <text x="595" y="48" text-anchor="middle" font-size="26" font-weight="700" fill="#374151">M</text>
+            <text x="595" y="70" text-anchor="middle" font-size="13" font-weight="600" fill="#e95e0f" x-text="params.current_a+' A'"></text>
+            <text x="595" y="116" text-anchor="middle" font-size="10" fill="#9ca3af">Last</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+        <!-- Left: Operating Parameters -->
+        <div>
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Betriebsparameter</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Leitungslänge [m]</label>
+              <input type="number" x-model.number="params.length_m" step="1" min="1"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Betriebsstrom [A]</label>
+              <input type="number" x-model.number="params.current_a" step="0.1" min="0"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Belastete Adern</label>
+              <input type="number" x-model.number="params.loaded_cores" step="1" min="1"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Systemspannung [V]</label>
+              <input type="number" x-model.number="params.system_voltage_v" step="1"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Nutzungsdauer [Jahre]</label>
+              <input type="number" x-model.number="params.years" step="1" min="1"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Betriebstage / Jahr</label>
+              <input type="number" x-model.number="params.days_per_year" step="1" min="1"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-600 mb-1">Stunden / Tag</label>
+              <input type="number" x-model.number="params.hours_per_day" step="0.5" min="0" max="24"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+            </div>
+            <div class="flex items-center gap-3 pt-5">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" x-model="params.ac_3phase" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-lapp-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lapp-600"></div>
+                <span class="ml-2 text-sm font-medium text-gray-600">AC Dreiphasig</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Cable Options Table -->
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Kabeloptionen</h3>
+          </div>
+          <!-- Search bar -->
+          <div class="mb-4 relative" @click.away="shopDropdownOpen = false">
+            <div class="relative">
+              <input type="text" x-model="shopQuery" @input.debounce.400ms="searchShop()" @focus="if(shopResults.length) shopDropdownOpen = true"
+                placeholder="Kabel suchen, z.B. ÖLFLEX 191 CY ..."
+                class="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+              <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+              </svg>
+              <svg x-show="shopSearching" x-cloak class="absolute right-3 top-2.5 animate-spin h-4 w-4 text-lapp-600" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"/></svg>
+              <button x-show="shopQuery.length > 0" x-cloak @click="clearShopProduct()" class="absolute right-3 top-2 text-gray-400 hover:text-red-500 text-lg leading-none">&times;</button>
+            </div>
+            <!-- Search Results Dropdown -->
+            <div x-show="shopDropdownOpen && shopResults.length > 0" x-cloak
+              class="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-80 overflow-y-auto">
+              <template x-for="p in shopResults" :key="p.base_product_code">
+                <button @click="selectShopProduct(p); shopDropdownOpen = false"
+                  class="w-full text-left px-4 py-2.5 hover:bg-gray-50 border-b border-gray-100 flex items-center gap-3 transition-colors">
+                  <img x-show="p.image_url" :src="p.image_url" class="w-10 h-10 object-contain rounded bg-gray-50 flex-shrink-0" alt="">
+                  <div class="min-w-0">
+                    <div class="text-sm font-medium text-gray-800 truncate" x-text="p.name"></div>
+                    <div class="text-xs text-gray-400 truncate" x-text="p.variant_count + ' Varianten' + (p.from_price ? ' · ab ' + p.from_price : '')"></div>
+                  </div>
+                </button>
+              </template>
+            </div>
+          </div>
+          <!-- Product Image -->
+          <div x-show="selectedProductImage" x-cloak class="mb-4 flex items-center gap-4 bg-gray-50 rounded-xl border border-gray-200 p-3">
+            <img :src="selectedProductImage" class="w-20 h-20 object-contain rounded-lg bg-white p-1" alt="">
+            <div>
+              <div class="text-sm font-semibold text-gray-800" x-text="selectedProductName"></div>
+              <div class="text-xs text-gray-400 mt-0.5" x-text="filteredOptions.length + ' von ' + options.length + ' Varianten'"></div>
+            </div>
+          </div>
+          <!-- Empty state -->
+          <div x-show="options.length === 0 && !shopLoadingOptions && !shopQuery" class="flex flex-col items-center justify-center py-12 text-gray-400">
+            <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+            </svg>
+            <p class="text-sm">Kabel suchen und auswählen</p>
+          </div>
+          <!-- Loading state -->
+          <div x-show="shopLoadingOptions" x-cloak class="flex items-center justify-center py-12 text-gray-400">
+            <svg class="animate-spin w-6 h-6 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+            <span class="text-sm">Lade Kabelvarianten…</span>
+          </div>
+          <div x-show="filteredOptions.length > 0" class="overflow-x-auto border border-gray-200 rounded-lg">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+                <tr>
+                  <th class="px-3 py-2 text-left cursor-pointer hover:text-lapp-600" @click="optSortCol === 'name' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'name', optSortDir = 'asc')">
+                    Name <span x-show="optSortCol==='name'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-left cursor-pointer hover:text-lapp-600" @click="optSortCol === 'article_number' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'article_number', optSortDir = 'asc')">
+                    Artikelnr. <span x-show="optSortCol==='article_number'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-center">Adern</th>
+                  <th class="px-3 py-2 text-center">PE</th>
+                  <th class="px-3 py-2 text-right cursor-pointer hover:text-lapp-600" @click="optSortCol === 'cross_section_mm2' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'cross_section_mm2', optSortDir = 'asc')">
+                    mm² <span x-show="optSortCol==='cross_section_mm2'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-right cursor-pointer hover:text-lapp-600" @click="optSortCol === 'outer_diameter_mm' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'outer_diameter_mm', optSortDir = 'asc')">
+                    ⌀ mm <span x-show="optSortCol==='outer_diameter_mm'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-right cursor-pointer hover:text-lapp-600" @click="optSortCol === 'copper_mass_kg_per_km' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'copper_mass_kg_per_km', optSortDir = 'asc')">
+                    Cu kg/km <span x-show="optSortCol==='copper_mass_kg_per_km'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-right cursor-pointer hover:text-lapp-600" @click="optSortCol === 'weight_kg_per_km' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'weight_kg_per_km', optSortDir = 'asc')">
+                    Gew. kg/km <span x-show="optSortCol==='weight_kg_per_km'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-right cursor-pointer hover:text-lapp-600" @click="optSortCol === 'cable_price_eur_per_m' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'cable_price_eur_per_m', optSortDir = 'asc')">
+                    €/m <span x-show="optSortCol==='cable_price_eur_per_m'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
+                  </th>
+                  <th class="px-3 py-2 text-center">Status</th>
+                  <th class="px-3 py-2 text-center">Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="(opt, i) in pagedOptions" :key="optionsPage + '-' + i">
+                  <tr class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td class="px-3 py-1.5 text-sm font-medium text-gray-800" x-text="opt.name"></td>
+                    <td class="px-3 py-1.5 font-mono text-xs text-gray-600" x-text="opt.article_number"></td>
+                    <td class="px-3 py-1.5 text-center" x-text="opt.num_cores || '-'"></td>
+                    <td class="px-3 py-1.5 text-center">
+                      <span x-show="opt.protective_conductor === 'Ja'" class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">G</span>
+                      <span x-show="opt.protective_conductor === 'Nein'" class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">X</span>
+                    </td>
+                    <td class="px-3 py-1.5 text-right" x-text="opt.cross_section || opt.cross_section_mm2"></td>
+                    <td class="px-3 py-1.5 text-right text-gray-500" x-text="opt.outer_diameter_mm != null ? numFmt1.format(opt.outer_diameter_mm) : '-'"></td>
+                    <td class="px-3 py-1.5 text-right" x-text="opt.copper_mass_kg_per_km != null ? numFmt1.format(opt.copper_mass_kg_per_km) : '-'"></td>
+                    <td class="px-3 py-1.5 text-right" x-text="opt.weight_kg_per_km != null ? numFmt1.format(opt.weight_kg_per_km) : '-'"></td>
+                    <td class="px-3 py-1.5 text-right">
+                      <span x-show="opt.cable_price_eur_per_m > 0" class="font-semibold text-gray-800" x-text="priceFmt.format(opt.cable_price_eur_per_m) + ' €/m'"></span>
+                      <span x-show="!opt.cable_price_eur_per_m || opt.cable_price_eur_per_m === 0" class="text-gray-300">—</span>
+                    </td>
+                    <td class="px-3 py-1.5 text-center">
+                      <span x-show="opt.orderable && !opt.end_of_sales" class="inline-block w-2 h-2 rounded-full bg-green-500" title="Bestellbar"></span>
+                      <span x-show="opt.end_of_sales" class="inline-block w-2 h-2 rounded-full bg-red-500" title="Auslaufartikel"></span>
+                      <span x-show="!opt.orderable && !opt.end_of_sales" class="inline-block w-2 h-2 rounded-full bg-yellow-500" title="Nicht bestellbar"></span>
+                    </td>
+                    <td class="px-3 py-1.5 text-center">
+                      <a x-show="opt.url" :href="opt.url" target="_blank" class="text-lapp-600 hover:text-lapp-700">
+                        <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                      </a>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <!-- Filtered-out info -->
+          <div x-show="options.length > 0 && filteredOptions.length === 0" class="flex flex-col items-center justify-center py-8 text-gray-400">
+            <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/>
+            </svg>
+            <p class="text-sm">Alle Varianten durch Betriebsparameter herausgefiltert</p>
+            <p class="text-xs mt-1">Strom oder Aderzahl anpassen</p>
+          </div>
+          <!-- Pagination -->
+          <div x-show="optionsTotalPages > 1" class="flex items-center justify-between mt-2 text-xs text-gray-500">
+            <span x-text="filteredOptions.length + ' von ' + options.length + ' Varianten'"></span>
+            <div class="flex items-center gap-1">
+              <button @click="optionsPage = Math.max(0, optionsPage - 1)" :disabled="optionsPage === 0"
+                class="px-2 py-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed">&lsaquo;</button>
+              <template x-for="p in optionsTotalPages" :key="p">
+                <button @click="optionsPage = p - 1" class="px-2 py-1 rounded transition-colors"
+                  :class="optionsPage === p - 1 ? 'bg-lapp-600 text-white' : 'hover:bg-gray-100'" x-text="p"></button>
+              </template>
+              <button @click="optionsPage = Math.min(optionsTotalPages - 1, optionsPage + 1)" :disabled="optionsPage >= optionsTotalPages - 1"
+                class="px-2 py-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed">&rsaquo;</button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calculate Button -->
+      <div class="px-6 pb-6">
+        <button @click="calculate()"
+          class="w-full text-white font-bold py-3 px-8 rounded-xl text-lg transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed" style="background:linear-gradient(135deg,#e95e0f,#f97316 50%,#fb923c);box-shadow:0 4px 15px rgba(233,94,15,0.25)"
+          :disabled="loading || filteredOptions.length === 0" :class="{'opacity-60 cursor-not-allowed': loading || filteredOptions.length === 0}">
+          <span x-show="!loading">Berechnen</span>
+          <span x-show="loading" x-cloak>Berechne...</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Results Section (hidden until first calculation) -->
+    <template x-if="result">
+      <div class="space-y-8">
+
+        <!-- Metric Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- TCO Optimum -->
+          <div class="bg-white/90 rounded-2xl p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-l-4 border-l-emerald-500 border border-slate-200/70">
+            <div class="text-sm text-gray-500 font-medium">TCO-Optimum</div>
+            <template x-if="result.optimum.tco">
+              <div>
+                <div class="text-2xl font-bold text-emerald-600" x-text="result.optimum.tco.cross_section_mm2 + ' mm²'"></div>
+                <div class="text-sm text-gray-500 mt-1">
+                  TCO: <span class="font-semibold text-gray-700" x-text="fmt(result.optimum.tco.tco_eur) + ' €'"></span>
+                  &middot; CO2: <span class="font-semibold text-gray-700" x-text="fmt(result.optimum.tco.co2_total_kg) + ' kg'"></span>
+                </div>
+              </div>
+            </template>
+            <template x-if="!result.optimum.tco">
+              <div class="text-sm text-red-500 mt-1">Kein zulässiger Querschnitt</div>
+            </template>
+          </div>
+
+          <!-- CO2 Optimum -->
+          <div class="bg-white/90 rounded-2xl p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-l-4 border-l-blue-500 border border-slate-200/70">
+            <div class="text-sm text-gray-500 font-medium">CO2-Optimum</div>
+            <template x-if="result.optimum.co2">
+              <div>
+                <div class="text-2xl font-bold text-blue-600" x-text="result.optimum.co2.cross_section_mm2 + ' mm²'"></div>
+                <div class="text-sm text-gray-500 mt-1">
+                  TCO: <span class="font-semibold text-gray-700" x-text="fmt(result.optimum.co2.tco_eur) + ' €'"></span>
+                  &middot; CO2: <span class="font-semibold text-gray-700" x-text="fmt(result.optimum.co2.co2_total_kg) + ' kg'"></span>
+                </div>
+              </div>
+            </template>
+            <template x-if="!result.optimum.co2">
+              <div class="text-sm text-red-500 mt-1">Kein zulässiger Querschnitt</div>
+            </template>
+          </div>
+
+          <!-- Payback -->
+          <div class="bg-white/90 rounded-2xl p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-l-4 border-l-amber-500 border border-slate-200/70">
+            <div class="text-sm text-gray-500 font-medium">Amortisation (TCO-Opt. vs. Min.)</div>
+            <template x-if="result.optimum.payback_tco_years !== null && result.optimum.payback_tco_years !== undefined">
+              <div>
+                <div class="text-2xl font-bold text-amber-600" x-text="fmt(result.optimum.payback_tco_years) + ' Jahre'"></div>
+                <div class="text-sm text-gray-500 mt-1" x-show="result.optimum.smallest_admissible">
+                  Gegenüber <span class="font-semibold" x-text="result.optimum.smallest_admissible?.cross_section_mm2 + ' mm²'"></span>
+                </div>
+              </div>
+            </template>
+            <template x-if="result.optimum.payback_tco_years === null || result.optimum.payback_tco_years === undefined">
+              <div class="text-sm text-gray-400 mt-1">Keine Amortisation / identisch</div>
+            </template>
+          </div>
+        </section>
+
+        <!-- Results Table -->
+        <section class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm overflow-hidden">
+          <div class="bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 px-6 py-4">
+            <h2 class="text-[0.95rem] font-bold text-slate-900 tracking-tight">Ergebnisübersicht</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+                <tr>
+                  <th class="px-4 py-3 text-left">mm²</th>
+                  <th class="px-4 py-3 text-center">Zulässig</th>
+                  <th class="px-4 py-3 text-right">P<sub>Verlust</sub> [W]</th>
+                  <th class="px-4 py-3 text-right">E<sub>Verlust</sub> [kWh]</th>
+                  <th class="px-4 py-3 text-right">Kabelpreis [€]</th>
+                  <th class="px-4 py-3 text-right">Verlustkosten [€]</th>
+                  <th class="px-4 py-3 text-right">TCO [€]</th>
+                  <th class="px-4 py-3 text-right">CO2 ges. [kg]</th>
+                  <th class="px-4 py-3 text-right">ΔU [%]</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="row in result.rows" :key="row.cross_section_mm2">
+                  <tr class="border-t border-gray-100 transition-colors"
+                      :class="{
+                        'bg-emerald-50': result.optimum.tco && row.cross_section_mm2 === result.optimum.tco.cross_section_mm2 && row.admissible,
+                        'bg-blue-50': result.optimum.co2 && row.cross_section_mm2 === result.optimum.co2.cross_section_mm2 && row.admissible && !(result.optimum.tco && row.cross_section_mm2 === result.optimum.tco.cross_section_mm2),
+                        'bg-red-50 text-red-400': !row.admissible
+                      }">
+                    <td class="px-4 py-2 font-medium" x-text="row.cross_section_mm2"></td>
+                    <td class="px-4 py-2 text-center">
+                      <span x-show="row.admissible" class="text-emerald-500 font-bold">&#10003;</span>
+                      <span x-show="!row.admissible" class="text-red-400 cursor-help" :title="row.rejection_reason">&#10007;</span>
+                    </td>
+                    <td class="px-4 py-2 text-right" x-text="fmt(row.p_loss_w)"></td>
+                    <td class="px-4 py-2 text-right" x-text="fmt(row.energy_loss_kwh)"></td>
+                    <td class="px-4 py-2 text-right" x-text="fmt(row.cable_price_eur)"></td>
+                    <td class="px-4 py-2 text-right" x-text="fmt(row.loss_cost_eur)"></td>
+                    <td class="px-4 py-2 text-right font-semibold" x-text="fmt(row.tco_eur)"></td>
+                    <td class="px-4 py-2 text-right" x-text="fmt(row.co2_total_kg)"></td>
+                    <td class="px-4 py-2 text-right" x-text="row.voltage_drop_percent !== null ? fmt(row.voltage_drop_percent) : '-'"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <div class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex gap-6 text-xs text-gray-500">
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-200 inline-block"></span> TCO-Optimum</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-200 inline-block"></span> CO2-Optimum</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-red-200 inline-block"></span> Unzulässig</span>
+          </div>
+        </section>
+
+        <!-- Charts -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- TCO Breakdown -->
+          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">TCO-Aufschlüsselung</h3>
+            <div class="chart-container"><canvas id="chartTCO"></canvas></div>
+          </div>
+          <!-- CO2 Breakdown -->
+          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">CO2-Aufschlüsselung</h3>
+            <div class="chart-container"><canvas id="chartCO2"></canvas></div>
+          </div>
+          <!-- Voltage Drop -->
+          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Spannungsfall</h3>
+            <div class="chart-container"><canvas id="chartVDrop"></canvas></div>
+          </div>
+          <!-- Payback Timeline -->
+          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Amortisationsverlauf</h3>
+            <div class="chart-container"><canvas id="chartPayback"></canvas></div>
+          </div>
+        </section>
+      </div>
+    </template>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center text-sm font-medium tracking-wide py-7 mt-16 text-slate-500" style="background:linear-gradient(135deg,#0c1222,#161e2e);border-top:1px solid rgba(233,94,15,0.08)">
+    LAPP Hackathon 2026 &middot; Leitungsquerschnitt-Optimierer
+  </footer>
+
+  <script type="application/json" id="default-params">{{ default_params | tojson }}</script>
+  <script>
+    const DEFAULT_PARAMS = JSON.parse(document.getElementById('default-params').textContent);
+
+    // Chart instances (destroyed & recreated on each calculation)
+    let chartTCO = null, chartCO2 = null, chartVDrop = null, chartPayback = null;
+
+    const numFmt = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const numFmt1 = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const priceFmt = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+
+    function optimizer() {
+      return {
+        params: { ...DEFAULT_PARAMS },
+        options: [],
+        result: null,
+        loading: false,
+        shopQuery: '',
+        shopResults: [],
+        shopSearching: false,
+        shopLoadingOptions: false,
+        shopDropdownOpen: false,
+        selectedProductName: '',
+        selectedBaseCode: '',
+        selectedProductImage: '',
+        optionsPage: 0,
+        optionsPerPage: 8,
+        optSortCol: 'cross_section_mm2',
+        optSortDir: 'asc',
+
+        get filteredOptions() {
+          return this.options.filter(o => {
+            // Filter by number of cores: must match loaded_cores exactly
+            const cores = parseInt(o.num_cores);
+            if (!isNaN(cores) && cores !== this.params.loaded_cores) return false;
+            // Filter by ampacity: variant must handle the operating current
+            if (o.ampacity_a != null && this.params.current_a > 0 && o.ampacity_a < this.params.current_a) return false;
+            return true;
+          });
+        },
+        get sortedOptions() {
+          const col = this.optSortCol;
+          const dir = this.optSortDir === 'asc' ? 1 : -1;
+          return [...this.filteredOptions].sort((a, b) => {
+            let va = a[col], vb = b[col];
+            if (va == null) return 1;
+            if (vb == null) return -1;
+            if (typeof va === 'string') return va.localeCompare(vb, 'de') * dir;
+            return (va - vb) * dir;
+          });
+        },
+        get pagedOptions() {
+          const totalPages = this.optionsTotalPages;
+          if (totalPages > 0 && this.optionsPage >= totalPages) {
+            this.optionsPage = totalPages - 1;
+          }
+          const start = this.optionsPage * this.optionsPerPage;
+          return this.sortedOptions.slice(start, start + this.optionsPerPage);
+        },
+        get optionsTotalPages() {
+          return Math.ceil(this.filteredOptions.length / this.optionsPerPage);
+        },
+
+        async init() {
+          const s = JSON.parse(localStorage.getItem('lapp_settings') || '{}');
+          if (s.energy_price_eur_per_kwh !== undefined) this.params.energy_price_eur_per_kwh = s.energy_price_eur_per_kwh;
+          if (s.max_voltage_drop_percent !== undefined) this.params.max_voltage_drop_percent = s.max_voltage_drop_percent;
+          if (s.electricity_emission_factor_kg_per_kwh !== undefined) this.params.electricity_emission_factor_kg_per_kwh = s.electricity_emission_factor_kg_per_kwh;
+          if (s.copper_emission_factor_kg_per_kg !== undefined) this.params.copper_emission_factor_kg_per_kg = s.copper_emission_factor_kg_per_kg;
+
+          const prefill = JSON.parse(localStorage.getItem('lapp_opt_prefill') || 'null');
+          if (prefill) {
+            localStorage.removeItem('lapp_opt_prefill');
+            this.params = { ...this.params, ...prefill.params };
+            if (prefill.options && prefill.options.length > 0) {
+              this.options = prefill.options;
+              this.optionsPage = 0;
+            }
+            if (prefill.productName) {
+              this.selectedProductName = prefill.productName;
+              this.shopQuery = prefill.productName;
+            }
+            if (prefill.productImage) this.selectedProductImage = prefill.productImage;
+            if (prefill.baseCode) this.selectedBaseCode = prefill.baseCode;
+            // Auto-calculate after next tick so filteredOptions are ready
+            this.$nextTick(() => this.calculate());
+          }
+        },
+
+        async searchShop() {
+          const q = this.shopQuery.trim();
+          if (q.length < 2) { this.shopResults = []; return; }
+          this.shopSearching = true;
+          try {
+            const resp = await fetch('/api/shop/search?q=' + encodeURIComponent(q) + '&page_size=10');
+            const data = await resp.json();
+            this.shopResults = data.products || [];
+            this.shopDropdownOpen = this.shopResults.length > 0;
+            // open the dropdown via Alpine scope
+          } catch (e) { console.error('Shop search error:', e); }
+          finally { this.shopSearching = false; }
+        },
+
+        async selectShopProduct(product) {
+          this.selectedBaseCode = product.base_product_code;
+          this.selectedProductName = product.name;
+          this.selectedProductImage = product.image_url || '';
+          this.shopQuery = product.name;
+          this.shopResults = [];
+          this.shopLoadingOptions = true;
+          try {
+            const resp = await fetch('/api/shop/product/' + encodeURIComponent(product.base_product_code) + '/cable-options');
+            if (!resp.ok) throw new Error(await resp.text());
+            const opts = await resp.json();
+            if (opts.length > 0) {
+              this.options = opts;
+              this.optionsPage = 0;
+            }
+          } catch (e) { console.error('Failed to load cable options:', e); }
+          finally { this.shopLoadingOptions = false; }
+        },
+
+        clearShopProduct() {
+          this.selectedProductName = '';
+          this.selectedBaseCode = '';
+          this.selectedProductImage = '';
+          this.shopQuery = '';
+          this.options = [];
+          this.optionsPage = 0;
+          this.result = null;
+        },
+
+        fmt(v) {
+          return numFmt.format(v);
+        },
+
+        async calculate() {
+          this.loading = true;
+          try {
+            const resp = await fetch('/api/calculate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ params: this.params, options: this.filteredOptions }),
+            });
+            if (!resp.ok) throw new Error(await resp.text());
+            this.result = await resp.json();
+            // Wait for Alpine to render the canvas elements
+            this.$nextTick(() => this.renderCharts());
+          } catch (e) {
+            console.error(e);
+            alert('Fehler bei der Berechnung: ' + e.message);
+          } finally {
+            this.loading = false;
+          }
+        },
+
+        renderCharts() {
+          const rows = this.result.rows;
+          const labels = rows.map(r => r.cross_section_mm2 + ' mm²');
+          const admissible = rows.map(r => r.admissible);
+          const tcoOpt = this.result.optimum.tco?.cross_section_mm2;
+          const co2Opt = this.result.optimum.co2?.cross_section_mm2;
+
+          // Destroy existing charts
+          [chartTCO, chartCO2, chartVDrop, chartPayback].forEach(c => c?.destroy());
+
+          // Color helpers
+          const barAlpha = (base, adm) => adm.map(a => a ? base : base.replace(')', ', 0.35)').replace('rgb', 'rgba'));
+          const cableColor = 'rgb(59, 130, 246)';   // blue
+          const lossColor  = 'rgb(249, 115, 22)';   // orange
+          const co2InitColor = 'rgb(156, 163, 175)'; // gray
+          const co2LossColor = 'rgb(239, 68, 68)';   // red
+
+          // Highlight borders for optima
+          const borderTCO = rows.map(r => r.cross_section_mm2 === tcoOpt ? 'rgb(16, 185, 129)' : 'transparent');
+          const borderCO2 = rows.map(r => r.cross_section_mm2 === co2Opt ? 'rgb(59, 130, 246)' : 'transparent');
+
+          // --- Chart 1: TCO ---
+          chartTCO = new Chart(document.getElementById('chartTCO'), {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'Kabelpreis [€]',
+                  data: rows.map(r => r.cable_price_eur),
+                  backgroundColor: barAlpha(cableColor, admissible),
+                  borderColor: borderTCO,
+                  borderWidth: rows.map(r => r.cross_section_mm2 === tcoOpt ? 3 : 0),
+                },
+                {
+                  label: 'Verlustkosten [€]',
+                  data: rows.map(r => r.loss_cost_eur),
+                  backgroundColor: barAlpha(lossColor, admissible),
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom' } },
+              scales: {
+                x: { stacked: true },
+                y: { stacked: true, title: { display: true, text: 'Euro [€]' } },
+              },
+            },
+          });
+
+          // --- Chart 2: CO2 ---
+          chartCO2 = new Chart(document.getElementById('chartCO2'), {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'CO2 Kupfer [kg]',
+                  data: rows.map(r => r.co2_initial_kg),
+                  backgroundColor: barAlpha(co2InitColor, admissible),
+                  borderColor: borderCO2,
+                  borderWidth: rows.map(r => r.cross_section_mm2 === co2Opt ? 3 : 0),
+                },
+                {
+                  label: 'CO2 Verluste [kg]',
+                  data: rows.map(r => r.co2_loss_kg),
+                  backgroundColor: barAlpha(co2LossColor, admissible),
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom' } },
+              scales: {
+                x: { stacked: true },
+                y: { stacked: true, title: { display: true, text: 'kg CO2' } },
+              },
+            },
+          });
+
+          // --- Chart 3: Voltage Drop ---
+          const maxDrop = this.params.max_voltage_drop_percent;
+          chartVDrop = new Chart(document.getElementById('chartVDrop'), {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [{
+                label: 'Spannungsfall [%]',
+                data: rows.map(r => r.voltage_drop_percent),
+                backgroundColor: rows.map(r =>
+                  r.voltage_drop_percent !== null && maxDrop && r.voltage_drop_percent > maxDrop
+                    ? 'rgba(239, 68, 68, 0.7)'
+                    : 'rgba(16, 185, 129, 0.7)'
+                ),
+              }],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                annotation: undefined,
+              },
+              scales: {
+                y: {
+                  title: { display: true, text: 'Spannungsfall [%]' },
+                  beginAtZero: true,
+                },
+              },
+            },
+            plugins: maxDrop ? [{
+              id: 'limitLine',
+              afterDraw(chart) {
+                const yScale = chart.scales.y;
+                const y = yScale.getPixelForValue(maxDrop);
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.strokeStyle = 'rgb(239, 68, 68)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 4]);
+                ctx.beginPath();
+                ctx.moveTo(chart.chartArea.left, y);
+                ctx.lineTo(chart.chartArea.right, y);
+                ctx.stroke();
+                ctx.fillStyle = 'rgb(239, 68, 68)';
+                ctx.font = '11px sans-serif';
+                ctx.fillText('Max ' + maxDrop + ' %', chart.chartArea.right - 70, y - 6);
+                ctx.restore();
+              }
+            }] : [],
+          });
+
+          // --- Chart 4: Payback Timeline ---
+          const smallest = this.result.optimum.smallest_admissible;
+          const tcoRow = this.result.optimum.tco;
+          const years = this.params.years;
+
+          if (smallest && tcoRow && smallest.cross_section_mm2 !== tcoRow.cross_section_mm2) {
+            const yearLabels = [];
+            const lineMin = [];
+            const lineTCO = [];
+            const annualLossMin = smallest.loss_cost_eur / years;
+            const annualLossTCO = tcoRow.loss_cost_eur / years;
+            for (let y = 0; y <= years; y++) {
+              yearLabels.push('Jahr ' + y);
+              lineMin.push(smallest.cable_price_eur + annualLossMin * y);
+              lineTCO.push(tcoRow.cable_price_eur + annualLossTCO * y);
+            }
+            chartPayback = new Chart(document.getElementById('chartPayback'), {
+              type: 'line',
+              data: {
+                labels: yearLabels,
+                datasets: [
+                  {
+                    label: smallest.cross_section_mm2 + ' mm² (Min.)',
+                    data: lineMin,
+                    borderColor: 'rgb(249, 115, 22)',
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                    fill: false,
+                    tension: 0.1,
+                  },
+                  {
+                    label: tcoRow.cross_section_mm2 + ' mm² (TCO-Opt.)',
+                    data: lineTCO,
+                    borderColor: 'rgb(16, 185, 129)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: false,
+                    tension: 0.1,
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: {
+                  y: { title: { display: true, text: 'Kumulative Kosten [€]' }, beginAtZero: true },
+                },
+              },
+            });
+          } else {
+            chartPayback = new Chart(document.getElementById('chartPayback'), {
+              type: 'line',
+              data: { labels: [], datasets: [] },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  title: { display: true, text: 'Minimal zulässig = TCO-Optimum', font: { size: 14 } },
+                },
+              },
+            });
+          }
+        },
+      };
+    }
+  </script>
+</body>
+</html>

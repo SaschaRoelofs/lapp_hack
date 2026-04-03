@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 import uuid
 from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
+import markdown
 import uvicorn
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Any
@@ -27,8 +28,22 @@ from machine_db import build_machine_graph_from_json, build_machine_graph_from_d
 from lapp_shop_proxy import router as shop_router
 
 app = FastAPI(title="Leitungsquerschnitt-Optimierer")
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 app.include_router(shop_router)
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+
+# ---------------------------------------------------------------------------
+# README → HTML (single source of truth for the homepage)
+# ---------------------------------------------------------------------------
+_README_PATH = Path(__file__).parent / "README.md"
+
+
+def _render_readme() -> str:
+    md_text = _README_PATH.read_text(encoding="utf-8")
+    return markdown.markdown(
+        md_text,
+        extensions=["tables", "fenced_code", "codehilite"],
+    )
 
 # ---------------------------------------------------------------------------
 # Default cable options (from the original main() example configuration)
@@ -137,6 +152,15 @@ async def index(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="index.html",
+        context={"readme_html": _render_readme()},
+    )
+
+
+@app.get("/optimizer", response_class=HTMLResponse)
+async def optimizer_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="optimizer.html",
         context={
             "default_params": DEFAULT_PARAMS,
         },
@@ -197,41 +221,7 @@ async def calculate(req: CalculateRequest):
     return CalculateResponse(rows=row_dicts, optimum=optimum)
 
 
-# ---------------------------------------------------------------------------
-# Database helpers
-# ---------------------------------------------------------------------------
 
-DB_PATH = Path(__file__).parent / "lapp_cables.db"
-
-
-def _get_db():
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-@app.get("/api/products")
-async def api_products():
-    conn = _get_db()
-    rows = conn.execute("SELECT * FROM products ORDER BY name").fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
-
-
-@app.get("/api/products/{product_id}")
-async def api_product_detail(product_id: int):
-    conn = _get_db()
-    product = conn.execute("SELECT * FROM products WHERE id = ?", (product_id,)).fetchone()
-    if not product:
-        conn.close()
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Product not found")
-    cables = conn.execute(
-        "SELECT * FROM cables WHERE product_id = ? ORDER BY product_variant, cross_section_mm2, num_cores",
-        (product_id,),
-    ).fetchall()
-    conn.close()
-    return {"product": dict(product), "cables": [dict(c) for c in cables]}
 
 
 # ---------------------------------------------------------------------------
@@ -253,50 +243,7 @@ STANDARD_AMPACITY_A: dict[float, int] = {
 }
 
 
-@app.get("/api/product-cable-options/{product_id}")
-async def api_product_cable_options(product_id: int):
-    """Derive optimizer-ready cable options from DB data for a given product."""
-    conn = _get_db()
-    rows = conn.execute(
-        """
-        SELECT cross_section_mm2,
-               AVG(copper_index_kg_km) as avg_copper
-        FROM cables
-        WHERE product_id = ? AND cross_section_mm2 IS NOT NULL AND cross_section_mm2 > 0
-        GROUP BY cross_section_mm2
-        ORDER BY cross_section_mm2
-        """,
-        (product_id,),
-    ).fetchall()
-    conn.close()
 
-    result = []
-    for r in rows:
-        cs = r["cross_section_mm2"]
-        copper = r["avg_copper"]
-        resistance = STANDARD_RESISTANCE_OHM_PER_KM.get(
-            cs, round(17.241 / cs, 3) if cs > 0 else 0
-        )
-        ampacity = STANDARD_AMPACITY_A.get(cs)
-        default = next(
-            (d for d in DEFAULT_OPTIONS if d["cross_section_mm2"] == cs), None
-        )
-        price = default["cable_price_eur_per_m"] if default else 0
-        copper_val = (
-            round(copper, 1)
-            if copper
-            else (default["copper_mass_kg_per_km"] if default else 0)
-        )
-        result.append(
-            {
-                "cross_section_mm2": cs,
-                "resistance_ohm_per_km": resistance,
-                "copper_mass_kg_per_km": copper_val,
-                "cable_price_eur_per_m": price,
-                "ampacity_a": ampacity,
-            }
-        )
-    return result
 
 
 @app.get("/machine", response_class=HTMLResponse)
