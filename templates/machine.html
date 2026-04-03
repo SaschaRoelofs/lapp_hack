@@ -108,6 +108,34 @@
       line-height: 1.15rem;
     }
 
+    .meta-row {
+      display: grid;
+      grid-template-columns: 5.5rem minmax(0, 1fr);
+      gap: 0.5rem;
+      align-items: start;
+    }
+
+    .meta-label {
+      color: #6b7280;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+
+    .meta-value {
+      min-width: 0;
+      color: #111827;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .meta-value--nowrap {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .info-chip {
       display: inline-flex;
       align-items: center;
@@ -210,22 +238,37 @@
           <!-- Technical data card -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4" x-show="graphData.data_source">
             <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Quelle</h3>
-            <div class="space-y-1 text-sm" x-show="graphData.data_source">
-              <div class="flex justify-between"><span class="text-gray-500">Snapshot</span><span class="font-medium" x-text="graphData.data_source?.label"></span></div>
-              <div class="flex justify-between"><span class="text-gray-500">Import</span><span class="font-medium" x-text="formatImportedAt(graphData.data_source?.imported_at)"></span></div>
-              <div class="flex justify-between"><span class="text-gray-500">Quelle</span><span class="font-medium truncate max-w-36 text-right" :title="graphData.data_source?.source_dir" x-text="graphData.data_source?.source_dir"></span></div>
+            <div class="space-y-2 text-sm" x-show="graphData.data_source">
+              <div class="meta-row">
+                <span class="meta-label">Snapshot</span>
+                <span class="meta-value" x-text="graphData.data_source?.label"></span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Import</span>
+                <span class="meta-value meta-value--nowrap" x-text="formatImportedAt(graphData.data_source?.imported_at)"></span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-label">Quelle</span>
+                <span class="meta-value" :title="graphData.data_source?.source_dir" x-text="graphData.data_source?.source_dir"></span>
+              </div>
             </div>
           </div>
 
           <!-- Technical data card -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Projektdaten</h3>
-            <div class="space-y-1 text-sm">
+            <div class="space-y-2 text-sm">
               <template x-if="graphData.technical_data.project_name">
-                <div class="flex justify-between"><span class="text-gray-500">Projekt</span><span class="font-medium" x-text="graphData.technical_data.project_name"></span></div>
+                <div class="meta-row">
+                  <span class="meta-label">Projekt</span>
+                  <span class="meta-value" x-text="graphData.technical_data.project_name"></span>
+                </div>
               </template>
               <template x-if="graphData.technical_data.export_date">
-                <div class="flex justify-between"><span class="text-gray-500">Export</span><span class="font-medium" x-text="graphData.technical_data.export_date"></span></div>
+                <div class="meta-row">
+                  <span class="meta-label">Export</span>
+                  <span class="meta-value meta-value--nowrap" x-text="graphData.technical_data.export_date"></span>
+                </div>
               </template>
 
             </div>
