@@ -292,7 +292,14 @@ async def api_product_cable_options(product_id: int):
 
 @app.get("/machine", response_class=HTMLResponse)
 async def machine_page(request: Request):
-    return templates.TemplateResponse(request=request, name="machine.html")
+    return templates.TemplateResponse(
+        request=request,
+        name="machine.html",
+        context={
+            "default_params": DEFAULT_PARAMS,
+            "default_options": DEFAULT_OPTIONS,
+        },
+    )
 
 
 @app.get("/api/machine-db")

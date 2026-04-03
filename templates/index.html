@@ -435,8 +435,9 @@
     LAPP Hackathon 2026 &middot; Leitungsquerschnitt-Optimierer
   </footer>
 
+  <script type="application/json" id="default-params">{{ default_params | tojson }}</script>
   <script>
-    const DEFAULT_PARAMS = {{ default_params | tojson }};
+    const DEFAULT_PARAMS = JSON.parse(document.getElementById('default-params').textContent);
 
     // Chart instances (destroyed & recreated on each calculation)
     let chartTCO = null, chartCO2 = null, chartVDrop = null, chartPayback = null;

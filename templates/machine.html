@@ -297,6 +297,29 @@
             </div>
           </div>
 
+          <!-- Machine operation params -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <h3 class="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wide">Maschinenbetrieb</h3>
+            <p class="text-xs text-gray-400 mb-3">Wird als Vorbelegung im Optimierer verwendet.</p>
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Nutzungsdauer (Jahre)</label>
+                <input type="number" x-model.number="machineYears" min="1" step="1"
+                  class="w-full border border-gray-200 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-lapp-600">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Stunden / Tag</label>
+                <input type="number" x-model.number="machineHoursPerDay" min="0" max="24" step="0.5"
+                  class="w-full border border-gray-200 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-lapp-600">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Tage / Jahr</label>
+                <input type="number" x-model.number="machineDaysPerYear" min="0" max="365" step="1"
+                  class="w-full border border-gray-200 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-lapp-600">
+              </div>
+            </div>
+          </div>
+
           <!-- Legend -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Legende</h3>
@@ -399,7 +422,7 @@
         </div>
 
         <!-- Right sidebar: Component detail or FG Group detail -->
-        <aside class="w-80 flex-shrink-0" x-show="selectedComponent || selectedFgGroup || selectedCable" x-transition>
+        <aside class="w-1/3 flex-shrink-0 min-w-72" x-show="selectedComponent || selectedFgGroup || selectedCable" x-transition>
 
           <!-- Cable detail panel -->
           <template x-if="selectedCable && !selectedComponent && !selectedFgGroup">
@@ -428,6 +451,7 @@
                     <div>
                       <div class="detail-label mb-1">Adern</div>
                       <div class="detail-value font-medium" x-text="selectedCable.num_cores || '–'"></div>
+                      <div x-show="selectedCable.used_wires != null && selectedCable.used_wires != selectedCable.num_cores" class="detail-muted text-[10px]" x-text="selectedCable.used_wires + ' belastet'"></div>
                     </div>
                     <div>
                       <div class="detail-label mb-1">Querschnitt</div>
@@ -483,6 +507,175 @@
                       </div>
                     </template>
                   </div>
+
+                  <!-- ============ Optimizer Panel ============ -->
+                  <div class="pt-4 border-t border-gray-100">
+                    <div class="flex items-center justify-between w-full">
+                      <button @click="optShowPanel = !optShowPanel" class="flex items-center gap-2 group flex-1 min-w-0">
+                        <div class="detail-label mb-0">Querschnitt optimieren</div>
+                        <svg class="w-4 h-4 text-gray-400 transition-transform flex-shrink-0" :class="optShowPanel ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                      </button>
+                      <a href="/settings" target="_blank" rel="noreferrer" title="Einstellungen" class="ml-2 flex-shrink-0 text-gray-400 hover:text-lapp-600 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                      </a>
+                    </div>
+
+                    <div x-show="optShowPanel" x-collapse class="mt-3 space-y-3">
+
+                      <!-- Parameter inputs -->
+                      <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <label class="detail-label">Betriebsstrom (A) *</label>
+                          <input type="number" x-model.number="optParams.current_a" min="0" step="0.1"
+                            class="w-full border border-lapp-600 rounded-md px-2 py-1.5 text-sm bg-orange-50 focus:outline-none focus:ring-1 focus:ring-lapp-600"
+                            placeholder="z.B. 16">
+                        </div>
+                        <div>
+                          <label class="detail-label">Spannung (V) *</label>
+                          <input type="number" x-model.number="optParams.system_voltage_v" min="0" step="1"
+                            class="w-full border border-lapp-600 rounded-md px-2 py-1.5 text-sm bg-orange-50 focus:outline-none focus:ring-1 focus:ring-lapp-600"
+                            placeholder="z.B. 400">
+                        </div>
+                        <div>
+                          <label class="detail-label flex items-center justify-between">
+                            <span>Länge (m)</span>
+                            <span x-show="optEplanLength != null" class="text-[9px] font-semibold bg-blue-100 text-blue-700 rounded px-1 py-0.5" x-text="'EPLAN: ' + optEplanLength"></span>
+                          </label>
+                          <input type="number" x-model.number="optParams.length_m" min="0" step="0.001"
+                            :class="optEplanLength != null ? 'border-blue-300 bg-blue-50' : 'border-gray-200'"
+                            class="w-full rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-lapp-600">
+                        </div>
+                        <div>
+                          <label class="detail-label flex items-center justify-between">
+                            <span>Belastete Adern</span>
+                            <span x-show="optUsedWires != null" class="text-[9px] font-semibold bg-blue-100 text-blue-700 rounded px-1 py-0.5" x-text="'EPLAN: ' + optUsedWires"></span>
+                          </label>
+                          <input type="number" x-model.number="optParams.loaded_cores" min="1" max="20" step="1"
+                            class="w-full border border-blue-300 rounded-md px-2 py-1.5 text-sm bg-blue-50 focus:outline-none focus:ring-1 focus:ring-lapp-600">
+                        </div>
+                        <div>
+                          <label class="detail-label">Phasen</label>
+                          <div class="flex mt-1 rounded-md overflow-hidden border border-gray-200 text-xs font-medium">
+                            <button type="button" @click="optParams.ac_3phase = false"
+                              :class="!optParams.ac_3phase ? 'bg-lapp-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'"
+                              class="flex-1 py-1.5 transition-colors">1~</button>
+                            <button type="button" @click="optParams.ac_3phase = true"
+                              :class="optParams.ac_3phase ? 'bg-lapp-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'"
+                              class="flex-1 py-1.5 border-l border-gray-200 transition-colors">3~</button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Cable options status -->
+                      <div class="flex items-center gap-2 text-xs text-gray-500">
+                        <template x-if="optOptionsLoading">
+                          <div class="flex items-center gap-1.5 text-blue-600">
+                            <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                            <span>Lade Kabelvarianten…</span>
+                          </div>
+                        </template>
+                        <template x-if="!optOptionsLoading && optOptions.length > 0">
+                          <span x-text="filteredOptOptions.length + ' von ' + optOptions.length + ' Varianten'"></span>
+                        </template>
+                      </div>
+
+                      <!-- Calculate button -->
+                      <button @click="calculateOpt()"
+                        class="w-full bg-lapp-600 hover:bg-lapp-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors shadow-sm"
+                        :disabled="optLoading || optParams.current_a <= 0 || optParams.system_voltage_v <= 0 || filteredOptOptions.length === 0"
+                        :class="{'opacity-50 cursor-not-allowed': optLoading || optParams.current_a <= 0 || optParams.system_voltage_v <= 0 || filteredOptOptions.length === 0}">
+                        <span x-show="!optLoading">Berechnen</span>
+                        <span x-show="optLoading" class="flex items-center justify-center gap-2">
+                          <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                          Berechne…
+                        </span>
+                      </button>
+
+                      <!-- Error -->
+                      <div x-show="optError" class="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-2 py-1.5" x-text="optError"></div>
+
+                      <!-- Results -->
+                      <template x-if="optResult">
+                        <div class="space-y-3">
+                          <!-- Optimum cards -->
+                          <div class="grid grid-cols-2 gap-2">
+                            <template x-if="optResult.optimum.tco">
+                              <div class="rounded-lg border-l-3 border-emerald-500 bg-emerald-50 p-2">
+                                <div class="text-[10px] font-semibold text-emerald-700 uppercase">TCO-Opt.</div>
+                                <div class="text-sm font-bold text-emerald-900" x-text="optResult.optimum.tco.cross_section_mm2 + ' mm²'"></div>
+                                <div class="text-xs text-emerald-700" x-text="optFmt(optResult.optimum.tco.tco_eur) + ' €'"></div>
+                              </div>
+                            </template>
+                            <template x-if="optResult.optimum.co2">
+                              <div class="rounded-lg border-l-3 border-blue-500 bg-blue-50 p-2">
+                                <div class="text-[10px] font-semibold text-blue-700 uppercase">CO₂-Opt.</div>
+                                <div class="text-sm font-bold text-blue-900" x-text="optResult.optimum.co2.cross_section_mm2 + ' mm²'"></div>
+                                <div class="text-xs text-blue-700" x-text="optFmt(optResult.optimum.co2.co2_total_kg) + ' kg'"></div>
+                              </div>
+                            </template>
+                          </div>
+
+                          <!-- Payback -->
+                          <template x-if="optResult.optimum.payback_tco_years !== null && optResult.optimum.payback_tco_years !== undefined">
+                            <div class="flex items-center gap-2 text-xs">
+                              <span class="info-chip info-chip--amber">
+                                <span>Amortisation:</span>
+                                <span class="font-bold" x-text="optFmt(optResult.optimum.payback_tco_years) + ' J.'"></span>
+                              </span>
+                            </div>
+                          </template>
+
+                          <!-- Current cable highlight -->
+                          <template x-if="selectedCable?.cross_section_mm2">
+                            <div class="text-xs text-gray-500">
+                              Aktuell verbaut: <span class="font-semibold" x-text="selectedCable.cross_section_mm2 + ' mm²'"></span>
+                            </div>
+                          </template>
+
+                          <!-- Compact result table -->
+                          <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                            <table class="w-full text-[11px]">
+                              <thead class="bg-gray-50 text-gray-500 uppercase">
+                                <tr>
+                                  <th class="px-1.5 py-1 text-left">mm²</th>
+                                  <th class="px-1.5 py-1 text-right">TCO €</th>
+                                  <th class="px-1.5 py-1 text-right">CO₂ kg</th>
+                                  <th class="px-1.5 py-1 text-right">ΔU %</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <template x-for="row in optResult.rows" :key="row.cross_section_mm2">
+                                  <tr class="border-t border-gray-100"
+                                      :class="{
+                                        'bg-emerald-50 font-semibold': optResult.optimum.tco && row.cross_section_mm2 === optResult.optimum.tco.cross_section_mm2,
+                                        'bg-blue-50': optResult.optimum.co2 && row.cross_section_mm2 === optResult.optimum.co2.cross_section_mm2 && !(optResult.optimum.tco && row.cross_section_mm2 === optResult.optimum.tco.cross_section_mm2),
+                                        'bg-red-50 text-red-400 line-through': !row.admissible,
+                                        'ring-2 ring-lapp-600 ring-inset': selectedCable?.cross_section_mm2 && row.cross_section_mm2 === selectedCable.cross_section_mm2,
+                                      }">
+                                    <td class="px-1.5 py-1" x-text="row.cross_section_mm2"></td>
+                                    <td class="px-1.5 py-1 text-right" x-text="optFmt(row.tco_eur)"></td>
+                                    <td class="px-1.5 py-1 text-right" x-text="optFmt(row.co2_total_kg)"></td>
+                                    <td class="px-1.5 py-1 text-right" x-text="row.voltage_drop_percent != null ? row.voltage_drop_percent.toFixed(1) : '–'"></td>
+                                  </tr>
+                                </template>
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <!-- Legend -->
+                          <div class="flex flex-wrap gap-2 text-[10px] text-gray-400">
+                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-emerald-300 inline-block"></span>TCO-Opt.</span>
+                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-blue-300 inline-block"></span>CO₂-Opt.</span>
+                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-red-200 inline-block"></span>Unzulässig</span>
+                            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded ring-1 ring-lapp-600"></span>Aktuell</span>
+                          </div>
+                        </div>
+                      </template>
+
+                    </div>
+                  </div>
+                  <!-- ============ /Optimizer Panel ============ -->
+
                 </div>
               </div>
             </div>
@@ -661,7 +854,17 @@
     </template>
   </main>
 
+  <script type="application/json" id="default-params">{{ default_params | tojson }}</script>
+  <script type="application/json" id="default-options">{{ default_options | tojson }}</script>
   <script>
+    const DEFAULT_PARAMS = JSON.parse(document.getElementById('default-params').textContent);
+    const DEFAULT_OPTIONS = JSON.parse(document.getElementById('default-options').textContent);
+
+    const optNumFmt = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Graph element registry — rebuilt on every _drawGraph(); used for highlight + zoom-to-cable
+    let _gReg = { edgesByCable: {}, nodeById: {}, allPathEls: [], allLabelBgs: [], allLabelTexts: [], allNodeGs: [] };
+
     function machineViz() {
       return {
         graphData: null,
@@ -681,6 +884,27 @@
         panY: 0,
         isPanning: false,
         panStart: { x: 0, y: 0 },
+
+        // Optimizer state
+        optParams: { ...DEFAULT_PARAMS },
+        optOptions: [],
+        optResult: null,
+        optLoading: false,
+        optOptionsLoading: false,
+        optError: '',
+        optShowPanel: true,
+        optUsedWires: null,
+        optEplanLength: null,
+        optSettingsPrice: null,
+        optSettingsVoltDrop: null,
+
+        // Machine-level operation params (left panel, persisted)
+        machineYears: DEFAULT_PARAMS.years,
+        machineHoursPerDay: DEFAULT_PARAMS.hours_per_day,
+        machineDaysPerYear: DEFAULT_PARAMS.days_per_year,
+        optMachineYears: null,
+        optMachineHoursPerDay: null,
+        optMachineDaysPerYear: null,
 
         // Type color mapping
         TYPE_COLORS: {
@@ -732,6 +956,19 @@
         },
 
         async init() {
+          // Load machine operation params from localStorage
+          const ms = JSON.parse(localStorage.getItem('lapp_machine_ops') || '{}');
+          if (ms.years !== undefined) this.machineYears = ms.years;
+          if (ms.hours_per_day !== undefined) this.machineHoursPerDay = ms.hours_per_day;
+          if (ms.days_per_year !== undefined) this.machineDaysPerYear = ms.days_per_year;
+          // Watchers: persist + push to open optimizer in real-time
+          this.$watch('machineYears', (v) => { this._saveMachineOps(); if (this.selectedCable) { this.optParams.years = v; this.optMachineYears = v; } });
+          this.$watch('machineHoursPerDay', (v) => { this._saveMachineOps(); if (this.selectedCable) { this.optParams.hours_per_day = v; this.optMachineHoursPerDay = v; } });
+          this.$watch('machineDaysPerYear', (v) => { this._saveMachineOps(); if (this.selectedCable) { this.optParams.days_per_year = v; this.optMachineDaysPerYear = v; } });
+          this.$watch('selectedCable', (cable) => {
+            if (cable) this.$nextTick(() => this.highlightCable(cable));
+            else this.clearGraphHighlight();
+          });
           await this.loadDatabaseGraph();
         },
 
@@ -804,8 +1041,13 @@
           this.selectedCableShop = null;
           this.selectedCableShopError = '';
 
+          // Init optimizer with cable data
+          this.initOptimizer(cable);
+
           if (!normalizedArticleNumber) {
             this.selectedCableShopError = 'Keine Artikelnummer für diesen Kabelsatz vorhanden.';
+            // Load default options as fallback
+            this.optOptions = DEFAULT_OPTIONS.map(o => ({ ...o }));
             return;
           }
 
@@ -817,12 +1059,138 @@
               throw new Error(err.detail || 'Shop-Variante konnte nicht geladen werden.');
             }
             this.selectedCableShop = await resp.json();
+            // Auto-load cable options from shop
+            if (this.selectedCableShop?.base_product_code) {
+              this.loadOptCableOptions(this.selectedCableShop.base_product_code);
+            } else {
+              this.optOptions = DEFAULT_OPTIONS.map(o => ({ ...o }));
+            }
           } catch (e) {
             this.selectedCableShopError = e.message;
+            this.optOptions = DEFAULT_OPTIONS.map(o => ({ ...o }));
           } finally {
             this.selectedCableShopLoading = false;
           }
         },
+
+        // --------------- Optimizer ---------------
+
+        initOptimizer(cable) {
+          this.optParams = { ...DEFAULT_PARAMS, system_voltage_v: 0, ac_3phase: false };
+          this.optResult = null;
+          this.optError = '';
+          this.optOptions = [];
+          this.optUsedWires = null;
+          this.optMachineYears = null;
+          this.optMachineHoursPerDay = null;
+          this.optMachineDaysPerYear = null;
+
+          // Pre-fill from cable data
+          if (cable?.length_m) {
+            this.optParams.length_m = cable.length_m;
+            this.optEplanLength = cable.length_m;
+          } else {
+            this.optEplanLength = null;
+          }
+          // usedWires = physically loaded conductors from EPLAN (preferred over num_cores = total wire count)
+          const coresRaw = cable?.used_wires ?? cable?.num_cores;
+          if (coresRaw != null) {
+            const cores = parseInt(coresRaw);
+            if (!isNaN(cores) && cores >= 1) {
+              this.optParams.loaded_cores = cores;
+              this.optUsedWires = cores;
+            }
+          }
+
+          // Load settings from localStorage (same as index.html)
+          const s = JSON.parse(localStorage.getItem('lapp_settings') || '{}');
+          if (s.energy_price_eur_per_kwh !== undefined) {
+            this.optParams.energy_price_eur_per_kwh = s.energy_price_eur_per_kwh;
+            this.optSettingsPrice = s.energy_price_eur_per_kwh;
+          } else {
+            this.optSettingsPrice = null;
+          }
+          if (s.max_voltage_drop_percent !== undefined) {
+            this.optParams.max_voltage_drop_percent = s.max_voltage_drop_percent;
+            this.optSettingsVoltDrop = s.max_voltage_drop_percent;
+          } else {
+            this.optSettingsVoltDrop = null;
+          }
+          if (s.electricity_emission_factor_kg_per_kwh !== undefined) this.optParams.electricity_emission_factor_kg_per_kwh = s.electricity_emission_factor_kg_per_kwh;
+          if (s.copper_emission_factor_kg_per_kg !== undefined) this.optParams.copper_emission_factor_kg_per_kg = s.copper_emission_factor_kg_per_kg;
+
+          // Fill from machine operation params (left panel)
+          this.optParams.years = this.machineYears;
+          this.optMachineYears = this.machineYears;
+          this.optParams.hours_per_day = this.machineHoursPerDay;
+          this.optMachineHoursPerDay = this.machineHoursPerDay;
+          this.optParams.days_per_year = this.machineDaysPerYear;
+          this.optMachineDaysPerYear = this.machineDaysPerYear;
+        },
+
+        _saveMachineOps() {
+          localStorage.setItem('lapp_machine_ops', JSON.stringify({
+            years: this.machineYears,
+            hours_per_day: this.machineHoursPerDay,
+            days_per_year: this.machineDaysPerYear,
+          }));
+        },
+
+        async loadOptCableOptions(baseProductCode) {
+          this.optOptionsLoading = true;
+          this.optOptions = [];
+          try {
+            const resp = await fetch('/api/shop/product/' + encodeURIComponent(baseProductCode) + '/cable-options');
+            if (!resp.ok) throw new Error('Kabelvarianten konnten nicht geladen werden.');
+            const opts = await resp.json();
+            this.optOptions = opts.length > 0 ? opts : DEFAULT_OPTIONS.map(o => ({ ...o }));
+          } catch (e) {
+            console.error('loadOptCableOptions error:', e);
+            this.optOptions = DEFAULT_OPTIONS.map(o => ({ ...o }));
+          } finally {
+            this.optOptionsLoading = false;
+          }
+        },
+
+        get filteredOptOptions() {
+          return this.optOptions.filter(o => {
+            const cores = parseInt(o.num_cores);
+            if (!isNaN(cores) && cores < this.optParams.loaded_cores) return false;
+            if (o.ampacity_a != null && this.optParams.current_a > 0 && o.ampacity_a < this.optParams.current_a) return false;
+            return true;
+          });
+        },
+
+        async calculateOpt() {
+          if (this.optParams.current_a <= 0 || this.optParams.system_voltage_v <= 0) {
+            this.optError = 'Bitte Betriebsstrom und Spannung eingeben.';
+            return;
+          }
+          const opts = this.filteredOptOptions;
+          if (opts.length === 0) {
+            this.optError = 'Keine passenden Kabelvarianten verfügbar.';
+            return;
+          }
+          this.optLoading = true;
+          this.optError = '';
+          this.optResult = null;
+          try {
+            const resp = await fetch('/api/calculate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ params: this.optParams, options: opts }),
+            });
+            if (!resp.ok) throw new Error(await resp.text());
+            this.optResult = await resp.json();
+          } catch (e) {
+            console.error(e);
+            this.optError = 'Fehler: ' + e.message;
+          } finally {
+            this.optLoading = false;
+          }
+        },
+
+        optFmt(v) { return optNumFmt.format(v); },
 
         // Pan & Zoom
         _zoomAt(newZoom, anchorX, anchorY) {
@@ -1121,6 +1489,9 @@
           group.innerHTML = '';
           const self = this;
 
+          // Reset highlight registry
+          _gReg = { edgesByCable: {}, nodeById: {}, allPathEls: [], allLabelBgs: [], allLabelTexts: [], allNodeGs: [] };
+
           // Draw edges first (behind nodes)
           g.edges().forEach(e => {
             const edge = g.edge(e);
@@ -1166,8 +1537,11 @@
               pathEl.setAttribute('marker-end', 'url(#arrowhead)');
             }
             group.appendChild(pathEl);
+            _gReg.allPathEls.push(pathEl);
 
             // Edge label
+            let edgeLabelBgEl = null;
+            let edgeLabelTextEls = [];
             if (edge.label) {
               // Use dagre's label position, or compute midpoint from path
               let lx = edge.x;
@@ -1208,6 +1582,7 @@
                 labelBg.setAttribute('stroke-width', '1');
                 labelBg.setAttribute('style', 'cursor:pointer');
                 group.appendChild(labelBg);
+                edgeLabelBgEl = labelBg;
 
                 // Render each line
                 const startY = ly - totalHeight / 2 + lineHeight;
@@ -1222,6 +1597,7 @@
                   textEl.setAttribute('style', 'cursor:pointer');
                   textEl.textContent = line;
                   group.appendChild(textEl);
+                  edgeLabelTextEls.push(textEl);
 
                   // Find matching cable for click handler
                   const matchingCable = cables.find(c => c.cable_name === line);
@@ -1260,6 +1636,15 @@
                 title.textContent = `Funktionsgruppe ${edge.functionGroup}`;
                 pathEl.appendChild(title);
               }
+            }
+
+            // Register cable edges for highlight/zoom
+            if (isCable && edge.cables) {
+              edge.cables.forEach(c => {
+                _gReg.edgesByCable[c.cable_name] = { pathEl, labelBgEl: edgeLabelBgEl, labelTextEls: edgeLabelTextEls, fromNodeId: e.v, toNodeId: e.w, points: edge.points };
+              });
+              if (edgeLabelBgEl) _gReg.allLabelBgs.push(edgeLabelBgEl);
+              edgeLabelTextEls.forEach(t => _gReg.allLabelTexts.push(t));
             }
           });
 
@@ -1394,10 +1779,92 @@
 
             gNode.style.cursor = 'pointer';
             group.appendChild(gNode);
+            _gReg.allNodeGs.push(gNode);
+            _gReg.nodeById[nodeId] = { gEl: gNode, x: node.x, y: node.y, w: node.width, h: node.height };
           });
 
           // Auto-fit view: compute bounding box and scale to fit viewport
           this._autoFit();
+        },
+
+        highlightCable(cable) {
+          const match = _gReg.edgesByCable[cable.cable_name];
+
+          // Dim everything
+          _gReg.allPathEls.forEach(el => { el.style.opacity = '0.1'; });
+          _gReg.allLabelBgs.forEach(el  => { el.style.opacity = '0.1'; });
+          _gReg.allLabelTexts.forEach(el => { el.style.opacity = '0.1'; });
+          _gReg.allNodeGs.forEach(el    => { el.style.opacity = '0.12'; el.style.filter = ''; });
+
+          if (!match) return;
+
+          // Highlight the cable edge
+          match.pathEl.style.opacity = '1';
+          match.pathEl.style.stroke = '#e95e0f';
+          match.pathEl.style.strokeWidth = '4';
+          if (match.labelBgEl) {
+            match.labelBgEl.style.opacity = '1';
+            match.labelBgEl.style.fill = '#fff7e6';
+            match.labelBgEl.style.stroke = '#e95e0f';
+            match.labelBgEl.style.strokeWidth = '2';
+          }
+          match.labelTextEls.forEach(el => {
+            el.style.opacity = '1';
+            el.style.fill = '#c94e0a';
+          });
+
+          // Highlight the connected nodes
+          [match.fromNodeId, match.toNodeId].forEach(nodeId => {
+            const nd = _gReg.nodeById[nodeId];
+            if (nd) {
+              nd.gEl.style.opacity = '1';
+              nd.gEl.style.filter = 'drop-shadow(0 0 10px rgba(233,94,15,0.55))';
+            }
+          });
+
+          // Zoom to the cable + both endpoint nodes
+          this._zoomToCable(match);
+        },
+
+        clearGraphHighlight() {
+          _gReg.allPathEls.forEach(el  => { el.style.opacity = ''; el.style.stroke = ''; el.style.strokeWidth = ''; });
+          _gReg.allLabelBgs.forEach(el => { el.style.opacity = ''; el.style.fill = ''; el.style.stroke = ''; el.style.strokeWidth = ''; });
+          _gReg.allLabelTexts.forEach(el => { el.style.opacity = ''; el.style.fill = ''; });
+          _gReg.allNodeGs.forEach(el   => { el.style.opacity = ''; el.style.filter = ''; });
+        },
+
+        _zoomToCable(match) {
+          const container = document.getElementById('graphContainer');
+          if (!container) return;
+          const cw = container.clientWidth;
+          const ch = container.clientHeight;
+
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+          // Bounding box from edge path waypoints
+          (match.points || []).forEach(p => {
+            minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+            maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+          });
+
+          // Include both endpoint nodes
+          [match.fromNodeId, match.toNodeId].forEach(nodeId => {
+            const nd = _gReg.nodeById[nodeId];
+            if (nd) {
+              minX = Math.min(minX, nd.x - nd.w / 2);
+              minY = Math.min(minY, nd.y - nd.h / 2);
+              maxX = Math.max(maxX, nd.x + nd.w / 2);
+              maxY = Math.max(maxY, nd.y + nd.h / 2);
+            }
+          });
+
+          if (minX === Infinity) return;
+
+          const pad = 100;
+          const newZoom = Math.min(cw / (maxX - minX + pad * 2), ch / (maxY - minY + pad * 2), 2.2);
+          this.zoom = Math.max(0.15, newZoom);
+          this.panX = cw / 2 - ((minX + maxX) / 2) * this.zoom;
+          this.panY = ch / 2 - ((minY + maxY) / 2) * this.zoom;
         },
 
         _autoFit() {

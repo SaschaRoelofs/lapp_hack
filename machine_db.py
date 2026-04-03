@@ -256,6 +256,15 @@ def _parse_cable_json(raw: dict[str, Any]) -> dict[str, Any]:
         # Trust the parsed cross section from wiresAndCrossSection
         cross_section_mm2 = cross_section_hints[0]
 
+    # usedWires = number of actually loaded conductors (e.g. 3 of 5 wires used)
+    used_wires_raw = raw.get("usedWires")
+    used_wires: int | None = None
+    if used_wires_raw is not None:
+        try:
+            used_wires = int(used_wires_raw)
+        except (ValueError, TypeError):
+            pass
+
     return {
         "name": raw["name"],
         "type": raw.get("type", ""),
@@ -266,6 +275,7 @@ def _parse_cable_json(raw: dict[str, Any]) -> dict[str, Any]:
         "wire_count": wire_count,
         "conductor_count_hint": conductor_count_hint,
         "cross_section_hints": cross_section_hints,
+        "used_wires": used_wires,
     }
 
 
@@ -433,6 +443,7 @@ def build_machine_graph_from_json(
             "cable_spec": cable_spec,
             "cross_section_mm2": row.get("cross_section_mm2"),
             "num_cores": row.get("conductor_count_hint") or row.get("wire_count"),
+            "used_wires": row.get("used_wires"),
             "length_m": row.get("length_m"),
             "article_part_nr": row.get("article_part_nr") or "",
             "src_loc": src_loc,
@@ -488,6 +499,7 @@ def build_machine_graph_from_json(
             "cable_spec": cable["cable_spec"],
             "cross_section_mm2": cable["cross_section_mm2"],
             "num_cores": cable["num_cores"],
+            "used_wires": cable["used_wires"],
             "from_component": from_id,
             "to_component": to_id,
             "from_location": src_loc,
@@ -509,6 +521,7 @@ def build_machine_graph_from_json(
             "cable_spec": cable["cable_spec"],
             "cross_section_mm2": cable["cross_section_mm2"],
             "num_cores": cable["num_cores"],
+            "used_wires": cable["used_wires"],
             "length_m": cable["length_m"],
             "sap_number": cable["article_part_nr"],
             "function_de": cable["cable_type"],
