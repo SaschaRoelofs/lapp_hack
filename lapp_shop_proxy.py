@@ -79,6 +79,13 @@ def _clean_html(text: str | None) -> str:
     return re.sub(r"<[^>]+>", "", text)
 
 
+def _normalize_article_code(article_code: str) -> str:
+    """Strip Lapp prefixes and whitespace so shop lookups use the bare number."""
+    cleaned = article_code.strip()
+    cleaned = re.sub(r"^lapp\.?\s*", "", cleaned, flags=re.IGNORECASE)
+    return cleaned.strip()
+
+
 ATTR_KEYS = [
     "num_cores",
     "protective_conductor",
@@ -216,9 +223,16 @@ async def get_product_clean(base_product_code: str) -> dict:
 
 VARIANT_PRICE_FIELDS = "code,name,price(DEFAULT),unitPrice(DEFAULT),priceUnit,basePriceUnit,fromPrice(DEFAULT),priceOnRequest,volumePrices(DEFAULT)"
 
+VARIANT_DETAIL_FIELDS = (
+    "code,name,description,url,canonicalUrl,baseProduct,orderable,lappEndOfSales,"
+    "priceOnRequest,price(DEFAULT),unitPrice(DEFAULT),priceUnit,quantityUnit,"
+    "images(FULL),variantArticleListAttributes,variantOptionQualifiers"
+)
+
 
 async def get_variant_price(article_code: str) -> dict:
     """Fetch price data for a single variant (article code like '0011180')."""
+    article_code = _normalize_article_code(article_code)
     client = await _get_client()
     resp = await client.get(
         f"{API_BASE}/products/{article_code}",
@@ -257,6 +271,98 @@ async def get_variant_price(article_code: str) -> dict:
         "unit_price_formatted": unit_price.get("formattedValue", ""),
         "price_on_request": data.get("priceOnRequest", False),
         "volume_prices": volume_prices,
+    }
+
+
+async def get_variant_detail(article_code: str) -> dict:
+    """Fetch a cleaned exact variant record for a single article number."""
+    article_code = _normalize_article_code(article_code)
+    client = await _get_client()
+    try:
+        resp = await client.get(
+            f"{API_BASE}/products/{article_code}",
+            params={**COMMON_PARAMS, "fields": VARIANT_DETAIL_FIELDS},
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except httpx.HTTPStatusError:
+        search_data = await search_lapp(article_code, page=0, page_size=20)
+        products = search_data.get("products", [])
+        for product in products:
+            base_code = product.get("baseProduct") or product.get("code") or ""
+            if not base_code:
+                continue
+
+            try:
+                product_clean = await get_product_clean(base_code)
+            except httpx.HTTPStatusError:
+                continue
+
+            for variant in product_clean.get("variants", []):
+                if variant.get("article_number") == article_code:
+                    variant_copy = dict(variant)
+                    variant_copy.setdefault("base_product_code", base_code)
+                    variant_copy.setdefault("description", product_clean.get("description", ""))
+                    variant_copy.setdefault("image_url", product_clean.get("image_url", ""))
+                    variant_copy.setdefault("canonical_url", f"https://www.lapp.com/de/de{product.get('url', '')}")
+                    variant_copy.setdefault("price_on_request", product.get("priceOnRequest", False))
+
+                    try:
+                        price_data = await get_variant_price(article_code)
+                        variant_copy.update({
+                            "price_value": price_data.get("price_value"),
+                            "price_formatted": price_data.get("price_formatted", ""),
+                            "price_currency": price_data.get("price_currency", "EUR"),
+                            "price_unit": price_data.get("price_unit"),
+                            "price_per_meter": price_data.get("price_per_meter"),
+                            "unit_price_value": price_data.get("unit_price_value"),
+                            "unit_price_formatted": price_data.get("unit_price_formatted", ""),
+                        })
+                    except httpx.HTTPStatusError:
+                        variant_copy.setdefault("price_formatted", product.get("fromPrice", {}).get("formattedValue", ""))
+                        variant_copy.setdefault("price_value", product.get("fromPrice", {}).get("value"))
+
+                    return variant_copy
+
+        raise HTTPException(status_code=404, detail="Variant not found")
+
+    price_info = data.get("price", {})
+    unit_price = data.get("unitPrice", {})
+    price_unit = data.get("priceUnit", 1)
+    price_value = price_info.get("value")
+    price_per_m = round(price_value / price_unit, 4) if price_value and price_unit else None
+
+    images = data.get("images", [])
+    image_url = next((img.get("url", "") for img in images if img.get("format") in {"zoom", "product"}), "")
+
+    parsed = _parse_variant(data)
+    return {
+        "article_number": data.get("code", article_code),
+        "name": data.get("name", ""),
+        "description": _clean_html(data.get("description", "")),
+        "base_product_code": data.get("baseProduct", ""),
+        "url": f"https://www.lapp.com/de/de{data.get('url', '')}",
+        "canonical_url": f"https://www.lapp.com/de/de{data.get('canonicalUrl', '')}",
+        "image_url": image_url,
+        "orderable": data.get("orderable", False),
+        "end_of_sales": data.get("lappEndOfSales", False),
+        "price_on_request": data.get("priceOnRequest", False),
+        "price_value": price_value,
+        "price_formatted": price_info.get("formattedValue", ""),
+        "price_currency": price_info.get("currencyIso", "EUR"),
+        "price_unit": price_unit,
+        "price_per_meter": price_per_m,
+        "unit_price_value": unit_price.get("value"),
+        "unit_price_formatted": unit_price.get("formattedValue", ""),
+        "quantity_unit": data.get("quantityUnit", ""),
+        "cross_section_mm2": parsed.get("cross_section_mm2"),
+        "cross_section": parsed.get("cross_section", ""),
+        "num_cores": parsed.get("num_cores", ""),
+        "protective_conductor": parsed.get("protective_conductor", ""),
+        "outer_diameter_mm": parsed.get("outer_diameter_mm"),
+        "copper_index_kg_per_km": parsed.get("copper_index_kg_per_km"),
+        "weight_kg_per_km": parsed.get("weight_kg_per_km"),
+        "variants": [parsed],
     }
 
 
@@ -426,6 +532,17 @@ async def shop_variant_price(article_code: str):
     """Get price for a single variant by article code."""
     try:
         return await get_variant_price(article_code)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Variant not found")
+        raise HTTPException(status_code=502, detail=f"Lapp API error: {exc.response.status_code}")
+
+
+@router.get("/variant/{article_code}")
+async def shop_variant_detail(article_code: str):
+    """Get the exact shop record for a single variant/article number."""
+    try:
+        return await get_variant_detail(article_code)
     except httpx.HTTPStatusError as exc:
         if exc.response.status_code == 404:
             raise HTTPException(status_code=404, detail="Variant not found")

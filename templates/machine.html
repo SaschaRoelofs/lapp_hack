@@ -29,7 +29,7 @@
     .graph-svg .node rect:hover { filter: brightness(0.92); }
     .graph-svg .node text { pointer-events: none; }
     .graph-svg .edgePath path { fill: none; stroke-width: 2; }
-    .graph-svg .edgeLabel text { font-size: 11px; fill: #64748b; }
+    .graph-svg .edgeLabel text { font-size: 12px; fill: #64748b; }
 
     .subsystem-box { rx: 12; ry: 12; stroke-dasharray: 6 3; }
 
@@ -45,7 +45,93 @@
     .comp-cable     { fill: #f1f5f9; stroke: #94a3b8; }
 
     /* Detail panel */
-    .detail-panel { max-height: calc(100vh - 200px); overflow-y: auto; }
+    .detail-panel {
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      border-radius: 1rem;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    }
+
+    .detail-panel-header {
+      background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .detail-panel-body {
+      padding: 1rem;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .detail-block {
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      border-radius: 0.9rem;
+      padding: 0.8rem 0.85rem;
+    }
+
+    .detail-grid {
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      border-radius: 0.9rem;
+      overflow: hidden;
+    }
+
+    .detail-grid-item {
+      padding: 0.7rem 0.85rem;
+    }
+
+    .detail-grid-item + .detail-grid-item {
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .detail-label {
+      font-size: 0.675rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 0.35rem;
+    }
+
+    .detail-value {
+      color: #0f172a;
+      font-size: 0.9rem;
+      line-height: 1.35rem;
+      word-break: break-word;
+    }
+
+    .detail-muted {
+      color: #64748b;
+      font-size: 0.8rem;
+      line-height: 1.15rem;
+    }
+
+    .info-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border-radius: 999px;
+      border: 1px solid #dbeafe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      padding: 0.28rem 0.7rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .info-chip--amber {
+      border-color: #fde68a;
+      background: #fffbeb;
+      color: #b45309;
+    }
+
+    .info-chip--green {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+      color: #15803d;
+    }
 
     /* Legend */
     .legend-dot { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; display: inline-block; }
@@ -275,101 +361,147 @@
           <!-- Cable detail panel -->
           <template x-if="selectedCable && !selectedComponent && !selectedFgGroup">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
-              <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                <h3 class="font-semibold text-gray-700" x-text="selectedCable.cable_name"></h3>
-                <button @click="selectedCable = null" class="text-gray-400 hover:text-gray-600">
+              <div class="detail-panel-header px-4 py-3 flex items-start justify-between gap-3">
+                <div>
+                  <div class="detail-label mb-1">Kabel</div>
+                  <h3 class="font-semibold text-slate-800 leading-tight" x-text="selectedCable.cable_name"></h3>
+                </div>
+                <button @click="selectedCable = null; selectedCableShop = null; selectedCableShopError = ''; selectedCableShopLoading = false" class="text-gray-400 hover:text-gray-600">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
-              <div class="p-4 space-y-3 text-sm">
-                <div>
-                  <div class="text-gray-500 text-xs">Artikelbezeichnung</div>
-                  <div class="font-medium text-gray-800" x-text="selectedCable.cable_type || '–'"></div>
-                </div>
-                <div>
-                  <div class="text-gray-500 text-xs">Artikelnummer</div>
-                  <div class="font-mono text-gray-800" x-text="selectedCable.sap_number || '–'"></div>
-                </div>
-                <div>
-                  <div class="text-gray-500 text-xs">Spezifikation</div>
-                  <div class="text-gray-800" x-text="selectedCable.cable_spec || '–'"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
+              <div class="detail-panel-body text-sm">
+                <div class="space-y-4">
                   <div>
-                    <div class="text-gray-500 text-xs">Adern</div>
-                    <div class="text-gray-800" x-text="selectedCable.num_cores || '–'"></div>
+                    <div class="detail-label">Identität</div>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="info-chip" x-text="selectedCable.cable_type || 'Kabel'"></span>
+                      <span class="font-mono text-sm text-slate-700" x-text="selectedCable.sap_number || '–'"></span>
+                    </div>
+                    <div class="detail-muted mt-2" x-text="selectedCable.cable_spec || '–'"></div>
                   </div>
-                  <div>
-                    <div class="text-gray-500 text-xs">Querschnitt</div>
-                    <div class="text-gray-800" x-text="selectedCable.cross_section_mm2 ? selectedCable.cross_section_mm2 + ' mm²' : '–'"></div>
+
+                  <div class="grid grid-cols-3 gap-2 text-xs pt-4 border-t border-gray-100">
+                    <div>
+                      <div class="detail-label mb-1">Adern</div>
+                      <div class="detail-value font-medium" x-text="selectedCable.num_cores || '–'"></div>
+                    </div>
+                    <div>
+                      <div class="detail-label mb-1">Querschnitt</div>
+                      <div class="detail-value font-medium" x-text="selectedCable.cross_section_mm2 ? selectedCable.cross_section_mm2 + ' mm²' : '–'"></div>
+                    </div>
+                    <div>
+                      <div class="detail-label mb-1">Länge</div>
+                      <div class="detail-value font-medium" x-text="selectedCable.length_m ? selectedCable.length_m + ' m' : '–'"></div>
+                    </div>
                   </div>
-                  <div>
-                    <div class="text-gray-500 text-xs">Länge</div>
-                    <div class="text-gray-800" x-text="selectedCable.length_m ? selectedCable.length_m + ' m' : '–'"></div>
+
+                  <div class="pt-4 border-t border-gray-100">
+                    <div class="detail-label">Verbindung</div>
+                    <div class="detail-value font-mono" x-text="'+' + (selectedCable.from_location || '–') + ' → +' + (selectedCable.to_location || '–')"></div>
                   </div>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                  <div>
-                    <div class="text-gray-500 text-xs">Von</div>
-                    <div class="font-mono text-gray-800" x-text="'+' + (selectedCable.from_location || '–')"></div>
-                  </div>
-                  <div>
-                    <div class="text-gray-500 text-xs">Nach</div>
-                    <div class="font-mono text-gray-800" x-text="'+' + (selectedCable.to_location || '–')"></div>
+
+                  <div class="pt-4 border-t border-gray-100">
+                    <div class="detail-label mb-2">Shop</div>
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <div class="detail-value font-medium" x-text="selectedCableShop?.name || 'Shop-Variante wird geladen'"></div>
+                        <div class="detail-muted mt-1" x-text="selectedCableShop?.article_number || selectedCable.sap_number || '–'"></div>
+                      </div>
+                      <a x-show="selectedCableShop?.url" :href="selectedCableShop?.url" target="_blank" rel="noreferrer" class="info-chip flex-shrink-0">Shop öffnen</a>
+                    </div>
+
+                    <template x-if="selectedCableShopLoading">
+                      <div class="mt-3 flex items-center gap-2 text-sm text-blue-700">
+                        <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                        <span>Lade Shop-Variante…</span>
+                      </div>
+                    </template>
+
+                    <template x-if="selectedCableShopError">
+                      <div class="mt-3 detail-muted text-red-700 bg-red-50 border border-red-200 rounded-md px-2 py-1" x-text="selectedCableShopError"></div>
+                    </template>
+
+                    <template x-if="selectedCableShop && !selectedCableShopLoading">
+                      <div class="mt-3">
+                        <div class="flex gap-3 items-start">
+                          <template x-if="selectedCableShop.image_url">
+                            <img :src="selectedCableShop.image_url" alt="Shop Produktbild" class="w-20 h-20 object-contain rounded-lg bg-white border border-blue-100 shadow-sm p-2 flex-shrink-0">
+                          </template>
+                          <div class="min-w-0 flex-1">
+                            <div class="mt-1 text-lg font-bold text-slate-900 leading-tight" x-text="selectedCableShop.price_formatted || (selectedCableShop.price_on_request ? 'Preis auf Anfrage' : 'Kein Preis verfügbar')"></div>
+                            <div class="detail-muted mt-1" x-text="selectedCableShop.base_product_code ? 'Basisprodukt ' + selectedCableShop.base_product_code : '–'"></div>
+                          </div>
+                        </div>
+
+                        <template x-if="selectedCableShop.description">
+                          <div class="detail-muted mt-3" x-text="selectedCableShop.description"></div>
+                        </template>
+                      </div>
+                    </template>
                   </div>
                 </div>
               </div>
             </div>
           </template>
 
-
           <!-- FG Group detail panel -->
           <template x-if="selectedFgGroup && !selectedComponent">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
-              <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                <h3 class="font-semibold text-gray-700">
-                  <span x-text="'=' + selectedFgGroup.fg"></span>
-                  <span class="text-gray-400 text-sm ml-1" x-text="'(' + selectedFgGroup.subsystem + ')'"></span>
-                </h3>
+              <div class="detail-panel-header px-4 py-3 flex items-start justify-between gap-3">
+                <div>
+                  <div class="detail-label mb-1">Funktionsgruppe</div>
+                  <h3 class="font-semibold text-slate-800">
+                    <span x-text="'=' + selectedFgGroup.fg"></span>
+                    <span class="text-gray-400 text-sm ml-1" x-text="'(' + selectedFgGroup.subsystem + ')'"></span>
+                  </h3>
+                </div>
                 <button @click="selectedFgGroup = null" class="text-gray-400 hover:text-gray-600">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
-              <div class="p-4 space-y-3 text-sm">
-                <div class="text-gray-500 text-xs">Funktionsgruppe</div>
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="text-lg font-bold" x-text="selectedFgGroup.components.length"></span>
-                  <span class="text-gray-600">Geräte</span>
+              <div class="detail-panel-body text-sm">
+                <div class="detail-block">
+                  <div class="detail-label">Überblick</div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="info-chip" x-text="selectedFgGroup.components.length + ' Geräte'"></span>
+                    <span class="detail-muted" x-text="selectedFgGroup.subsystem"></span>
+                    <span x-show="selectedFgGroup.components[0]?.related_cables?.length > 0" class="info-chip info-chip--green" x-text="selectedFgGroup.components[0]?.related_cables?.length + ' Kabel'"></span>
+                  </div>
                 </div>
 
                 <!-- Component list -->
-                <div class="text-gray-500 text-xs mb-1">Enthaltene Geräte</div>
-                <div class="max-h-96 overflow-y-auto space-y-1">
+                <div class="detail-block">
+                  <div class="detail-label">Enthaltene Geräte</div>
+                  <div class="max-h-72 overflow-y-auto space-y-1 pr-1">
                   <template x-for="comp in selectedFgGroup.components" :key="comp.id">
-                    <div class="bg-gray-50 rounded-lg p-2 text-xs cursor-pointer hover:bg-gray-100 transition-colors"
+                    <div class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs cursor-pointer hover:border-lapp-600 hover:shadow-sm transition-all"
                          @click="selectedComponent = comp">
                       <div class="flex items-center justify-between">
-                        <span class="font-mono font-bold" x-text="comp.designation"></span>
-                        <span class="inline-block px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+                        <span class="font-mono font-bold text-gray-900" x-text="comp.designation"></span>
+                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium"
                               :class="typeColorClass(comp.component_type)"
                               x-text="typeLabel(comp.component_type)"></span>
                       </div>
-                      <div class="text-gray-600" x-text="comp.description_de"></div>
-                      <div class="text-gray-400 font-mono text-[10px]" x-text="comp.full_eplan_name"></div>
+                      <div class="text-gray-700 mt-1" x-text="comp.description_de"></div>
+                      <div class="text-gray-400 font-mono text-[10px] mt-1 truncate" x-text="comp.full_eplan_name"></div>
                     </div>
                   </template>
+                  </div>
                 </div>
 
                 <!-- Cables for this FG group's location -->
                 <template x-if="selectedFgGroup.components[0]?.related_cables?.length > 0">
-                  <div>
-                    <div class="text-gray-500 text-xs mb-1">Kabel am Standort</div>
-                    <template x-for="cable in selectedFgGroup.components[0].related_cables" :key="cable.cable_name">
-                      <div class="bg-gray-50 rounded-lg p-2 mb-1 text-xs">
-                        <div class="font-medium" x-text="cable.cable_name"></div>
-                        <div class="text-gray-500" x-text="cable.cable_spec"></div>
-                      </div>
-                    </template>
+                  <div class="detail-block">
+                    <div class="detail-label">Kabel am Standort</div>
+                    <div class="space-y-2">
+                      <template x-for="cable in selectedFgGroup.components[0].related_cables" :key="cable.cable_name">
+                          <div class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs">
+                          <div class="font-medium text-gray-800" x-text="cable.cable_name"></div>
+                          <div class="detail-muted mt-0.5" x-text="cable.cable_spec"></div>
+                        </div>
+                      </template>
+                    </div>
                   </div>
                 </template>
               </div>
@@ -379,94 +511,74 @@
           <!-- Single component detail panel -->
           <div x-show="selectedComponent">
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
-              <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-                <h3 class="font-semibold text-gray-700" x-text="selectedComponent?.designation"></h3>
+              <div class="detail-panel-header px-4 py-3 flex items-start justify-between gap-3">
+                <div>
+                  <div class="detail-label mb-1">Gerät</div>
+                  <h3 class="font-semibold text-slate-800" x-text="selectedComponent?.designation"></h3>
+                </div>
                 <button @click="selectedComponent = null" class="text-gray-400 hover:text-gray-600">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
-            <div class="p-4 space-y-3 text-sm" x-show="selectedComponent">
+            <div class="detail-panel-body text-sm" x-show="selectedComponent">
               <!-- Type badge -->
-              <div>
-                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                      :class="typeColorClass(selectedComponent?.component_type)"
-                      x-text="typeLabel(selectedComponent?.component_type)"></span>
-                <span class="text-gray-400 text-xs ml-1" x-text="selectedComponent?.full_eplan_name || selectedComponent?.id"></span>
+              <div class="detail-block">
+                <div class="detail-label">Typ</div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                        :class="typeColorClass(selectedComponent?.component_type)"
+                        x-text="typeLabel(selectedComponent?.component_type)"></span>
+                </div>
               </div>
 
-              <!-- Function group -->
-              <template x-if="selectedComponent?.function_group">
-                <div>
-                  <div class="text-gray-500 text-xs">Funktionsgruppe</div>
-                  <div class="font-medium font-mono" x-text="'=' + selectedComponent.function_group"></div>
+              <div class="detail-grid">
+                <div class="detail-grid-item">
+                  <div class="detail-label">Beschreibung</div>
+                  <div class="detail-value font-medium" x-text="selectedComponent?.description_de || '–'"></div>
+                  <div class="detail-muted" x-text="selectedComponent?.description_en" x-show="selectedComponent.description_en"></div>
                 </div>
-              </template>
-
-              <!-- Descriptions -->
-              <template x-if="selectedComponent?.description_de">
-                <div>
-                  <div class="text-gray-500 text-xs">Bezeichnung</div>
-                  <div class="font-medium" x-text="selectedComponent.description_de"></div>
-                  <div class="text-gray-500" x-text="selectedComponent.description_en" x-show="selectedComponent.description_en"></div>
+                <div class="detail-grid-item grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <div class="detail-label mb-1">Funktionsgruppe</div>
+                    <div class="detail-value font-mono" x-text="selectedComponent?.function_group ? '=' + selectedComponent.function_group : '–'"></div>
+                  </div>
+                  <div>
+                    <div class="detail-label mb-1">Einbauort</div>
+                    <div class="detail-value font-medium" x-text="selectedComponent?.location ? (selectedComponent.location === '+SS1' ? 'Schaltschrank' : selectedComponent.location === '+MR1' ? 'Maschinenraum' : selectedComponent.location) : '–'"></div>
+                  </div>
+                  <div>
+                    <div class="detail-label mb-1">Hersteller</div>
+                    <div class="detail-value" x-text="selectedComponent.manufacturer || '–'"></div>
+                  </div>
+                  <div>
+                    <div class="detail-label mb-1">Subsystem</div>
+                    <div class="detail-value" x-text="selectedComponent.subsystem || '–'"></div>
+                  </div>
+                  <div>
+                    <div class="detail-label mb-1">Bestellnr.</div>
+                    <div class="detail-value font-mono" x-text="selectedComponent.order_number || '–'"></div>
+                  </div>
+                  <div>
+                    <div class="detail-label mb-1">SAP</div>
+                    <div class="detail-value font-mono" x-text="selectedComponent.sap_number || '–'"></div>
+                  </div>
                 </div>
-              </template>
-
-              <!-- Technical specs -->
-              <template x-if="selectedComponent?.technical_specs">
-                <div>
-                  <div class="text-gray-500 text-xs">Technische Daten</div>
-                  <div class="font-medium font-mono" x-text="selectedComponent.technical_specs"></div>
-                </div>
-              </template>
-
-              <!-- Manufacturer -->
-              <template x-if="selectedComponent?.manufacturer">
-                <div>
-                  <div class="text-gray-500 text-xs">Hersteller</div>
-                  <div class="font-medium" x-text="selectedComponent.manufacturer"></div>
-                </div>
-              </template>
-
-              <!-- Order number -->
-              <template x-if="selectedComponent?.order_number">
-                <div>
-                  <div class="text-gray-500 text-xs">Bestellnummer</div>
-                  <div class="font-medium font-mono" x-text="selectedComponent.order_number"></div>
-                </div>
-              </template>
-
-              <!-- SAP number -->
-              <template x-if="selectedComponent?.sap_number">
-                <div>
-                  <div class="text-gray-500 text-xs">SAP Nummer</div>
-                  <div class="font-medium font-mono" x-text="selectedComponent.sap_number"></div>
-                </div>
-              </template>
-
-              <!-- Location -->
-              <template x-if="selectedComponent?.location">
-                <div>
-                  <div class="text-gray-500 text-xs">Einbauort</div>
-                  <div class="font-medium" x-text="selectedComponent.location === '+SS1' ? 'Schaltschrank' : selectedComponent.location === '+MR1' ? 'Maschinenraum' : selectedComponent.location"></div>
-                </div>
-              </template>
-
-              <!-- Subsystem -->
-              <template x-if="selectedComponent?.subsystem">
-                <div>
-                  <div class="text-gray-500 text-xs">Subsystem</div>
-                  <div class="font-medium" x-text="selectedComponent.subsystem"></div>
-                </div>
-              </template>
+                <template x-if="selectedComponent?.technical_specs">
+                  <div class="detail-grid-item">
+                    <div class="detail-label">Technische Daten</div>
+                    <div class="detail-value font-mono" x-text="selectedComponent.technical_specs"></div>
+                  </div>
+                </template>
+              </div>
 
               <!-- Connected cables -->
-              <div x-show="getComponentCables(selectedComponent).length > 0">
-                <div class="text-gray-500 text-xs mb-1">Verbundene Kabel</div>
+              <div x-show="getComponentCables(selectedComponent).length > 0" class="detail-block">
+                <div class="detail-label">Verbundene Kabel</div>
                 <template x-for="cable in getComponentCables(selectedComponent)" :key="cable.cable_name">
-                  <div class="bg-gray-50 rounded-lg p-2 mb-1 text-xs">
-                    <div class="font-medium" x-text="cable.cable_name"></div>
-                    <div class="text-gray-500" x-text="cable.cable_spec"></div>
-                    <div class="text-gray-500" x-text="cable.cable_type" x-show="cable.cable_type && cable.cable_type !== cable.cable_spec"></div>
+                  <div class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 mb-2 text-xs">
+                    <div class="font-medium text-gray-800" x-text="cable.cable_name"></div>
+                    <div class="detail-muted" x-text="cable.cable_spec"></div>
+                    <div class="detail-muted" x-text="cable.cable_type" x-show="cable.cable_type && cable.cable_type !== cable.cable_spec"></div>
                     <template x-if="cable.cross_section_mm2">
                       <a :href="'/?cs=' + cable.cross_section_mm2 + '&cores=' + (cable.num_cores || 3)"
                          class="text-lapp-600 hover:underline mt-1 inline-block">
@@ -478,11 +590,11 @@
               </div>
 
               <!-- I/O assignments for controllers -->
-              <div x-show="getComponentIO(selectedComponent).length > 0">
-                <div class="text-gray-500 text-xs mb-1">I/O-Zuordnung</div>
-                <div class="max-h-48 overflow-y-auto">
+              <div x-show="getComponentIO(selectedComponent).length > 0" class="detail-block">
+                <div class="detail-label">I/O-Zuordnung</div>
+                <div class="max-h-48 overflow-y-auto pr-1">
                   <template x-for="io in getComponentIO(selectedComponent)" :key="io.pin + io.function_de">
-                    <div class="flex gap-2 text-xs py-0.5 border-b border-gray-100">
+                    <div class="flex gap-2 text-xs py-1 border-b border-gray-100 last:border-b-0">
                       <span class="font-mono font-medium w-8" x-text="io.signal_type"></span>
                       <span class="font-mono w-6 text-gray-400" x-text="io.pin"></span>
                       <span class="text-gray-700" x-text="io.function_de"></span>
@@ -494,7 +606,7 @@
               <!-- Back to group button -->
               <template x-if="selectedFgGroup">
                 <button @click="selectedComponent = null"
-                        class="w-full text-center text-xs text-gray-500 hover:text-lapp-600 mt-2 py-1">
+                        class="w-full text-center text-xs text-gray-500 hover:text-lapp-600 mt-1 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
                   ← Zurück zur Gruppe
                 </button>
               </template>
@@ -516,6 +628,9 @@
         selectedComponent: null,
         selectedFgGroup: null,
         selectedCable: null,
+        selectedCableShop: null,
+        selectedCableShopLoading: false,
+        selectedCableShopError: '',
         filterSubsystem: '',
         viewMode: 'subsystem',
         zoom: 1,
@@ -640,12 +755,63 @@
           }
         },
 
+        async loadCableShopInfo(cable) {
+          const articleNumber = cable?.sap_number || cable?.article_part_nr || '';
+          const normalizedArticleNumber = articleNumber.replace(/^lapp\.?\s*/i, '').trim();
+          this.selectedCableShop = null;
+          this.selectedCableShopError = '';
+
+          if (!normalizedArticleNumber) {
+            this.selectedCableShopError = 'Keine Artikelnummer für diesen Kabelsatz vorhanden.';
+            return;
+          }
+
+          this.selectedCableShopLoading = true;
+          try {
+            const resp = await fetch(`/api/shop/variant/${encodeURIComponent(normalizedArticleNumber)}`);
+            if (!resp.ok) {
+              const err = await resp.json().catch(() => ({}));
+              throw new Error(err.detail || 'Shop-Variante konnte nicht geladen werden.');
+            }
+            this.selectedCableShop = await resp.json();
+          } catch (e) {
+            this.selectedCableShopError = e.message;
+          } finally {
+            this.selectedCableShopLoading = false;
+          }
+        },
+
         // Pan & Zoom
-        zoomIn()  { this.zoom = Math.min(3, this.zoom * 1.2); },
-        zoomOut() { this.zoom = Math.max(0.2, this.zoom / 1.2); },
+        _zoomAt(newZoom, anchorX, anchorY) {
+          const container = document.getElementById('graphContainer');
+          if (!container) return;
+
+          const oldZoom = this.zoom;
+          const clampedZoom = Math.max(0.2, Math.min(3, newZoom));
+          if (clampedZoom === oldZoom) return;
+
+          const x = anchorX ?? container.clientWidth / 2;
+          const y = anchorY ?? container.clientHeight / 2;
+          const worldX = (x - this.panX) / oldZoom;
+          const worldY = (y - this.panY) / oldZoom;
+
+          this.zoom = clampedZoom;
+          this.panX = x - worldX * this.zoom;
+          this.panY = y - worldY * this.zoom;
+        },
+
+        zoomIn(anchorX, anchorY)  { this._zoomAt(this.zoom * 1.2, anchorX, anchorY); },
+        zoomOut(anchorX, anchorY) { this._zoomAt(this.zoom / 1.2, anchorX, anchorY); },
         resetView() { this.zoom = 1; this.panX = 20; this.panY = 20; },
         handleWheel(e) {
-          if (e.deltaY < 0) this.zoomIn(); else this.zoomOut();
+          const container = document.getElementById('graphContainer');
+          if (!container) return;
+
+          const rect = container.getBoundingClientRect();
+          const anchorX = e.clientX - rect.left;
+          const anchorY = e.clientY - rect.top;
+
+          if (e.deltaY < 0) this.zoomIn(anchorX, anchorY); else this.zoomOut(anchorX, anchorY);
         },
         startPan(e) { this.isPanning = true; this.panStart = { x: e.clientX - this.panX, y: e.clientY - this.panY }; },
         doPan(e)  { if (this.isPanning) { this.panX = e.clientX - this.panStart.x; this.panY = e.clientY - this.panStart.y; } },
@@ -664,7 +830,7 @@
 
           try {
             const g = new dagre.graphlib.Graph({ compound: true, multigraph: true });
-            g.setGraph({ rankdir: 'LR', nodesep: 30, ranksep: 120, marginx: 30, marginy: 30 });
+            g.setGraph({ rankdir: 'LR', nodesep: 80, ranksep: 250, marginx: 50, marginy: 50, edgesep: 40 });
             g.setDefaultEdgeLabel(() => ({}));
 
             const components = this.graphData.components;
@@ -760,12 +926,12 @@
             const label = fgLabel + '\n' + (group.components.length > 1 ? typeSummary : (group.components[0].description_de || ''));
 
             // Wider for groups with many types
-            const nodeWidth = Math.max(150, Math.min(220, typeSummary.length * 6 + 30));
+            const nodeWidth = Math.max(180, Math.min(280, typeSummary.length * 6.5 + 40));
 
             g.setNode(nodeId, {
               label: label,
               width: nodeWidth,
-              height: 50,
+              height: 60,
               // Store first component for click, but also array of all
               component: group.components[0],
               fgGroup: group,
@@ -807,8 +973,8 @@
 
             g.setNode(nodeId, {
               label: c.designation + '\n' + fgPrefix + descShort,
-              width: 150,
-              height: 50,
+              width: 170,
+              height: 60,
               component: c,
               colors: colors,
             });
@@ -823,8 +989,11 @@
           // We pick a representative node from each location as edge endpoint
           // (dagre cannot route edges between compound/parent nodes)
 
-          // --- Cable edges between locations (one edge per cable) ---
+          // --- Bundle cables by (fromNode, toNode) route to avoid overlapping labels ---
           const cableConns = connections.filter(c => c.connection_type === 'cable');
+
+          // First, group cables by their resolved (fromNode, toNode) pair
+          const routeBundles = {};  // "fromNode|toNode" → { fromNode, toNode, cables: [...] }
           cableConns.forEach((conn, idx) => {
             const fromLoc = conn.from_location || '';
             const toLoc = conn.to_location || '';
@@ -834,17 +1003,50 @@
             const toNodes = compByLoc[toLoc];
             if (!fromNodes || !fromNodes.length || !toNodes || !toNodes.length) return;
 
-            // Distribute cables across different FG-group nodes in the location
-            // to avoid all edges converging on a single node
+            // Distribute across FG-group nodes in the location
             const fromNode = fromNodes[idx % fromNodes.length];
             const toNode = toNodes[idx % toNodes.length];
+            const routeKey = fromNode + '|' + toNode;
 
-            g.setEdge(fromNode, toNode, {
-              label: conn.cable_name,
-              cables: [conn],
-              cableNames: conn.cable_name,
+            if (!routeBundles[routeKey]) {
+              routeBundles[routeKey] = { fromNode, toNode, cables: [] };
+            }
+            routeBundles[routeKey].cables.push(conn);
+          });
+
+          // Create one edge per route bundle
+          Object.entries(routeBundles).forEach(([routeKey, bundle], idx) => {
+            const cables = bundle.cables;
+            const firstCable = cables[0];
+            const extraCount = Math.max(0, cables.length - 1);
+
+            // Keep the visual label compact, but preserve the technical detail line.
+            const mainLabel = extraCount > 0
+              ? `${firstCable.cable_name} +${extraCount}`
+              : firstCable.cable_name;
+
+            const detailParts = [];
+            if (firstCable.cable_spec) detailParts.push(firstCable.cable_spec);
+            if (firstCable.length_m) detailParts.push(`${firstCable.length_m} m`);
+            if (firstCable.num_cores) detailParts.push(`${firstCable.num_cores} Adern`);
+            if (extraCount > 0) detailParts.push(`+${extraCount} weitere`);
+            const detailLabel = detailParts.join(' | ');
+
+            // Compute label dimensions for dagre spacing
+            const lines = detailLabel ? [mainLabel, detailLabel] : [mainLabel];
+            const lineCount = lines.length;
+            const longestLine = lines.reduce((a, b) => a.length > b.length ? a : b, '');
+            const labelWidth = longestLine.length * 7 + 24;
+            const labelHeight = lineCount * 16 + 12;
+
+            g.setEdge(bundle.fromNode, bundle.toNode, {
+              label: lines.join('\n'),
+              cables: cables,
               edgeType: 'cable',
-              minlen: 2,
+              minlen: 3,
+              labelpos: 'c',
+              width: labelWidth,
+              height: labelHeight,
             }, 'cable_' + idx);
           });
 
@@ -885,7 +1087,26 @@
             const isCable = edge.edgeType === 'cable';
 
             const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            let d = 'M' + edge.points.map(p => `${p.x},${p.y}`).join(' L');
+            // Use smooth cubic bezier curves instead of straight line segments
+            let d;
+            if (edge.points.length <= 2) {
+              d = 'M' + edge.points.map(p => `${p.x},${p.y}`).join(' L');
+            } else {
+              d = `M${edge.points[0].x},${edge.points[0].y}`;
+              for (let i = 1; i < edge.points.length - 1; i++) {
+                const prev = edge.points[i - 1];
+                const curr = edge.points[i];
+                const next = edge.points[i + 1];
+                const cpx1 = (prev.x + curr.x) / 2;
+                const cpy1 = (prev.y + curr.y) / 2;
+                const cpx2 = (curr.x + next.x) / 2;
+                const cpy2 = (curr.y + next.y) / 2;
+                if (i === 1) d += ` Q${curr.x},${curr.y} ${cpx2},${cpy2}`;
+                else d += ` T${cpx2},${cpy2}`;
+              }
+              const last = edge.points[edge.points.length - 1];
+              d += ` L${last.x},${last.y}`;
+            }
             pathEl.setAttribute('d', d);
             pathEl.setAttribute('fill', 'none');
 
@@ -897,8 +1118,8 @@
               pathEl.setAttribute('marker-end', 'url(#arrowhead-fg)');
             } else {
               // Thick solid line for cable connections
-              pathEl.setAttribute('stroke', '#64748b');
-              pathEl.setAttribute('stroke-width', '2.5');
+              pathEl.setAttribute('stroke', '#94a3b8');
+              pathEl.setAttribute('stroke-width', '2');
               pathEl.setAttribute('marker-end', 'url(#arrowhead)');
             }
             group.appendChild(pathEl);
@@ -924,56 +1145,61 @@
                 text.textContent = edge.label;
                 group.appendChild(text);
               } else if (isCable) {
-                // Background pill for cable label
-                const cableInfo = edge.cables && edge.cables[0];
-                const mainLabel = edge.label;
-                const specLabel = cableInfo ? cableInfo.cable_spec : '';
+                // Bundled cable label: show each cable on its own line
+                const cables = edge.cables || [];
+                const lines = edge.label.split('\n');
+                const lineHeight = 15;
+                const totalHeight = lines.length * lineHeight + 8;
+                const longestLine = lines.reduce((a, b) => a.length > b.length ? a : b, '');
+                const totalWidth = longestLine.length * 7 + 24;
 
+                // Background pill
                 const labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                const textLen = Math.max(mainLabel.length, specLabel.length) * 5.5 + 16;
-                const labelH = specLabel ? 28 : 18;
-                labelBg.setAttribute('x', lx - textLen / 2);
-                labelBg.setAttribute('y', ly - labelH / 2 - 1);
-                labelBg.setAttribute('width', textLen);
-                labelBg.setAttribute('height', labelH);
+                labelBg.setAttribute('x', lx - totalWidth / 2);
+                labelBg.setAttribute('y', ly - totalHeight / 2);
+                labelBg.setAttribute('width', totalWidth);
+                labelBg.setAttribute('height', totalHeight);
                 labelBg.setAttribute('rx', '6');
-                labelBg.setAttribute('fill', '#f1f5f9');
+                labelBg.setAttribute('fill', '#f8fafc');
                 labelBg.setAttribute('stroke', '#cbd5e1');
                 labelBg.setAttribute('stroke-width', '1');
                 labelBg.setAttribute('style', 'cursor:pointer');
                 group.appendChild(labelBg);
 
-                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                text.setAttribute('x', lx);
-                text.setAttribute('y', specLabel ? ly - 2 : ly + 3);
-                text.setAttribute('text-anchor', 'middle');
-                text.setAttribute('font-size', '10');
-                text.setAttribute('font-weight', '600');
-                text.setAttribute('fill', '#475569');
-                text.setAttribute('style', 'cursor:pointer');
-                text.textContent = mainLabel;
-                group.appendChild(text);
+                // Render each line
+                const startY = ly - totalHeight / 2 + lineHeight;
+                lines.forEach((line, lineIdx) => {
+                  const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                  textEl.setAttribute('x', lx);
+                  textEl.setAttribute('y', startY + lineIdx * lineHeight);
+                  textEl.setAttribute('text-anchor', 'middle');
+                  textEl.setAttribute('font-size', '10');
+                  textEl.setAttribute('font-weight', '600');
+                  textEl.setAttribute('fill', '#475569');
+                  textEl.setAttribute('style', 'cursor:pointer');
+                  textEl.textContent = line;
+                  group.appendChild(textEl);
 
-                // Click handler for cable detail
-                const openCable = cableInfo
-                  ? () => { self.selectedComponent = null; self.selectedFgGroup = null; self.selectedCable = cableInfo; }
-                  : null;
-                if (openCable) {
-                  labelBg.addEventListener('click', openCable);
-                  text.addEventListener('click', openCable);
-                }
+                  // Find matching cable for click handler
+                  const matchingCable = cables.find(c => c.cable_name === line);
+                  if (matchingCable) {
+                    textEl.addEventListener('click', () => {
+                      self.selectedComponent = null;
+                      self.selectedFgGroup = null;
+                      self.selectedCable = matchingCable;
+                      self.loadCableShopInfo(matchingCable);
+                    });
+                  }
+                });
 
-                if (specLabel) {
-                  const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                  text2.setAttribute('x', lx);
-                  text2.setAttribute('y', ly + 10);
-                  text2.setAttribute('text-anchor', 'middle');
-                  text2.setAttribute('font-size', '8');
-                  text2.setAttribute('fill', '#94a3b8');
-                  text2.setAttribute('style', 'cursor:pointer');
-                  text2.textContent = specLabel;
-                  group.appendChild(text2);
-                  if (openCable) { text2.addEventListener('click', openCable); }
+                // Click on background opens first cable detail
+                if (cables.length > 0) {
+                  labelBg.addEventListener('click', () => {
+                    self.selectedComponent = null;
+                    self.selectedFgGroup = null;
+                    self.selectedCable = cables[0];
+                    self.loadCableShopInfo(cables[0]);
+                  });
                 }
               }
 
@@ -1016,13 +1242,13 @@
 
             if (minX === Infinity) return;
 
-            const pad = 20;
+            const pad = 30;
             const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             const color = this.SUB_COLORS[node.subIndex % this.SUB_COLORS.length];
             rect.setAttribute('x', minX - pad);
-            rect.setAttribute('y', minY - pad - 18);
+            rect.setAttribute('y', minY - pad - 24);
             rect.setAttribute('width', maxX - minX + pad * 2);
-            rect.setAttribute('height', maxY - minY + pad * 2 + 18);
+            rect.setAttribute('height', maxY - minY + pad * 2 + 24);
             rect.setAttribute('rx', '12');
             rect.setAttribute('ry', '12');
             rect.setAttribute('fill', color + '10');
@@ -1034,10 +1260,10 @@
 
             // Subsystem label
             const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            label.setAttribute('x', minX - pad + 10);
-            label.setAttribute('y', minY - pad - 4);
-            label.setAttribute('font-size', '11');
-            label.setAttribute('font-weight', '600');
+            label.setAttribute('x', minX - pad + 12);
+            label.setAttribute('y', minY - pad - 6);
+            label.setAttribute('font-size', '13');
+            label.setAttribute('font-weight', '700');
             label.setAttribute('fill', color);
             label.setAttribute('pointer-events', 'none');
             label.textContent = node.label;
@@ -1069,9 +1295,9 @@
             const lines = node.label.split('\n');
             const text1 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text1.setAttribute('x', node.width / 2);
-            text1.setAttribute('y', lines.length > 1 ? 20 : 28);
+            text1.setAttribute('y', lines.length > 1 ? 22 : 32);
             text1.setAttribute('text-anchor', 'middle');
-            text1.setAttribute('font-size', '13');
+            text1.setAttribute('font-size', '14');
             text1.setAttribute('font-weight', '700');
             text1.setAttribute('fill', colors.text);
             text1.textContent = lines[0];
@@ -1080,11 +1306,13 @@
             if (lines.length > 1) {
               const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
               text2.setAttribute('x', node.width / 2);
-              text2.setAttribute('y', 38);
+              text2.setAttribute('y', 42);
               text2.setAttribute('text-anchor', 'middle');
-              text2.setAttribute('font-size', '10');
+              text2.setAttribute('font-size', '11');
               text2.setAttribute('fill', '#64748b');
-              text2.textContent = lines[1];
+              // Truncate subtitle if too long to prevent overflow
+              const maxChars = Math.floor(node.width / 6.5);
+              text2.textContent = lines[1].length > maxChars ? lines[1].substring(0, maxChars - 1) + '…' : lines[1];
               gNode.appendChild(text2);
             }
 
@@ -1125,8 +1353,29 @@
             group.appendChild(gNode);
           });
 
-          // Auto-fit view on first render
-          this.resetView();
+          // Auto-fit view: compute bounding box and scale to fit viewport
+          this._autoFit();
+        },
+
+        _autoFit() {
+          const container = document.getElementById('graphContainer');
+          const svgGroup = document.getElementById('graphGroup');
+          if (!container || !svgGroup) { this.resetView(); return; }
+
+          const bbox = svgGroup.getBBox();
+          if (!bbox || bbox.width === 0 || bbox.height === 0) { this.resetView(); return; }
+
+          const cw = container.clientWidth;
+          const ch = container.clientHeight;
+          const padding = 40;
+
+          const scaleX = (cw - padding * 2) / bbox.width;
+          const scaleY = (ch - padding * 2) / bbox.height;
+          const scale = Math.min(scaleX, scaleY, 1.2); // cap at 1.2 so it's not too zoomed in
+
+          this.zoom = Math.max(0.15, Math.round(scale * 100) / 100);
+          this.panX = padding - bbox.x * this.zoom + (cw - bbox.width * this.zoom) / 2 - padding;
+          this.panY = padding - bbox.y * this.zoom + (ch - bbox.height * this.zoom) / 2 - padding;
         },
       };
     }
