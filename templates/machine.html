@@ -669,6 +669,15 @@
                             <span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-red-200 inline-block"></span>Unzulässig</span>
                             <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded ring-1 ring-lapp-600"></span>Aktuell</span>
                           </div>
+
+                          <!-- Open in full optimizer -->
+                          <button @click="openInOptimizer()"
+                            class="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-lapp-600 border border-lapp-600 rounded-lg px-3 py-1.5 hover:bg-lapp-600 hover:text-white transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                            Details im Optimierer
+                          </button>
                         </div>
                       </template>
 
@@ -1076,7 +1085,7 @@
         // --------------- Optimizer ---------------
 
         initOptimizer(cable) {
-          this.optParams = { ...DEFAULT_PARAMS, system_voltage_v: 0, ac_3phase: false };
+          this.optParams = { ...DEFAULT_PARAMS, current_a: 0, system_voltage_v: 0, ac_3phase: false };
           this.optResult = null;
           this.optError = '';
           this.optOptions = [];
@@ -1191,6 +1200,18 @@
         },
 
         optFmt(v) { return optNumFmt.format(v); },
+
+        openInOptimizer() {
+          const prefill = {
+            params: { ...this.optParams },
+            options: this.filteredOptOptions,
+            productName: this.selectedCableShop?.name || '',
+            productImage: this.selectedCableShop?.image_url || '',
+            baseCode: this.selectedCableShop?.base_product_code || '',
+          };
+          localStorage.setItem('lapp_opt_prefill', JSON.stringify(prefill));
+          window.open('/', '_blank');
+        },
 
         // Pan & Zoom
         _zoomAt(newZoom, anchorX, anchorY) {

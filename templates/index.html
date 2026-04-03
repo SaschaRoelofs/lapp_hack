@@ -504,6 +504,24 @@
           if (s.max_voltage_drop_percent !== undefined) this.params.max_voltage_drop_percent = s.max_voltage_drop_percent;
           if (s.electricity_emission_factor_kg_per_kwh !== undefined) this.params.electricity_emission_factor_kg_per_kwh = s.electricity_emission_factor_kg_per_kwh;
           if (s.copper_emission_factor_kg_per_kg !== undefined) this.params.copper_emission_factor_kg_per_kg = s.copper_emission_factor_kg_per_kg;
+
+          const prefill = JSON.parse(localStorage.getItem('lapp_opt_prefill') || 'null');
+          if (prefill) {
+            localStorage.removeItem('lapp_opt_prefill');
+            this.params = { ...this.params, ...prefill.params };
+            if (prefill.options && prefill.options.length > 0) {
+              this.options = prefill.options;
+              this.optionsPage = 0;
+            }
+            if (prefill.productName) {
+              this.selectedProductName = prefill.productName;
+              this.shopQuery = prefill.productName;
+            }
+            if (prefill.productImage) this.selectedProductImage = prefill.productImage;
+            if (prefill.baseCode) this.selectedBaseCode = prefill.baseCode;
+            // Auto-calculate after next tick so filteredOptions are ready
+            this.$nextTick(() => this.calculate());
+          }
         },
 
         async searchShop() {
