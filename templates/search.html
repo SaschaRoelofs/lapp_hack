@@ -32,10 +32,11 @@
   <!-- Header -->
   {% include '_header.html' %}
 
-  <div class="flex h-[calc(100vh-76px)]">
+  <div class="flex flex-col md:flex-row h-[calc(100vh-76px)]">
 
     <!-- Left Panel: Search & Results -->
-    <aside class="w-96 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col">
+    <aside class="w-full md:w-96 md:flex-shrink-0 bg-white border-r border-gray-200 min-h-0"
+      :class="mobileShowDetail ? 'hidden md:flex md:flex-col' : 'flex flex-col'">
       <!-- Search -->
       <div class="p-3 border-b border-gray-200">
         <form @submit.prevent="searchProducts()" class="flex gap-2">
@@ -86,7 +87,17 @@
     </aside>
 
     <!-- Right Panel: Product Detail -->
-    <main class="flex-1 overflow-y-auto">
+    <main class="flex-1 overflow-y-auto min-h-0"
+      :class="!mobileShowDetail ? 'hidden md:block' : 'block'">
+
+      <!-- Back button: mobile only -->
+      <button @click="mobileShowDetail = false"
+        class="md:hidden flex items-center gap-2 px-4 py-3 text-sm font-medium text-lapp-600 border-b border-gray-200 bg-white w-full sticky top-0 z-10">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Zurück zur Suche
+      </button>
 
       <!-- Empty State -->
       <div x-show="!selectedCode && !loadingProduct" class="flex items-center justify-center h-full text-gray-400">
@@ -116,9 +127,9 @@
         <!-- Product Header -->
         <template x-if="product">
           <div>
-            <div class="flex items-start gap-6 mb-6">
+            <div class="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-6">
               <img x-show="product.image_url" :src="product.image_url"
-                class="w-32 h-32 object-contain rounded-xl border border-gray-200 bg-white p-2 flex-shrink-0" alt="">
+                class="w-24 h-24 sm:w-32 sm:h-32 object-contain rounded-xl border border-gray-200 bg-white p-2 flex-shrink-0" alt="">
               <div>
                 <h2 class="text-2xl font-bold text-gray-800" x-text="product.name"></h2>
                 <p class="text-sm text-gray-500 mt-1" x-text="product.description"></p>
@@ -183,7 +194,7 @@
             </div>
 
             <!-- Variant Filter -->
-            <div class="flex items-center gap-4 mb-2">
+            <div class="flex flex-wrap items-center gap-3 mb-2">
               <h3 class="text-sm font-semibold text-gray-600">
                 Varianten <span class="font-normal text-gray-400">(<span x-text="filteredVariants.length"></span> / <span x-text="product.variants.length"></span>)</span>
               </h3>
@@ -195,7 +206,7 @@
               </button>
               <span x-show="pricesLoaded" class="text-xs text-green-600 font-medium">✓ geladen</span>
               <input type="text" x-model="variantFilter" placeholder="Filtern (Name, Artikelnr.) ..."
-                class="ml-auto w-64 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
+                class="mt-1 sm:mt-0 sm:ml-auto w-full sm:w-64 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
             </div>
 
             <!-- Variants Table -->
@@ -207,21 +218,21 @@
                       <th class="px-4 py-3 text-left cursor-pointer hover:text-lapp-600" @click="sortBy('name')">
                         Name <span x-show="sortCol==='name'" x-text="sortDir==='asc'?'▲':'▼'"></span>
                       </th>
-                      <th class="px-4 py-3 text-left cursor-pointer hover:text-lapp-600" @click="sortBy('article_number')">
+                      <th class="px-4 py-3 text-left cursor-pointer hover:text-lapp-600 hidden sm:table-cell" @click="sortBy('article_number')">
                         Artikelnr. <span x-show="sortCol==='article_number'" x-text="sortDir==='asc'?'▲':'▼'"></span>
                       </th>
-                      <th class="px-4 py-3 text-center">Adern</th>
-                      <th class="px-4 py-3 text-center">Schutzleiter</th>
+                      <th class="px-4 py-3 text-center hidden sm:table-cell">Adern</th>
+                      <th class="px-4 py-3 text-center hidden sm:table-cell">Schutzleiter</th>
                       <th class="px-4 py-3 text-right cursor-pointer hover:text-lapp-600" @click="sortBy('cross_section_mm2')">
                         Querschnitt <span x-show="sortCol==='cross_section_mm2'" x-text="sortDir==='asc'?'▲':'▼'"></span>
                       </th>
-                      <th class="px-4 py-3 text-right cursor-pointer hover:text-lapp-600" @click="sortBy('outer_diameter_mm')">
+                      <th class="px-4 py-3 text-right cursor-pointer hover:text-lapp-600 hidden md:table-cell" @click="sortBy('outer_diameter_mm')">
                         ⌀ mm <span x-show="sortCol==='outer_diameter_mm'" x-text="sortDir==='asc'?'▲':'▼'"></span>
                       </th>
-                      <th class="px-4 py-3 text-right cursor-pointer hover:text-lapp-600" @click="sortBy('copper_index_kg_per_km')">
+                      <th class="px-4 py-3 text-right cursor-pointer hover:text-lapp-600 hidden md:table-cell" @click="sortBy('copper_index_kg_per_km')">
                         Cu kg/km <span x-show="sortCol==='copper_index_kg_per_km'" x-text="sortDir==='asc'?'▲':'▼'"></span>
                       </th>
-                      <th class="px-4 py-3 text-right cursor-pointer hover:text-lapp-600" @click="sortBy('weight_kg_per_km')">
+                      <th class="px-4 py-3 text-right cursor-pointer hover:text-lapp-600 hidden md:table-cell" @click="sortBy('weight_kg_per_km')">
                         Gew. kg/km <span x-show="sortCol==='weight_kg_per_km'" x-text="sortDir==='asc'?'▲':'▼'"></span>
                       </th>
                       <th class="px-4 py-3 text-right cursor-pointer hover:text-lapp-600" @click="sortBy('price_value')">
@@ -238,16 +249,16 @@
                     <template x-for="v in sortedVariants" :key="v.article_number">
                       <tr class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
                         <td class="px-4 py-2 text-sm font-medium text-gray-800" x-text="v.name"></td>
-                        <td class="px-4 py-2 font-mono text-xs text-gray-600" x-text="v.article_number"></td>
-                        <td class="px-4 py-2 text-center" x-text="v.num_cores || '-'"></td>
-                        <td class="px-4 py-2 text-center">
+                        <td class="px-4 py-2 font-mono text-xs text-gray-600 hidden sm:table-cell" x-text="v.article_number"></td>
+                        <td class="px-4 py-2 text-center hidden sm:table-cell" x-text="v.num_cores || '-'"></td>
+                        <td class="px-4 py-2 text-center hidden sm:table-cell">
                           <span x-show="v.protective_conductor === 'Ja'" class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">G</span>
                           <span x-show="v.protective_conductor === 'Nein'" class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-600">X</span>
                         </td>
                         <td class="px-4 py-2 text-right" x-text="v.cross_section || '-'"></td>
-                        <td class="px-4 py-2 text-right text-gray-500" x-text="v.outer_diameter_mm != null ? fmtNum(v.outer_diameter_mm) : (v.outer_diameter || '-')"></td>
-                        <td class="px-4 py-2 text-right" x-text="v.copper_index_kg_per_km != null ? fmtNum(v.copper_index_kg_per_km) : (v.copper_index || '-')"></td>
-                        <td class="px-4 py-2 text-right" x-text="v.weight_kg_per_km != null ? fmtNum(v.weight_kg_per_km) : (v.weight || '-')"></td>
+                        <td class="px-4 py-2 text-right text-gray-500 hidden md:table-cell" x-text="v.outer_diameter_mm != null ? fmtNum(v.outer_diameter_mm) : (v.outer_diameter || '-')"></td>
+                        <td class="px-4 py-2 text-right hidden md:table-cell" x-text="v.copper_index_kg_per_km != null ? fmtNum(v.copper_index_kg_per_km) : (v.copper_index || '-')"></td>
+                        <td class="px-4 py-2 text-right hidden md:table-cell" x-text="v.weight_kg_per_km != null ? fmtNum(v.weight_kg_per_km) : (v.weight || '-')"></td>
                         <td class="px-4 py-2 text-right">
                           <template x-if="v.price_formatted">
                             <span class="font-semibold text-gray-800" x-text="v.price_formatted"></span>
@@ -305,6 +316,7 @@
         searching: false,
         searchResults: [],
         totalResults: null,
+        mobileShowDetail: false,
 
         selectedCode: '',
         loadingProduct: false,
@@ -357,6 +369,7 @@
           this.product = null;
           this.variantFilter = '';
           this.pricesLoaded = false;
+          this.mobileShowDetail = true;
           try {
             const resp = await fetch('/api/shop/product/' + encodeURIComponent(code));
             this.product = await resp.json();

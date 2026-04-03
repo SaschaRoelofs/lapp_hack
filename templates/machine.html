@@ -59,6 +59,25 @@
       box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
     }
 
+    @media (max-width: 767px) {
+      .detail-panel {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-height: 70vh;
+        border-radius: 1.25rem 1.25rem 0 0;
+        z-index: 50;
+        box-shadow: 0 -8px 32px rgba(15,23,42,0.18);
+      }
+      .detail-panel-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,0.35);
+        z-index: 49;
+      }
+    }
+
     .detail-panel-header {
       background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
       border-bottom: 1px solid #e2e8f0;
@@ -244,12 +263,29 @@
 
     <!-- Main visualization (shown when data loaded) -->
     <template x-if="graphData">
-      <div class="flex gap-4" style="height: calc(100vh - 170px);">
+      <div class="flex flex-col md:flex-row gap-4" style="height: calc(100vh - 170px);">
+
+        <!-- Mobile: left sidebar toggle button -->
+        <button @click="mobileSidebarOpen = !mobileSidebarOpen"
+          class="md:hidden flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 self-start shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          Info &amp; Filter
+        </button>
 
         <!-- Left sidebar: Info + Legend + Subsystems -->
-        <aside class="w-72 flex-shrink-0 space-y-4 overflow-y-auto">
-
-          <!-- Technical data card -->
+        <aside
+          class="md:w-72 md:flex-shrink-0 md:overflow-y-auto md:flex md:flex-col"
+          :class="mobileSidebarOpen ? 'fixed inset-0 z-[60] flex flex-col bg-gray-50' : 'hidden md:flex md:flex-col'"
+        >
+          <!-- Mobile sticky header with close button -->
+          <div class="md:hidden sticky top-0 flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0 z-10">
+            <span class="font-semibold text-sm text-gray-700">Info &amp; Filter</span>
+            <button @click="mobileSidebarOpen = false" class="text-gray-400 hover:text-gray-700">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <!-- Scrollable content -->
+          <div class="flex-1 overflow-y-auto p-4 space-y-4">
           <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4" x-show="graphData.data_source">
             <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Quelle</h3>
             <div class="space-y-2 text-sm" x-show="graphData.data_source">
@@ -381,12 +417,13 @@
           </div>
 
           <!-- Upload new -->
+          </div><!-- end scrollable content -->
         </aside>
 
         <!-- Center: Graph visualization -->
-        <div class="flex-1 flex flex-col gap-4">
+        <div class="flex-1 flex flex-col gap-4 min-w-0" style="min-height: 350px;">
           <!-- Toolbar -->
-          <div class="flex items-center gap-2">
+          <div class="flex items-center flex-wrap gap-2">
             <button @click="zoomIn()" class="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">
               <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
             </button>
@@ -404,12 +441,15 @@
           </div>
 
           <!-- SVG Graph -->
-          <div class="graph-container flex-1" id="graphContainer" style="min-height: 600px"
+          <div class="graph-container flex-1" id="graphContainer" style="min-height: 300px"
                @wheel.prevent="handleWheel($event)"
                @mousedown="startPan($event)"
                @mousemove="doPan($event)"
                @mouseup="endPan()"
-               @mouseleave="endPan()">
+               @mouseleave="endPan()"
+               @touchstart.prevent="handleTouchStart($event)"
+               @touchmove.prevent="handleTouchMove($event)"
+               @touchend.prevent="handleTouchEnd($event)">
             <svg class="graph-svg" width="100%" height="100%" id="graphSvg">
               <defs>
                 <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
@@ -438,11 +478,14 @@
         </div>
 
         <!-- Right sidebar: Component detail or FG Group detail -->
-        <aside class="w-1/3 flex-shrink-0 min-w-72" x-show="selectedComponent || selectedFgGroup || selectedCable" x-transition>
+        <aside x-show="selectedComponent || selectedFgGroup || selectedCable"
+          class="md:w-1/3 md:flex-shrink-0 md:min-w-72 md:overflow-y-auto">
 
           <!-- Cable detail panel -->
           <template x-if="selectedCable && !selectedComponent && !selectedFgGroup">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
+            <div>
+              <div class="detail-panel-overlay md:hidden" @click="selectedCable = null; selectedCableShop = null; selectedCableShopError = ''; selectedCableShopLoading = false"></div>
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
               <div class="detail-panel-header px-4 py-3 flex items-start justify-between gap-3">
                 <div>
                   <div class="detail-label mb-1">Kabel</div>
@@ -704,11 +747,14 @@
                 </div>
               </div>
             </div>
+            </div>
           </template>
 
           <!-- FG Group detail panel -->
           <template x-if="selectedFgGroup && !selectedComponent">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
+            <div>
+              <div class="detail-panel-overlay md:hidden" @click="selectedFgGroup = null"></div>
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
               <div class="detail-panel-header px-4 py-3 flex items-start justify-between gap-3">
                 <div>
                   <div class="detail-label mb-1">Funktionsgruppe</div>
@@ -767,10 +813,12 @@
                 </template>
               </div>
             </div>
+            </div>
           </template>
 
           <!-- Single component detail panel -->
           <div x-show="selectedComponent">
+            <div class="detail-panel-overlay md:hidden" @click="selectedComponent = null"></div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
               <div class="detail-panel-header px-4 py-3 flex items-start justify-between gap-3">
                 <div>
@@ -931,6 +979,8 @@
         optMachineYears: null,
         optMachineHoursPerDay: null,
         optMachineDaysPerYear: null,
+
+        mobileSidebarOpen: false,
 
         // Type color mapping
         TYPE_COLORS: {
@@ -1292,6 +1342,21 @@
         startPan(e) { this.isPanning = true; this.panStart = { x: e.clientX - this.panX, y: e.clientY - this.panY }; },
         doPan(e)  { if (this.isPanning) { this.panX = e.clientX - this.panStart.x; this.panY = e.clientY - this.panStart.y; } },
         endPan()  { this.isPanning = false; },
+
+        // Touch pan support
+        _touchStart: null,
+        handleTouchStart(e) {
+          if (e.touches.length === 1) {
+            this._touchStart = { x: e.touches[0].clientX - this.panX, y: e.touches[0].clientY - this.panY };
+          }
+        },
+        handleTouchMove(e) {
+          if (e.touches.length === 1 && this._touchStart) {
+            this.panX = e.touches[0].clientX - this._touchStart.x;
+            this.panY = e.touches[0].clientY - this._touchStart.y;
+          }
+        },
+        handleTouchEnd(e) { this._touchStart = null; },
 
         // --------------- Graph rendering with Dagre ---------------
         renderGraph() {

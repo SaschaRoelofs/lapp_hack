@@ -38,8 +38,11 @@
 
     /* ── Team Cards ──────────────────────────────────────── */
     #readme-content .team-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;
       margin: 1.5rem 0;
+    }
+    @media (max-width: 480px) {
+      #readme-content .team-grid { grid-template-columns: 1fr; }
     }
     #readme-content .team-card {
       background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
@@ -144,6 +147,12 @@
       border: 1px solid rgba(226,232,240,0.7);
       box-shadow: 0 4px 16px rgba(0,0,0,0.03);
     }
+    /* Wrap tables in a scrollable container on small screens */
+    #readme-content .table-wrap {
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      margin: 1.25rem 0; border-radius: 1rem;
+    }
+    #readme-content .table-wrap table { margin: 0; min-width: 480px; }
     #readme-content thead tr { background: linear-gradient(135deg, #0f172a, #1e293b); }
     #readme-content th {
       text-align: left; padding: 0.75rem 1.15rem;
@@ -270,7 +279,7 @@
           </svg>
         </div>
       </div>
-      <h2 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+      <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
         LAPP Leitungsquerschnitt-<br><span class="bg-gradient-to-r from-orange-400 via-lapp-600 to-orange-400 bg-clip-text text-transparent">Optimierer</span>
       </h2>
       <p class="mt-5 text-lg md:text-xl text-slate-400 max-w-2xl leading-relaxed">
@@ -287,7 +296,7 @@
         </a>
       </div>
       <!-- Stats -->
-      <div class="mt-16 grid grid-cols-3 gap-8 md:gap-16 text-center">
+      <div class="mt-12 sm:mt-16 grid grid-cols-3 gap-4 sm:gap-8 md:gap-16 text-center">
         <div>
           <div class="text-2xl md:text-3xl font-extrabold text-white">TCO</div>
           <div class="text-xs md:text-sm text-slate-500 mt-1">Total Cost of Ownership</div>
@@ -305,17 +314,27 @@
   </section>
 
   <!-- Content flows directly on page -->
-  <main class="max-w-5xl mx-auto px-6 py-12">
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
     <div id="readme-content">
       {{ readme_html | safe }}
     </div>
   </main>
 
-  <footer class="text-center text-sm font-medium tracking-wide py-7 mt-16 text-slate-500" style="background:linear-gradient(135deg,#0c1222,#161e2e);border-top:1px solid rgba(233,94,15,0.08)">
+  <footer class="text-center text-sm font-medium tracking-wide py-7 mt-8 sm:mt-16 text-slate-500" style="background:linear-gradient(135deg,#0c1222,#161e2e);border-top:1px solid rgba(233,94,15,0.08)">
     LAPP Hackathon 2026 &middot; Leitungsquerschnitt-Optimierer
   </footer>
 
   <script>
+    // Wrap all tables in a scroll container for small screens
+    (function() {
+      document.querySelectorAll('#readme-content table').forEach(function(t) {
+        const wrap = document.createElement('div');
+        wrap.className = 'table-wrap';
+        t.parentNode.insertBefore(wrap, t);
+        wrap.appendChild(t);
+      });
+    })();
+
     // Transform the markdown-generated Team table into styled cards
     (function() {
       const rc = document.getElementById('readme-content');
