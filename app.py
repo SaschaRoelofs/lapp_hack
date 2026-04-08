@@ -293,6 +293,11 @@ async def api_machine_db_upload(
     if not token:
         token = uuid.uuid4().hex
 
+    # Rohdaten vor der Verarbeitung speichern
+    (_GRAPH_STORE_DIR / f"{token}_raw.json").write_text(
+        json.dumps(data, ensure_ascii=False), encoding="utf-8"
+    )
+
     try:
         graph = build_machine_graph_from_data(data, source_label=data.get("projectName", "upload"))
     except (KeyError, ValueError) as exc:
