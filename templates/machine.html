@@ -1282,12 +1282,13 @@
         },
 
         // Pan & Zoom
+        _minZoom: 0.05,
         _zoomAt(newZoom, anchorX, anchorY) {
           const container = document.getElementById('graphContainer');
           if (!container) return;
 
           const oldZoom = this.zoom;
-          const clampedZoom = Math.max(0.2, Math.min(3, newZoom));
+          const clampedZoom = Math.max(this._minZoom, Math.min(3, newZoom));
           if (clampedZoom === oldZoom) return;
 
           const x = anchorX ?? container.clientWidth / 2;
@@ -2032,7 +2033,7 @@
 
           const pad = 100;
           const newZoom = Math.min(cw / (maxX - minX + pad * 2), ch / (maxY - minY + pad * 2), 2.2);
-          this.zoom = Math.max(0.15, newZoom);
+          this.zoom = Math.max(this._minZoom, newZoom);
           this.panX = cw / 2 - ((minX + maxX) / 2) * this.zoom;
           this.panY = ch / 2 - ((minY + maxY) / 2) * this.zoom;
         },
@@ -2053,7 +2054,9 @@
           const scaleY = (ch - padding * 2) / bbox.height;
           const scale = Math.min(scaleX, scaleY, 1.2); // cap at 1.2 so it's not too zoomed in
 
-          this.zoom = Math.max(0.15, Math.round(scale * 100) / 100);
+          // Store as minimum zoom so the user can always zoom out to see the full graph
+          this._minZoom = Math.max(0.03, Math.round(scale * 100) / 100);
+          this.zoom = this._minZoom;
           this.panX = padding - bbox.x * this.zoom + (cw - bbox.width * this.zoom) / 2 - padding;
           this.panY = padding - bbox.y * this.zoom + (ch - bbox.height * this.zoom) / 2 - padding;
         },
