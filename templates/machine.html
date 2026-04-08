@@ -415,26 +415,6 @@
             </div>
           </div>
 
-          <!-- Subsystem filter -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <h3 class="font-semibold text-gray-700 mb-2 text-sm uppercase tracking-wide">Subsysteme</h3>
-            <div class="space-y-1">
-              <button @click="filterSubsystem = ''; renderGraph()"
-                      class="w-full text-left px-2 py-1 rounded text-sm transition-colors"
-                      :class="filterSubsystem === '' ? 'bg-lapp-600 text-white' : 'hover:bg-gray-100 text-gray-700'">
-                Alle anzeigen
-              </button>
-              <template x-for="sub in graphData.subsystems" :key="sub.name">
-                <button @click="filterSubsystem = sub.name; renderGraph()"
-                        class="w-full text-left px-2 py-1 rounded text-sm transition-colors flex justify-between items-center"
-                        :class="filterSubsystem === sub.name ? 'bg-lapp-600 text-white' : 'hover:bg-gray-100 text-gray-700'">
-                  <span x-text="sub.name_de || sub.name"></span>
-                  <span class="text-xs opacity-60" x-text="sub.component_ids.length + ' / ' + (sub.cable_count || 0)"></span>
-                </button>
-              </template>
-            </div>
-          </div>
-
           <!-- Upload new -->
           </div><!-- end scrollable content -->
         </aside>
@@ -449,7 +429,6 @@
             <button @click="zoomOut()" class="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">
               <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
             </button>
-            <button @click="resetView()" class="bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">Reset</button>
             <div class="ml-auto flex items-center gap-2">
               <label class="text-sm text-gray-600">Ansicht:</label>
               <select x-model="viewMode" @change="selectedComponent = null; selectedFgGroup = null; selectedCable = null; renderGraph()" class="border border-gray-300 rounded-lg px-2 py-1 text-sm">
