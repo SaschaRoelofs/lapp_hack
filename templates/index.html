@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
@@ -7,7 +7,7 @@
   <title>LAPP Leitungsquerschnitt-Optimierer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
@@ -38,43 +38,87 @@
 
     /* ── Team Cards ──────────────────────────────────────── */
     #readme-content .team-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
       margin: 1.5rem 0;
     }
-    @media (max-width: 480px) {
-      #readme-content .team-grid { grid-template-columns: 1fr; }
+    @media (max-width: 600px) {
+      #readme-content .team-grid {
+        grid-template-columns: 1fr;
+        max-width: 300px;
+        margin-left: auto; margin-right: auto;
+      }
     }
+
     #readme-content .team-card {
-      background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
-      border: 1px solid rgba(226,232,240,0.7); border-radius: 1.25rem;
-      padding: 2rem 1.25rem; text-align: center;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s ease;
+      background: #fff;
+      border: 1px solid rgba(226,232,240,0.9);
+      border-radius: 1.5rem;
+      padding: 2rem 1.25rem 1.75rem;
+      text-align: center;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+      position: relative; overflow: hidden;
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s, border-color 0.3s;
+    }
+    /* Orange top accent line */
+    #readme-content .team-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #e95e0f, #f97316, #fbbf24);
     }
     #readme-content .team-card:hover {
-      transform: translateY(-6px); box-shadow: 0 16px 40px rgba(233,94,15,0.1);
+      transform: translateY(-6px);
+      box-shadow: 0 20px 48px rgba(233,94,15,0.13);
+      border-color: rgba(233,94,15,0.22);
+    }
+
+    /* Photo wrapper – provides the gradient ring */
+    #readme-content .team-photo-wrap {
+      position: relative;
+      width: 104px; height: 104px;
+      margin: 0 auto 1.25rem;
+    }
+    #readme-content .team-photo-wrap::before {
+      content: '';
+      position: absolute; inset: -3px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e95e0f 0%, #f97316 40%, #fbbf24 70%, #e95e0f 100%);
+      background-size: 200% 200%;
+      animation: ringRotate 5s linear infinite;
+    }
+    @keyframes ringRotate {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
     #readme-content .team-card img {
-      width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
-      margin: 0 auto 1.25rem; display: block;
-      border: 3px solid transparent;
-      background-image: linear-gradient(#fff,#fff), linear-gradient(135deg, #e95e0f, #f97316, #fbbf24);
-      background-origin: border-box; background-clip: content-box, border-box;
-      box-shadow: 0 4px 16px rgba(233,94,15,0.2);
-      transition: box-shadow 0.3s ease;
+      position: relative; z-index: 1;
+      width: 100%; height: 100%;
+      border-radius: 50%; object-fit: cover; display: block;
+      border: 3px solid #fff;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      transition: transform 0.3s ease;
     }
-    #readme-content .team-card:hover img {
-      box-shadow: 0 8px 28px rgba(233,94,15,0.3);
-    }
+    #readme-content .team-card:hover img { transform: scale(1.05); }
+
+    /* Text */
     #readme-content .team-card h4 {
-      font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0 0 0.3rem;
+      font-size: 1.05rem; font-weight: 800; color: #0f172a;
+      margin: 0 0 0.6rem; letter-spacing: -0.02em;
     }
-    #readme-content .team-card p {
-      font-size: 0.85rem; color: #e95e0f; font-weight: 600; margin: 0 0 0.2rem;
-      letter-spacing: 0.01em;
+    #readme-content .team-card-badge {
+      display: inline-block;
+      padding: 0.28rem 0.8rem;
+      background: rgba(233,94,15,0.08);
+      border: 1px solid rgba(233,94,15,0.2);
+      border-radius: 99px;
+      font-size: 0.75rem; font-weight: 700; color: #c94e0a;
+      margin-bottom: 0.5rem;
     }
-    #readme-content .team-card span {
-      font-size: 0.78rem; color: #64748b; font-weight: 500;
+    #readme-content .team-card-org {
+      display: block;
+      font-size: 0.76rem; color: #64748b; font-weight: 500;
     }
 
     /* ── H2 – Section headings ───────────────────────────── */
@@ -214,21 +258,63 @@
     /* ── Hero ─────────────────────────────────────────────── */
     .hero {
       position: relative;
-      background: linear-gradient(135deg, #0a0f1e 0%, #111827 40%, #1a1025 100%);
+      background: linear-gradient(135deg, #060c1a 0%, #0d1526 35%, #0f172a 60%, #140d20 100%);
       overflow: hidden;
     }
+
+    /* Dot grid pattern */
     .hero::before {
       content: '';
       position: absolute; inset: 0;
-      background:
-        radial-gradient(ellipse 60% 50% at 20% 50%, rgba(233,94,15,0.08) 0%, transparent 70%),
-        radial-gradient(ellipse 50% 60% at 80% 30%, rgba(249,115,22,0.06) 0%, transparent 70%);
+      background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 32px 32px;
       pointer-events: none;
     }
-    .hero::after {
-      content: '';
+
+    /* Glow blobs */
+    .hero-glow-1 {
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(233,94,15,0.12) 0%, transparent 70%);
+      top: -200px; left: -100px;
+      pointer-events: none;
+      animation: drift1 12s ease-in-out infinite;
+    }
+    .hero-glow-2 {
+      position: absolute;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%);
+      bottom: -150px; right: -100px;
+      pointer-events: none;
+      animation: drift2 15s ease-in-out infinite;
+    }
+    .hero-glow-3 {
+      position: absolute;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(251,191,36,0.05) 0%, transparent 70%);
+      top: 50%; right: 20%;
+      pointer-events: none;
+      animation: drift3 10s ease-in-out infinite;
+    }
+    .hero-bottom-line {
       position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(233,94,15,0.3), transparent);
+      background: linear-gradient(90deg, transparent, rgba(233,94,15,0.4), transparent);
+    }
+
+    @keyframes drift1 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(40px, 30px); }
+    }
+    @keyframes drift2 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(-30px, -20px); }
+    }
+    @keyframes drift3 {
+      0%, 100% { transform: translate(0, -50%); }
+      50% { transform: translate(20px, calc(-50% + 15px)); }
     }
 
     @keyframes float {
@@ -237,90 +323,295 @@
     }
     .hero-icon { animation: float 4s ease-in-out infinite; }
 
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .anim-1 { animation: fadeInUp 0.6s ease both; }
+    .anim-2 { animation: fadeInUp 0.6s 0.15s ease both; }
+    .anim-3 { animation: fadeInUp 0.6s 0.3s ease both; }
+    .anim-4 { animation: fadeInUp 0.6s 0.45s ease both; }
+
     .hero-cta {
       display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 12px 28px; border-radius: 12px; font-weight: 600; font-size: 0.9rem;
+      padding: 14px 28px; border-radius: 14px; font-weight: 600; font-size: 0.95rem;
       transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
-      text-decoration: none;
+      text-decoration: none; white-space: nowrap;
     }
     .hero-cta-primary {
       background: linear-gradient(135deg, #e95e0f, #f97316);
       color: #fff;
-      box-shadow: 0 4px 20px rgba(233,94,15,0.3);
+      box-shadow: 0 4px 24px rgba(233,94,15,0.35), 0 1px 0 rgba(255,255,255,0.1) inset;
     }
     .hero-cta-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(233,94,15,0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 36px rgba(233,94,15,0.45);
     }
+    .hero-cta-primary:active { transform: translateY(0); }
     .hero-cta-secondary {
       background: rgba(255,255,255,0.06);
       color: #cbd5e1;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.12);
     }
     .hero-cta-secondary:hover {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.11);
       color: #f1f5f9;
-      transform: translateY(-2px);
+      transform: translateY(-3px);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .hero-cta-secondary:active { transform: translateY(0); }
+
+    /* ── Stats bar ─────────────────────────────────────────── */
+    .stat-card {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0.4rem; padding: 1.25rem 1rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 1.25rem;
+      backdrop-filter: blur(8px);
+      transition: background 0.25s, border-color 0.25s;
+    }
+    .stat-card:hover {
+      background: rgba(233,94,15,0.07);
+      border-color: rgba(233,94,15,0.2);
+    }
+
+    /* ── Feature cards ─────────────────────────────────────── */
+    .feature-card {
+      display: flex; flex-direction: column;
+      background: #fff;
+      border: 1px solid rgba(226,232,240,0.8);
+      border-radius: 1.5rem;
+      padding: 1.75rem;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s ease, border-color 0.28s;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+      position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #e95e0f, #f97316);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+    .feature-card:hover { transform: translateY(-5px); box-shadow: 0 16px 40px rgba(0,0,0,0.08); border-color: rgba(233,94,15,0.2); }
+    .feature-card:hover::before { transform: scaleX(1); }
+    .feature-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 52px; height: 52px; border-radius: 14px;
+      background: linear-gradient(135deg, rgba(233,94,15,0.1), rgba(249,115,22,0.1));
+      margin-bottom: 1.1rem; flex-shrink: 0;
+      transition: background 0.25s;
+    }
+    .feature-card:hover .feature-icon { background: linear-gradient(135deg, rgba(233,94,15,0.18), rgba(249,115,22,0.18)); }
+    .feature-arrow {
+      margin-top: auto; padding-top: 1.1rem;
+      display: flex; align-items: center; gap: 0.3rem;
+      font-size: 0.82rem; font-weight: 600; color: #e95e0f;
+      transition: gap 0.2s;
+    }
+    .feature-card:hover .feature-arrow { gap: 0.55rem; }
+
+    /* ── Section separator ─────────────────────────────────── */
+    .section-bg {
+      background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+    }
+
+    /* ── Responsive CTA row ────────────────────────────────── */
+    @media (max-width: 480px) {
+      .hero-cta { width: 100%; justify-content: center; padding: 14px 20px; }
+      .cta-row { flex-direction: column; width: 100%; }
     }
   </style>
 </head>
-<body class="text-gray-800 min-h-screen antialiased">
+<body class="text-gray-800 min-h-screen antialiased bg-slate-50">
 
   <!-- Header -->
   {% include '_header.html' %}
 
   <!-- Hero Section -->
   <section class="hero">
-    <div class="relative max-w-6xl mx-auto px-6 py-20 md:py-28 flex flex-col items-center text-center">
-      <div class="hero-icon mb-8">
-        <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-lapp-600 to-orange-400 shadow-2xl" style="box-shadow: 0 8px 40px rgba(233,94,15,0.35);">
-          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <div class="hero-glow-1"></div>
+    <div class="hero-glow-2"></div>
+    <div class="hero-glow-3"></div>
+    <div class="hero-bottom-line"></div>
+
+    <div class="relative max-w-6xl mx-auto px-5 sm:px-6 py-16 sm:py-24 md:py-32 flex flex-col items-center text-center">
+
+      <!-- Badge -->
+      <div class="anim-1 mb-7">
+        <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide"
+              style="background:rgba(233,94,15,0.12);color:#fb923c;border:1px solid rgba(233,94,15,0.25)">
+          <span class="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
+          LAPP Hackathon 2026
+        </span>
+      </div>
+
+      <!-- Icon -->
+      <div class="hero-icon anim-2 mb-7">
+        <div class="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-2xl"
+             style="background:linear-gradient(135deg,#e95e0f,#f97316);box-shadow:0 8px 48px rgba(233,94,15,0.4),0 2px 0 rgba(255,255,255,0.15) inset;">
+          <svg class="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
           </svg>
         </div>
       </div>
-      <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
-        LAPP Leitungsquerschnitt-<br><span class="bg-gradient-to-r from-orange-400 via-lapp-600 to-orange-400 bg-clip-text text-transparent">Optimierer</span>
+
+      <!-- Title -->
+      <h2 class="anim-2 text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-[1.1]">
+        Leitungsquerschnitt-<br>
+        <span style="background:linear-gradient(90deg,#fb923c,#e95e0f,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+          Optimierer
+        </span>
       </h2>
-      <p class="mt-5 text-lg md:text-xl text-slate-400 max-w-2xl leading-relaxed">
-        <strong class="text-orange-400">LAPP Hackathon 2026</strong> · TCO- &amp; CO₂-Optimierung von Kupferleitungen
+
+      <!-- Subtitle -->
+      <p class="anim-3 mt-5 text-base sm:text-lg md:text-xl text-slate-400 max-w-xl leading-relaxed">
+        TCO- &amp; CO₂-Optimierung von Kupferleitungen –<br class="hidden sm:block">
+        weniger Kosten, weniger Emissionen, bessere Entscheidungen.
       </p>
-      <div class="mt-10 flex flex-wrap items-center justify-center gap-4">
+
+      <!-- CTA Buttons -->
+      <div class="anim-3 mt-9 flex flex-wrap sm:flex-nowrap items-center justify-center gap-3 cta-row w-full sm:w-auto">
         <a href="/optimizer" class="hero-cta hero-cta-primary">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
           Optimierer starten
         </a>
         <a href="/machine" class="hero-cta hero-cta-secondary">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+          </svg>
           Maschine visualisieren
         </a>
       </div>
+
       <!-- Stats -->
-      <div class="mt-12 sm:mt-16 grid grid-cols-3 gap-4 sm:gap-8 md:gap-16 text-center">
-        <div>
-          <div class="text-2xl md:text-3xl font-extrabold text-white">TCO</div>
-          <div class="text-xs md:text-sm text-slate-500 mt-1">Total Cost of Ownership</div>
+      <div class="anim-4 mt-14 sm:mt-16 grid grid-cols-3 gap-3 sm:gap-5 w-full max-w-lg">
+        <div class="stat-card">
+          <svg class="w-6 h-6 text-orange-400 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div class="text-xl sm:text-2xl font-black text-white">TCO</div>
+          <div class="text-xs text-slate-500 leading-tight">Total Cost<br class="sm:hidden"> of Ownership</div>
         </div>
-        <div>
-          <div class="text-2xl md:text-3xl font-extrabold text-white">CO₂</div>
-          <div class="text-xs md:text-sm text-slate-500 mt-1">Emissionsberechnung</div>
+        <div class="stat-card">
+          <svg class="w-6 h-6 text-orange-400 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h.5A2.5 2.5 0 0019 5.5V3.935M7.5 21h9"/>
+          </svg>
+          <div class="text-xl sm:text-2xl font-black text-white">CO₂</div>
+          <div class="text-xs text-slate-500 leading-tight">Emissions-<br class="sm:hidden">berechnung</div>
         </div>
-        <div>
-          <div class="text-2xl md:text-3xl font-extrabold text-white">Live</div>
-          <div class="text-xs md:text-sm text-slate-500 mt-1">LAPP Shop Daten</div>
+        <div class="stat-card">
+          <svg class="w-6 h-6 text-orange-400 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          <div class="text-xl sm:text-2xl font-black text-white">Live</div>
+          <div class="text-xs text-slate-500 leading-tight">LAPP Shop<br class="sm:hidden"> Daten</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Content flows directly on page -->
+  <!-- Feature Cards -->
+  <section class="section-bg py-12 sm:py-16">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="text-center mb-10 sm:mb-12">
+        <p class="text-xs font-semibold tracking-widest text-orange-500 uppercase mb-2">Tools</p>
+        <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Direkt loslegen</h3>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+
+        <!-- Optimierer -->
+        <a href="/optimizer" class="feature-card">
+          <div class="feature-icon">
+            <svg class="w-6 h-6 text-lapp-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <h4 class="font-bold text-slate-900 text-base mb-1">Optimierer</h4>
+          <p class="text-sm text-slate-500 leading-relaxed flex-1">TCO &amp; CO₂-Kalkulation für alle verfügbaren Leitungsquerschnitte mit Amortisationsrechnung.</p>
+          <div class="feature-arrow">
+            Starten
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </a>
+
+        <!-- Maschine -->
+        <a href="/machine" class="feature-card">
+          <div class="feature-icon">
+            <svg class="w-6 h-6 text-lapp-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+            </svg>
+          </div>
+          <h4 class="font-bold text-slate-900 text-base mb-1">Maschinenvisualisierung</h4>
+          <p class="text-sm text-slate-500 leading-relaxed flex-1">Interaktiver Schaltplan-Graph aus EPLAN-Exports mit Kabel-Detailansicht und integriertem Optimierer.</p>
+          <div class="feature-arrow">
+            Öffnen
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </a>
+
+        <!-- Shop-Suche -->
+        <a href="/search" class="feature-card">
+          <div class="feature-icon">
+            <svg class="w-6 h-6 text-lapp-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+            </svg>
+          </div>
+          <h4 class="font-bold text-slate-900 text-base mb-1">Shop-Suche</h4>
+          <p class="text-sm text-slate-500 leading-relaxed flex-1">Volltextsuche über alle LAPP-Produkte mit Live-Preisen, Varianten und Zertifizierungen.</p>
+          <div class="feature-arrow">
+            Suchen
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </a>
+
+        <!-- Einstellungen -->
+        <a href="/settings" class="feature-card">
+          <div class="feature-icon">
+            <svg class="w-6 h-6 text-lapp-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <h4 class="font-bold text-slate-900 text-base mb-1">Einstellungen</h4>
+          <p class="text-sm text-slate-500 leading-relaxed flex-1">Strompreis, Spannungsfall-Limit und CO₂-Faktoren individuell konfigurieren.</p>
+          <div class="feature-arrow">
+            Konfigurieren
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Divider -->
+  <div class="max-w-5xl mx-auto px-4 sm:px-6">
+    <div class="h-px" style="background:linear-gradient(90deg,transparent,rgba(233,94,15,0.15) 30%,rgba(233,94,15,0.15) 70%,transparent)"></div>
+  </div>
+
+  <!-- README Content -->
   <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
     <div id="readme-content">
       {{ readme_html | safe }}
     </div>
   </main>
 
-  <footer class="text-center text-sm font-medium tracking-wide py-7 mt-8 sm:mt-16 text-slate-500" style="background:linear-gradient(135deg,#0c1222,#161e2e);border-top:1px solid rgba(233,94,15,0.08)">
+  <footer class="text-center text-sm font-medium tracking-wide py-7 mt-4 sm:mt-8 text-slate-500"
+          style="background:linear-gradient(135deg,#0c1222,#161e2e);border-top:1px solid rgba(233,94,15,0.08)">
     LAPP Hackathon 2026 &middot; Leitungsquerschnitt-Optimierer
   </footer>
 
@@ -345,7 +636,15 @@
         if (h.textContent.trim() === 'Team') { teamH2 = h; break; }
       }
       if (!teamH2) return;
-      const table = teamH2.nextElementSibling;
+      
+      let container = teamH2.nextElementSibling;
+      let table = container;
+      if (container && container.classList && container.classList.contains('table-wrap')) {
+        table = container.querySelector('table');
+      } else if (container && container.tagName === 'DIV' && container.querySelector('table')) { // fallback
+        table = container.querySelector('table');
+      }
+
       if (!table || table.tagName !== 'TABLE') return;
 
       const ths = table.querySelectorAll('thead th');
@@ -359,30 +658,49 @@
         const card = document.createElement('div');
         card.className = 'team-card';
 
+        // Photo wrapped in ring div
+        const wrap = document.createElement('div');
+        wrap.className = 'team-photo-wrap';
         const img = ths[i].querySelector('img');
         if (img) {
           const cloned = img.cloneNode();
           cloned.removeAttribute('width');
           cloned.removeAttribute('height');
-          card.appendChild(cloned);
+          wrap.appendChild(cloned);
         }
+        card.appendChild(wrap);
 
+        // Name
         const name = document.createElement('h4');
         name.textContent = rows[0] ? rows[0].children[i].textContent.trim() : '';
         card.appendChild(name);
 
-        const field = document.createElement('p');
-        field.textContent = rows[1] ? rows[1].children[i].textContent.trim() : '';
-        card.appendChild(field);
+        // Study field as pill badge
+        const badgeText = rows[1] ? rows[1].children[i].textContent.trim() : '';
+        if (badgeText) {
+          const badge = document.createElement('span');
+          badge.className = 'team-card-badge';
+          badge.textContent = badgeText;
+          card.appendChild(badge);
+        }
 
-        const org = document.createElement('span');
-        org.textContent = rows[2] ? rows[2].children[i].textContent.trim() : '';
-        card.appendChild(org);
+        // Organization
+        const orgText = rows[2] ? rows[2].children[i].textContent.trim() : '';
+        if (orgText) {
+          const org = document.createElement('span');
+          org.className = 'team-card-org';
+          org.textContent = orgText;
+          card.appendChild(org);
+        }
 
         grid.appendChild(card);
       }
 
-      table.replaceWith(grid);
+      if (container !== table) {
+        container.replaceWith(grid);
+      } else {
+        table.replaceWith(grid);
+      }
     })();
   </script>
 

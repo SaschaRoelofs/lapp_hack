@@ -152,7 +152,3 @@ templates/
   settings.html         # Einstellungen
 graph_store/            # Gespeicherte Maschinengraphen (JSON)
 ```
-
----
-
-*LAPP Hackathon 2026 · Leitungsquerschnitt-Optimierer*

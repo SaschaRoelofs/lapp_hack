@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
@@ -206,6 +206,63 @@
     .cable-label-bg:hover ~ .cable-label-text,
     .cable-label-text:hover {
       fill: #c94e0a !important;
+    }
+
+    /* Cable Wizard floating button */
+    .wizard-fab {
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 55;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      border: 1px solid #fed7aa;
+      background: linear-gradient(135deg, #fff7ed 0%, #ffffff 65%);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+      color: #c2410c;
+      padding: 0.55rem 0.75rem;
+      transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .wizard-fab:hover {
+      box-shadow: 0 18px 34px rgba(15, 23, 42, 0.24);
+      border-color: #fb923c;
+      transform: translateY(-1px);
+    }
+
+    .wizard-fab-label {
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1rem;
+      margin-left: 0;
+      transition: max-width 0.22s ease, opacity 0.22s ease, margin-left 0.22s ease;
+    }
+
+    .wizard-fab:hover .wizard-fab-label,
+    .wizard-fab:focus-visible .wizard-fab-label {
+      max-width: 16rem;
+      opacity: 1;
+      margin-left: 0.45rem;
+    }
+
+    @media (min-width: 768px) {
+      .wizard-fab {
+        right: 1.5rem;
+        bottom: 1.5rem;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .wizard-fab-label {
+        max-width: 16rem;
+        opacity: 1;
+        margin-left: 0.45rem;
+      }
     }
   </style>
 </head>
@@ -430,6 +487,10 @@
               <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
             </button>
             <div class="ml-auto flex items-center gap-2">
+              <button @click="reloadOriginalGraph()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg px-3 py-1 text-sm flex items-center gap-1 transition-colors" title="Daten auf Ursprungszustand zurücksetzen" aria-label="Zurücksetzen">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                <span>Zurücksetzen</span>
+              </button>
               <label class="text-sm text-gray-600">Ansicht:</label>
               <select x-model="viewMode" @change="selectedComponent = null; selectedFgGroup = null; selectedCable = null; renderGraph()" class="border border-gray-300 rounded-lg px-2 py-1 text-sm">
                 <option value="subsystem">Funktionsgruppen</option>
@@ -476,11 +537,312 @@
         </div>
 
         <!-- Right sidebar: Component detail or FG Group detail -->
-        <aside x-show="selectedComponent || selectedFgGroup || selectedCable"
+        <aside x-show="wizardOpen || selectedComponent || selectedFgGroup || selectedCable"
           class="md:w-1/3 md:flex-shrink-0 md:min-w-72 md:overflow-y-auto">
 
+          <!-- Cable Wizard panel -->
+          <template x-if="wizardOpen">
+            <div>
+              <div class="detail-panel-overlay md:hidden" @click="closeCableWizard()"></div>
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
+                <div class="detail-panel-header px-4 py-3 flex items-start justify-between gap-3">
+                  <div>
+                    <div class="detail-label mb-1">Cable Wizard</div>
+                    <h3 class="font-semibold text-slate-800 leading-tight">Schritt-für-Schritt Optimierung</h3>
+                  </div>
+                  <button @click="closeCableWizard()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+
+                <div class="detail-panel-body text-sm">
+                  <div class="detail-block">
+                    <div class="flex items-center justify-between gap-2 text-xs text-slate-600">
+                      <span class="font-medium" x-text="'Schritt ' + wizardDisplayStep() + ' / ' + wizardDisplayTotalSteps()"></span>
+                      <span x-text="wizardStepLabel()"></span>
+                    </div>
+                    <div class="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div class="h-2 bg-lapp-600 transition-all duration-300" :style="`width: ${wizardProgressPercent()}%`"></div>
+                    </div>
+                    <div class="detail-muted mt-2" x-text="wizardCables.length + ' Kabel im Wizard'"></div>
+                  </div>
+
+                  <template x-if="wizardIsCableStep() && wizardCurrentCable">
+                    <div class="space-y-3">
+                      <div class="detail-block">
+                        <div class="detail-label">Aktuelles Kabel</div>
+                        <div class="detail-value font-semibold" x-text="wizardCurrentCable.cable_name || 'Unbenanntes Kabel'"></div>
+                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                          <span class="info-chip" x-text="wizardCurrentCable.cable_type || 'Kabel'"></span>
+                          <span class="font-mono text-slate-600" x-text="wizardCurrentCable.sap_number || 'keine SAP'"></span>
+                          <span class="info-chip info-chip--green" x-text="wizardCurrentCable.cross_section_mm2 != null ? wizardCurrentCable.cross_section_mm2 + ' mm² verbaut' : 'Querschnitt unbekannt'"></span>
+                        </div>
+                        <div class="detail-muted mt-2" x-text="wizardCurrentCable.cable_spec || 'Keine Spezifikation verfügbar'"></div>
+                        <template x-if="wizardCurrentCableShopIsChecking()">
+                          <div class="mt-2 text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5">
+                            Prüfe, ob dieses Kabel im LAPP Shop verfügbar ist …
+                          </div>
+                        </template>
+                        <template x-if="wizardCurrentCableCanOptimize()">
+                          <div class="mt-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-2 py-1.5">
+                            Im LAPP Shop gefunden. Optimierung möglich.
+                          </div>
+                        </template>
+                        <template x-if="wizardCurrentCableOnlySkippable()">
+                          <div class="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5" x-text="wizardCurrentCableShopSkipMessage()"></div>
+                        </template>
+                        <template x-if="wizardCurrentCableShouldSkip()">
+                          <div class="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5" x-text="wizardCurrentSkipReason()"></div>
+                        </template>
+                        <div x-show="wizardIsCurrentCableSkipped()" class="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5">
+                          Dieses Kabel ist als „Übersprungen“ markiert und wird nicht optimiert.
+                        </div>
+                      </div>
+
+                      <div class="detail-block" x-show="wizardCurrentCableCanOptimize()">
+                        <div class="detail-label">Pflichtangaben</div>
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                          <div>
+                            <label class="detail-label">Betriebsstrom (A) *</label>
+                            <input
+                              type="number"
+                              min="0.1"
+                              step="0.1"
+                              x-model.number="wizardInputsByCable[wizardCurrentCableKey].current_a"
+                              class="w-full border border-lapp-600 rounded-md px-2 py-1.5 text-sm bg-orange-50 focus:outline-none focus:ring-1 focus:ring-lapp-600"
+                              placeholder="z.B. 16"
+                            >
+                          </div>
+                          <div>
+                            <label class="detail-label">Spannung (V) *</label>
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              x-model.number="wizardInputsByCable[wizardCurrentCableKey].system_voltage_v"
+                              class="w-full border border-lapp-600 rounded-md px-2 py-1.5 text-sm bg-orange-50 focus:outline-none focus:ring-1 focus:ring-lapp-600"
+                              placeholder="z.B. 400"
+                            >
+                          </div>
+                          <div>
+                            <label class="detail-label">Länge (m) *</label>
+                            <input
+                              type="number"
+                              min="0.001"
+                              step="0.001"
+                              x-model.number="wizardInputsByCable[wizardCurrentCableKey].length_m"
+                              class="w-full border border-blue-300 rounded-md px-2 py-1.5 text-sm bg-blue-50 focus:outline-none focus:ring-1 focus:ring-lapp-600"
+                            >
+                          </div>
+                          <div>
+                            <label class="detail-label">Belastete Adern *</label>
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              x-model.number="wizardInputsByCable[wizardCurrentCableKey].loaded_cores"
+                              class="w-full border border-blue-300 rounded-md px-2 py-1.5 text-sm bg-blue-50 focus:outline-none focus:ring-1 focus:ring-lapp-600"
+                            >
+                          </div>
+                        </div>
+                        <div class="mt-3">
+                          <label class="detail-label">Phasen (optional)</label>
+                          <div class="flex mt-1 rounded-md overflow-hidden border border-gray-200 text-xs font-medium">
+                            <button
+                              type="button"
+                              @click="wizardInputsByCable[wizardCurrentCableKey].ac_3phase = false"
+                              :class="!wizardInputsByCable[wizardCurrentCableKey].ac_3phase ? 'bg-lapp-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'"
+                              class="flex-1 py-1.5 transition-colors"
+                            >1~</button>
+                            <button
+                              type="button"
+                              @click="wizardInputsByCable[wizardCurrentCableKey].ac_3phase = true"
+                              :class="wizardInputsByCable[wizardCurrentCableKey].ac_3phase ? 'bg-lapp-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'"
+                              class="flex-1 py-1.5 border-l border-gray-200 transition-colors"
+                            >3~</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+
+                  <template x-if="wizardIsObjectiveStep()">
+                    <div class="space-y-3">
+                      <div class="detail-block">
+                        <div class="detail-label">Optimierungsziel</div>
+                        <p class="detail-muted mb-3">Nach Erfassung aller Kabel wird das beste Ergebnis je Kabel für das gewählte Ziel ausgewählt.</p>
+                        <div class="grid grid-cols-1 gap-2">
+                          <button
+                            @click="wizardObjective = 'tco'"
+                            class="w-full text-left rounded-lg border px-3 py-2 transition-colors"
+                            :class="wizardObjective === 'tco' ? 'border-emerald-400 bg-emerald-50 text-emerald-800' : 'border-gray-200 bg-white hover:border-emerald-300'"
+                          >
+                            <div class="font-semibold text-sm">TCO optimieren</div>
+                            <div class="text-xs mt-0.5">Minimiert die Gesamtkosten über die Laufzeit.</div>
+                          </button>
+                          <button
+                            @click="wizardObjective = 'co2'"
+                            class="w-full text-left rounded-lg border px-3 py-2 transition-colors"
+                            :class="wizardObjective === 'co2' ? 'border-blue-400 bg-blue-50 text-blue-800' : 'border-gray-200 bg-white hover:border-blue-300'"
+                          >
+                            <div class="font-semibold text-sm">CO₂ optimieren</div>
+                            <div class="text-xs mt-0.5">Minimiert die gesamten CO₂-Emissionen.</div>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+
+                  <template x-if="wizardIsResultStep()">
+                    <div class="space-y-3">
+                      <div x-show="wizardRunning" class="detail-block">
+                        <div class="flex items-center gap-2 text-blue-700">
+                          <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                          <span class="font-medium">Wizard optimiert Kabel …</span>
+                        </div>
+                        <div class="detail-muted mt-2" x-text="wizardProgress.done + ' / ' + wizardProgress.total + ' verarbeitet'"></div>
+                        <div class="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div class="h-2 bg-lapp-600 transition-all duration-200" :style="`width: ${wizardProgress.total > 0 ? Math.round((wizardProgress.done / wizardProgress.total) * 100) : 0}%`"></div>
+                        </div>
+                      </div>
+
+                      <div x-show="wizardError" class="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-2 py-1.5" x-text="wizardError"></div>
+
+                      <template x-if="!wizardRunning && wizardReport.length > 0">
+                        <div class="space-y-4">
+                          
+                          <!-- Focus on Savings (Money & CO2) -->
+                          <div class="grid grid-cols-2 gap-3">
+                            <div class="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm relative overflow-hidden">
+                              <div class="absolute -right-2 -top-4 opacity-10">
+                                <svg class="w-20 h-20 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h2.26c.09 1.12 1.05 1.59 1.98 1.59 1.15 0 1.94-.65 1.94-1.52 0-1.12-1.07-1.39-2.58-1.84-1.73-.52-3.16-1.45-3.16-3.4 0-1.63 1.18-2.68 2.83-3.12V4h2.67v1.94c1.4.27 2.72 1.14 2.91 3.03h-2.29c-.1-1.05-.88-1.59-1.88-1.59-1.25 0-1.75.75-1.75 1.48 0 1.07 1.05 1.34 2.65 1.84 1.83.56 3.08 1.52 3.08 3.39 0 1.76-1.23 2.76-2.72 3.1z"/></svg>
+                              </div>
+                              <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-800 mb-1">Ersparnis (TCO)</div>
+                              <div class="text-2xl font-black text-emerald-700" x-text="(wizardSummary.delta_tco_total > 0 ? '+' : '') + optFmt(Math.abs(wizardSummary.delta_tco_total)) + ' €'"></div>
+                              <div class="text-[10px] text-emerald-600 mt-1 uppercase font-medium">Gesamtlaufzeit</div>
+                            </div>
+                            
+                            <div class="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm relative overflow-hidden">
+                              <div class="absolute -right-2 -top-2 opacity-10">
+                                <svg class="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
+                              </div>
+                              <div class="text-[10px] font-bold uppercase tracking-wider text-blue-800 mb-1">CO₂-Reduktion</div>
+                              <div class="text-2xl font-black text-blue-700" x-text="(wizardSummary.delta_co2_total > 0 ? '+' : '') + optFmt(Math.abs(wizardSummary.delta_co2_total)) + ' kg'"></div>
+                              <div class="text-[10px] text-blue-600 mt-1 uppercase font-medium">Eingespartes CO₂</div>
+                            </div>
+                          </div>
+
+                          <!-- Compact Stats -->
+                          <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+                            <div class="flex gap-2">
+                              <span class="inline-flex items-center gap-1 text-[11px] font-medium text-slate-700 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"><span x-text="wizardSummary.total"></span> <span class="text-slate-500 font-normal">Gesamt</span></span>
+                              <span class="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200"><span x-text="wizardSummary.changed"></span> <span class="text-emerald-600 font-normal">Optimiert</span></span>
+                              <span class="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded-md border border-amber-200"><span x-text="wizardSummary.skipped"></span> <span class="text-amber-600 font-normal">Überspr.</span></span>
+                            </div>
+                          </div>
+
+                          <!-- Scrollable Table -->
+                          <div class="border border-gray-200 rounded-lg overflow-hidden flex flex-col shadow-sm">
+                            <div class="overflow-y-auto overflow-x-auto max-h-[35vh]">
+                              <table class="w-full text-[11px] min-w-[700px] border-collapse">
+                                <thead class="bg-gray-50 text-gray-500 uppercase sticky top-0 z-10 shadow-sm border-b border-gray-200">
+                                  <tr>
+                                    <th class="px-2 py-2 text-left">Kabel</th>
+                                    <th class="px-2 py-2 text-left">SAP</th>
+                                    <th class="px-2 py-2 text-right">Ist mm²</th>
+                                    <th class="px-2 py-2 text-right">Neu mm²</th>
+                                    <th class="px-2 py-2 text-left">Status</th>
+                                    <th class="px-2 py-2 text-right">ΔTCO €</th>
+                                    <th class="px-2 py-2 text-right">ΔCO₂ kg</th>
+                                    <th class="px-2 py-2 text-left">Hinweis</th>
+                                  </tr>
+                                </thead>
+                              <tbody>
+                                <template x-for="row in wizardReport" :key="row.report_key">
+                                  <tr class="border-t border-gray-100">
+                                    <td class="px-2 py-1 font-medium text-slate-800" x-text="row.cable_name"></td>
+                                    <td class="px-2 py-1 font-mono text-slate-500" x-text="row.sap_number || '-'"></td>
+                                    <td class="px-2 py-1 text-right" x-text="row.original_mm2 != null ? row.original_mm2 : '-'"></td>
+                                    <td class="px-2 py-1 text-right" x-text="row.recommended_mm2 != null ? row.recommended_mm2 : '-'"></td>
+                                    <td class="px-2 py-1">
+                                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold" :class="wizardStatusClass(row.status)" x-text="wizardStatusLabel(row.status)"></span>
+                                    </td>
+                                    <td class="px-2 py-1 text-right" x-text="row.delta_tco != null ? (row.delta_tco > 0 ? '+' : '') + optFmt(row.delta_tco) : '-'"></td>
+                                    <td class="px-2 py-1 text-right" x-text="row.delta_co2 != null ? (row.delta_co2 > 0 ? '+' : '') + optFmt(row.delta_co2) : '-'"></td>
+                                    <td class="px-2 py-1 text-slate-500" x-text="row.reason || '-'"></td>
+                                  </tr>
+                                </template>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+
+                  <div class="flex flex-wrap items-center gap-2 pt-1">
+                    <button
+                      x-show="!wizardRunning"
+                      @click="closeCableWizard()"
+                      class="text-xs font-medium text-gray-600 border border-gray-300 rounded-md px-3 py-1.5 hover:bg-gray-50 transition-colors"
+                    >Abbrechen</button>
+
+                    <button
+                      x-show="wizardStepIndex > 0 && !wizardRunning && !wizardIsResultStep()"
+                      @click="wizardPrevStep()"
+                      class="text-xs font-medium text-gray-600 border border-gray-300 rounded-md px-3 py-1.5 hover:bg-gray-50 transition-colors"
+                    >Zurück</button>
+
+                    <button
+                      x-show="wizardIsCableStep() && !wizardRunning"
+                      @click="wizardSkipCurrentCableAndNext()"
+                      class="ml-auto text-xs font-semibold text-amber-700 border border-amber-300 bg-amber-50 rounded-md px-3 py-1.5 hover:bg-amber-100 transition-colors"
+                    >Überspringen</button>
+
+                    <button
+                      x-show="wizardIsCableStep() && !wizardRunning && wizardCurrentCableCanOptimize()"
+                      @click="wizardNextStep()"
+                      :disabled="!wizardCurrentStepValid()"
+                      :class="{'opacity-50 cursor-not-allowed': !wizardCurrentStepValid()}"
+                      class="text-xs font-semibold text-white bg-lapp-600 hover:bg-lapp-700 rounded-md px-3 py-1.5 transition-colors"
+                    >Weiter</button>
+
+                    <button
+                      x-show="wizardIsObjectiveStep() && !wizardRunning"
+                      @click="runCableWizardOptimization()"
+                      class="ml-auto text-xs font-semibold text-white bg-lapp-600 hover:bg-lapp-700 rounded-md px-3 py-1.5 transition-colors"
+                    >Optimierung starten</button>
+
+                    <button
+                      x-show="wizardIsResultStep() && !wizardRunning"
+                      @click="restartCableWizard()"
+                      class="text-xs font-semibold text-lapp-600 border border-lapp-600 rounded-md px-3 py-1.5 hover:bg-lapp-50 transition-colors"
+                    >Neu starten</button>
+
+                    <button
+                      x-show="wizardIsResultStep() && !wizardRunning"
+                      @click="exportWizardCSV()"
+                      tooltip="Exportiert die Ergebnistabelle als CSV-Datei."
+                      class="ml-auto text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-300 rounded-md px-3 py-1.5 hover:bg-emerald-100 transition-colors flex items-center gap-1.5"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                      CSV
+                    </button>
+
+                    <button
+                      x-show="wizardIsResultStep() && !wizardRunning"
+                      @click="applyWizardResults()"
+                      tooltip="Übernimmt die neuen Querschnitte in die Maschinen-Ansicht."
+                      class="text-xs font-semibold text-white bg-lapp-600 hover:bg-lapp-700 rounded-md px-3 py-1.5 transition-colors"
+                    >In Ansicht übernehmen</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
           <!-- Cable detail panel -->
-          <template x-if="selectedCable && !selectedComponent && !selectedFgGroup">
+          <template x-if="!wizardOpen && selectedCable && !selectedComponent && !selectedFgGroup">
             <div>
               <div class="detail-panel-overlay md:hidden" @click="selectedCable = null; selectedCableShop = null; selectedCableShopError = ''; selectedCableShopLoading = false"></div>
               <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
@@ -499,30 +861,30 @@
                     <div class="detail-label">Identität</div>
                     <div class="flex flex-wrap items-center gap-2">
                       <span class="info-chip" x-text="selectedCable.cable_type || 'Kabel'"></span>
-                      <span class="font-mono text-sm text-slate-700" x-text="selectedCable.sap_number || '–'"></span>
+                      <span class="font-mono text-sm text-slate-700" x-text="selectedCable.sap_number || '-'"></span>
                     </div>
-                    <div class="detail-muted mt-2" x-text="selectedCable.cable_spec || '–'"></div>
+                    <div class="detail-muted mt-2" x-text="selectedCable.cable_spec || '-'"></div>
                   </div>
 
                   <div class="grid grid-cols-3 gap-2 text-xs pt-4 border-t border-gray-100">
                     <div>
                       <div class="detail-label mb-1">Adern</div>
-                      <div class="detail-value font-medium" x-text="selectedCable.num_cores || '–'"></div>
+                      <div class="detail-value font-medium" x-text="selectedCable.num_cores || '-'"></div>
                       <div x-show="selectedCable.used_wires != null && selectedCable.used_wires != selectedCable.num_cores" class="detail-muted text-[10px]" x-text="selectedCable.used_wires + ' belastet'"></div>
                     </div>
                     <div>
                       <div class="detail-label mb-1">Querschnitt</div>
-                      <div class="detail-value font-medium" x-text="selectedCable.cross_section_mm2 ? selectedCable.cross_section_mm2 + ' mm²' : '–'"></div>
+                      <div class="detail-value font-medium" x-text="selectedCable.cross_section_mm2 ? selectedCable.cross_section_mm2 + ' mm²' : '-'"></div>
                     </div>
                     <div>
                       <div class="detail-label mb-1">Länge</div>
-                      <div class="detail-value font-medium" x-text="selectedCable.length_m ? selectedCable.length_m + ' m' : '–'"></div>
+                      <div class="detail-value font-medium" x-text="selectedCable.length_m ? selectedCable.length_m + ' m' : '-'"></div>
                     </div>
                   </div>
 
                   <div class="pt-4 border-t border-gray-100">
                     <div class="detail-label">Verbindung</div>
-                    <div class="detail-value font-mono" x-text="'+' + (selectedCable.from_location || '–') + ' → +' + (selectedCable.to_location || '–')"></div>
+                    <div class="detail-value font-mono" x-text="'+' + (selectedCable.from_location || '-') + ' → +' + (selectedCable.to_location || '-')"></div>
                   </div>
 
                   <div class="pt-4 border-t border-gray-100">
@@ -530,7 +892,7 @@
                     <div class="flex items-start justify-between gap-3">
                       <div class="min-w-0">
                         <div class="detail-value font-medium" x-text="selectedCableShop?.name || 'Shop-Variante wird geladen'"></div>
-                        <div class="detail-muted mt-1" x-text="selectedCableShop?.article_number || selectedCable.sap_number || '–'"></div>
+                        <div class="detail-muted mt-1" x-text="selectedCableShop?.article_number || selectedCable.sap_number || '-'"></div>
                       </div>
                       <a x-show="selectedCableShop?.url" :href="selectedCableShop?.url" target="_blank" rel="noreferrer" class="info-chip flex-shrink-0">Shop öffnen</a>
                     </div>
@@ -554,7 +916,7 @@
                           </template>
                           <div class="min-w-0 flex-1">
                             <div class="mt-1 text-lg font-bold text-slate-900 leading-tight" x-text="selectedCableShop.price_formatted || (selectedCableShop.price_on_request ? 'Preis auf Anfrage' : 'Kein Preis verfügbar')"></div>
-                            <div class="detail-muted mt-1" x-text="selectedCableShop.base_product_code ? 'Basisprodukt ' + selectedCableShop.base_product_code : '–'"></div>
+                            <div class="detail-muted mt-1" x-text="selectedCableShop.base_product_code ? 'Basisprodukt ' + selectedCableShop.base_product_code : '-'"></div>
                           </div>
                         </div>
 
@@ -660,7 +1022,7 @@
                               <div class="rounded-lg border-l-3 border-emerald-500 bg-emerald-50 p-2">
                                 <div class="text-[10px] font-semibold text-emerald-700 uppercase">TCO-Opt.</div>
                                 <div class="text-sm font-bold text-emerald-900" x-text="optResult.optimum.tco.cross_section_mm2 + ' mm²'"></div>
-                                <div class="text-xs text-emerald-700" x-text="optFmt(optResult.optimum.tco.tco_eur) + ' €'"></div>
+                                <div class="text-xs text-emerald-700" x-text="optFmt(optResult.optimum.tco.tco_eur) + ' ₂'"></div>
                               </div>
                             </template>
                             <template x-if="optResult.optimum.co2">
@@ -695,7 +1057,7 @@
                               <thead class="bg-gray-50 text-gray-500 uppercase">
                                 <tr>
                                   <th class="px-1.5 py-1 text-left">mm²</th>
-                                  <th class="px-1.5 py-1 text-right">TCO €</th>
+                                  <th class="px-1.5 py-1 text-right">TCO ₂</th>
                                   <th class="px-1.5 py-1 text-right">CO₂ kg</th>
                                   <th class="px-1.5 py-1 text-right">ΔU %</th>
                                 </tr>
@@ -712,7 +1074,7 @@
                                     <td class="px-1.5 py-1" x-text="row.cross_section_mm2"></td>
                                     <td class="px-1.5 py-1 text-right" x-text="optFmt(row.tco_eur)"></td>
                                     <td class="px-1.5 py-1 text-right" x-text="optFmt(row.co2_total_kg)"></td>
-                                    <td class="px-1.5 py-1 text-right" x-text="row.voltage_drop_percent != null ? row.voltage_drop_percent.toFixed(1) : '–'"></td>
+                                    <td class="px-1.5 py-1 text-right" x-text="row.voltage_drop_percent != null ? row.voltage_drop_percent.toFixed(1) : '-'"></td>
                                   </tr>
                                 </template>
                               </tbody>
@@ -749,7 +1111,7 @@
           </template>
 
           <!-- FG Group detail panel -->
-          <template x-if="selectedFgGroup && !selectedComponent">
+          <template x-if="!wizardOpen && selectedFgGroup && !selectedComponent">
             <div>
               <div class="detail-panel-overlay md:hidden" @click="selectedFgGroup = null"></div>
               <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
@@ -802,7 +1164,7 @@
           </template>
 
           <!-- Single component detail panel -->
-          <div x-show="selectedComponent">
+          <div x-show="!wizardOpen && selectedComponent">
             <div class="detail-panel-overlay md:hidden" @click="selectedComponent = null"></div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
               <div class="detail-panel-header px-4 py-3 flex items-start justify-between gap-3">
@@ -828,33 +1190,33 @@
               <div class="detail-grid">
                 <div class="detail-grid-item">
                   <div class="detail-label">Beschreibung</div>
-                  <div class="detail-value font-medium" x-text="selectedComponent?.description_de || '–'"></div>
+                  <div class="detail-value font-medium" x-text="selectedComponent?.description_de || '-'"></div>
                   <div class="detail-muted" x-text="selectedComponent?.description_en" x-show="selectedComponent.description_en"></div>
                 </div>
                 <div class="detail-grid-item grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <div class="detail-label mb-1">Funktionsgruppe</div>
-                    <div class="detail-value font-mono" x-text="selectedComponent?.function_group ? '=' + selectedComponent.function_group : '–'"></div>
+                    <div class="detail-value font-mono" x-text="selectedComponent?.function_group ? '=' + selectedComponent.function_group : '-'"></div>
                   </div>
                   <div>
                     <div class="detail-label mb-1">Einbauort</div>
-                    <div class="detail-value font-medium" x-text="selectedComponent?.location ? (selectedComponent.location === '+SS1' ? 'Schaltschrank' : selectedComponent.location === '+MR1' ? 'Maschinenraum' : selectedComponent.location) : '–'"></div>
+                    <div class="detail-value font-medium" x-text="selectedComponent?.location ? (selectedComponent.location === '+SS1' ? 'Schaltschrank' : selectedComponent.location === '+MR1' ? 'Maschinenraum' : selectedComponent.location) : '-'"></div>
                   </div>
                   <div>
                     <div class="detail-label mb-1">Hersteller</div>
-                    <div class="detail-value" x-text="selectedComponent.manufacturer || '–'"></div>
+                    <div class="detail-value" x-text="selectedComponent.manufacturer || '-'"></div>
                   </div>
                   <div>
                     <div class="detail-label mb-1">Subsystem</div>
-                    <div class="detail-value" x-text="selectedComponent.subsystem || '–'"></div>
+                    <div class="detail-value" x-text="selectedComponent.subsystem || '-'"></div>
                   </div>
                   <div>
                     <div class="detail-label mb-1">Bestellnr.</div>
-                    <div class="detail-value font-mono" x-text="selectedComponent.order_number || '–'"></div>
+                    <div class="detail-value font-mono" x-text="selectedComponent.order_number || '-'"></div>
                   </div>
                   <div>
                     <div class="detail-label mb-1">SAP</div>
-                    <div class="detail-value font-mono" x-text="selectedComponent.sap_number || '–'"></div>
+                    <div class="detail-value font-mono" x-text="selectedComponent.sap_number || '-'"></div>
                   </div>
                 </div>
                 <template x-if="selectedComponent?.technical_specs">
@@ -892,6 +1254,20 @@
         </aside>
       </div>
     </template>
+
+    <button
+      x-show="graphData && !wizardOpen"
+      x-cloak
+      @click="startCableWizard()"
+      class="wizard-fab"
+      type="button"
+      aria-label="Cable Wizard starten"
+    >
+      <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L6 12l7.5 7.5M19.5 4.5L12 12l7.5 7.5"/>
+      </svg>
+      <span class="wizard-fab-label">Cable Wizard starten</span>
+    </button>
   </main>
 
   <script type="application/json" id="default-params">{{ default_params | tojson }}</script>
@@ -948,6 +1324,30 @@
         optMachineDaysPerYear: null,
 
         mobileSidebarOpen: false,
+
+        // Cable Wizard state
+        wizardOpen: false,
+        wizardStepIndex: 0,
+        wizardCables: [],
+        wizardInputsByCable: {},
+        wizardSkipByCable: {},
+        wizardShopByCable: {},
+        wizardShopCheckPromises: {},
+        wizardShopPreloadRunning: false,
+        wizardObjective: 'tco',
+        wizardRunning: false,
+        wizardProgress: { done: 0, total: 0 },
+        wizardReport: [],
+        wizardSummary: {
+          total: 0,
+          skipped: 0,
+          changed: 0,
+          unchanged: 0,
+          not_optimizable: 0,
+          delta_tco_total: 0,
+          delta_co2_total: 0,
+        },
+        wizardError: '',
 
         // Type color mapping
         TYPE_COLORS: {
@@ -1010,7 +1410,25 @@
           this.$watch('machineDaysPerYear', (v) => { this._saveMachineOps(); if (this.selectedCable) { this.optParams.days_per_year = v; this.optMachineDaysPerYear = v; } });
           this.$watch('selectedCable', (cable) => {
             if (cable) this.$nextTick(() => this.highlightCable(cable));
-            else this.clearGraphHighlight();
+            else if (!this.wizardOpen) this.clearGraphHighlight();
+          });
+          this.$watch('wizardOpen', (isOpen) => {
+            if (isOpen && this.wizardIsCableStep()) {
+              const c = this.wizardCurrentCable;
+              if (c) this.$nextTick(() => this.highlightCable(c));
+            } else if (!isOpen && !this.selectedCable) {
+              this.clearGraphHighlight();
+            }
+          });
+          this.$watch('wizardStepIndex', () => {
+            if (this.wizardOpen) {
+              if (this.wizardIsCableStep()) {
+                const c = this.wizardCurrentCable;
+                if (c) this.$nextTick(() => this.highlightCable(c));
+              } else {
+                this.clearGraphHighlight();
+              }
+            }
           });
 
           const token = new URLSearchParams(window.location.search).get('token');
@@ -1033,6 +1451,799 @@
 
         typeLabel(type) {
           return this.TYPE_LABELS[type] || type || 'Unbekannt';
+        },
+
+        _emptyWizardSummary() {
+          return {
+            total: 0,
+            skipped: 0,
+            changed: 0,
+            unchanged: 0,
+            not_optimizable: 0,
+            delta_tco_total: 0,
+            delta_co2_total: 0,
+          };
+        },
+
+        _wizardResetState() {
+          this.wizardOpen = false;
+          this.wizardStepIndex = 0;
+          this.wizardCables = [];
+          this.wizardInputsByCable = {};
+          this.wizardSkipByCable = {};
+          this.wizardShopByCable = {};
+          this.wizardShopCheckPromises = {};
+          this.wizardObjective = 'tco';
+          this.wizardRunning = false;
+          this.wizardProgress = { done: 0, total: 0 };
+          this.wizardReport = [];
+          this.wizardSummary = this._emptyWizardSummary();
+          this.wizardError = '';
+        },
+
+        wizardShouldRecommendSkip(cable) {
+          const txt = [cable?.cable_type, cable?.cable_name, cable?.cable_spec]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+          if (!txt) return false;
+
+          const keywordMatches = [
+            'patchkabel',
+            'patch cable',
+            'datenkabel',
+            'data cable',
+            'datenleitung',
+            'ethernet',
+            'profinet',
+            'fieldbus',
+            'bus cable',
+          ].some(k => txt.includes(k));
+
+          const catMatch = /\bcat[\s-]?[5-8]\b/.test(txt);
+          return keywordMatches || catMatch;
+        },
+
+        wizardCurrentCableShouldSkip() {
+          return this.wizardShouldRecommendSkip(this.wizardCurrentCable);
+        },
+
+        wizardCurrentSkipReason() {
+          if (!this.wizardCurrentCableShouldSkip()) return '';
+          return 'Empfehlung: Dieses Kabel wirkt wie ein Patch- oder Datenkabel. Bitte auf Überspringen klicken.';
+        },
+
+        wizardIsCurrentCableSkipped() {
+          const key = this.wizardCurrentCableKey;
+          if (!key) return false;
+          return !!this.wizardSkipByCable[key];
+        },
+
+        _wizardShopStateForCable(cable) {
+          const key = cable?._wizard_key;
+          if (!key) return { status: 'unknown', reason: '' };
+          return this.wizardShopByCable[key] || { status: 'unknown', reason: '' };
+        },
+
+        wizardCurrentCableShopState() {
+          return this._wizardShopStateForCable(this.wizardCurrentCable);
+        },
+
+        wizardCurrentCableShopIsChecking() {
+          const status = this.wizardCurrentCableShopState().status;
+          return this.wizardShopPreloadRunning || status === 'unknown' || status === 'checking';
+        },
+
+        wizardCurrentCableCanOptimize() {
+          return this.wizardCurrentCableShopState().status === 'found';
+        },
+
+        wizardCurrentCableOnlySkippable() {
+          const status = this.wizardCurrentCableShopState().status;
+          return status === 'missing' || status === 'no_article' || status === 'error';
+        },
+
+        wizardCurrentCableShopSkipMessage() {
+          const state = this.wizardCurrentCableShopState();
+          if (state.status === 'no_article') {
+            return 'Dieses Kabel hat keine SAP-/Artikelnummer und kann im LAPP Shop nicht geprüft werden. Bitte überspringen.';
+          }
+          if (state.status === 'missing') {
+            return 'Dieses Kabel wurde im LAPP Shop nicht gefunden und kann hier nur übersprungen werden.';
+          }
+          if (state.status === 'error') {
+            return state.reason || 'Die Shop-Prüfung ist fehlgeschlagen. Bitte dieses Kabel überspringen.';
+          }
+          return '';
+        },
+
+        async wizardEnsureShopInfoForCable(cable) {
+          const key = cable?._wizard_key;
+          if (!key) return { status: 'unknown', reason: '' };
+
+          const existing = this._wizardShopStateForCable(cable);
+          if (existing.status !== 'unknown' && existing.status !== 'checking') {
+            return existing;
+          }
+
+          if (this.wizardShopCheckPromises[key]) {
+            return await this.wizardShopCheckPromises[key];
+          }
+
+          const articleNumber = this._wizardNormalizeArticleNumber(cable?.sap_number || cable?.article_part_nr || '');
+          if (!articleNumber) {
+            const noArticle = {
+              status: 'no_article',
+              reason: 'Keine SAP-/Artikelnummer vorhanden.',
+            };
+            this.wizardShopByCable[key] = noArticle;
+            return noArticle;
+          }
+
+          this.wizardShopByCable[key] = { status: 'checking', reason: '' };
+
+          const checkPromise = (async () => {
+            const maxRetries = 3;
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+              try {
+                const resp = await fetch(`/api/shop/variant/${encodeURIComponent(articleNumber)}`);
+                if (resp.status === 404) {
+                  const notFound = {
+                    status: 'missing',
+                    reason: 'Nicht im LAPP Shop gefunden.',
+                  };
+                  this.wizardShopByCable[key] = notFound;
+                  return notFound;
+                }
+
+                if (!resp.ok) {
+                  // Retry on transient server errors (502, 503, 429)
+                  if (attempt < maxRetries && (resp.status >= 500 || resp.status === 429)) {
+                    await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+                    continue;
+                  }
+                  const failed = {
+                    status: 'error',
+                    reason: `Shop-Prüfung fehlgeschlagen (${resp.status}).`,
+                  };
+                  this.wizardShopByCable[key] = failed;
+                  return failed;
+                }
+
+                const variant = await resp.json();
+                const baseProductCode = variant?.base_product_code || '';
+                if (!baseProductCode) {
+                  const notFound = {
+                    status: 'missing',
+                    reason: 'Kein Shop-Produkt gefunden.',
+                  };
+                  this.wizardShopByCable[key] = notFound;
+                  return notFound;
+                }
+
+                const found = {
+                  status: 'found',
+                  reason: '',
+                  base_product_code: baseProductCode,
+                };
+                this.wizardShopByCable[key] = found;
+                return found;
+              } catch (_e) {
+                if (attempt < maxRetries) {
+                  await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+                  continue;
+                }
+                const failed = {
+                  status: 'error',
+                  reason: 'Shop-Prüfung fehlgeschlagen.',
+                };
+                this.wizardShopByCable[key] = failed;
+                return failed;
+              }
+            }
+          })().finally(() => { delete this.wizardShopCheckPromises[key]; });
+
+          this.wizardShopCheckPromises[key] = checkPromise;
+          return await checkPromise;
+        },
+
+        wizardEnsureCurrentCableShopCheck() {
+          if (!this.wizardIsCableStep()) return;
+          const cable = this.wizardCurrentCable;
+          if (!cable) return;
+          this.wizardEnsureShopInfoForCable(cable);
+        },
+
+        async wizardPrimeShopChecks() {
+          this.wizardShopByCable = {};
+          this.wizardShopCheckPromises = {};
+          for (const cable of this.wizardCables) {
+            this.wizardShopByCable[cable._wizard_key] = { status: 'checking', reason: '' };
+          }
+
+          if (this.wizardCables.length === 0) return;
+
+          const items = this.wizardCables.map(cable => ({
+            wizard_key: cable._wizard_key,
+            article_code: cable?.sap_number || cable?.article_part_nr || '',
+          }));
+
+          try {
+            const resp = await fetch('/api/shop/variants/resolve', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ items }),
+            });
+
+            if (!resp.ok) {
+              throw new Error(`Shop preload fehlgeschlagen (${resp.status}).`);
+            }
+
+            const data = await resp.json();
+            const results = Array.isArray(data?.results) ? data.results : [];
+            const byKey = new Map(results.map(r => [r.wizard_key, r]));
+
+            for (const cable of this.wizardCables) {
+              const key = cable._wizard_key;
+              const row = byKey.get(key);
+              if (!row) {
+                this.wizardShopByCable[key] = {
+                  status: 'error',
+                  reason: 'Kein Ergebnis vom Shop-Resolver erhalten.',
+                };
+                continue;
+              }
+              this.wizardShopByCable[key] = {
+                status: row.status || 'error',
+                reason: row.reason || '',
+                base_product_code: row.base_product_code || '',
+                article_number: row.article_number || '',
+              };
+            }
+            return;
+          } catch (_err) {
+            // Fallback: resolve cables sequentially to avoid rate limiting.
+            for (const cable of this.wizardCables) {
+              await this.wizardEnsureShopInfoForCable(cable);
+            }
+          }
+        },
+
+        _wizardNormalizeArticleNumber(raw) {
+          return String(raw || '').replace(/^lapp\.?\s*/i, '').trim();
+        },
+
+        _wizardDefaultInputForCable(cable) {
+          const loadedRaw = cable?.used_wires ?? cable?.num_cores;
+          const loadedParsed = parseInt(loadedRaw, 10);
+          const lengthParsed = Number(cable?.length_m);
+
+          return {
+            current_a: null,
+            system_voltage_v: null,
+            length_m: Number.isFinite(lengthParsed) && lengthParsed > 0 ? lengthParsed : null,
+            loaded_cores: Number.isFinite(loadedParsed) && loadedParsed >= 1 ? loadedParsed : 1,
+            ac_3phase: false,
+          };
+        },
+
+        _wizardCableList() {
+          if (!this.graphData?.connections) return [];
+          const dedup = new Map();
+
+          for (const c of this.graphData.connections) {
+            if (c.connection_type !== 'cable') continue;
+            const cableName = (c.cable_name || '').trim();
+            const key = cableName || [c.from_location || '', c.to_location || '', c.sap_number || '', c.cable_spec || ''].join('|');
+            if (!dedup.has(key)) {
+              dedup.set(key, {
+                ...c,
+                _wizard_key: key,
+                cable_name: cableName || key,
+              });
+            }
+          }
+
+          return Array.from(dedup.values()).sort((a, b) => {
+            const aName = String(a.cable_name || '');
+            const bName = String(b.cable_name || '');
+            return aName.localeCompare(bName, 'de');
+          });
+        },
+
+        _wizardGlobalParams() {
+          const settings = JSON.parse(localStorage.getItem('lapp_settings') || '{}');
+          return {
+            years: Number(this.machineYears) || DEFAULT_PARAMS.years,
+            days_per_year: Number(this.machineDaysPerYear) || DEFAULT_PARAMS.days_per_year,
+            hours_per_day: Number(this.machineHoursPerDay) || DEFAULT_PARAMS.hours_per_day,
+            energy_price_eur_per_kwh: settings.energy_price_eur_per_kwh !== undefined ? Number(settings.energy_price_eur_per_kwh) : DEFAULT_PARAMS.energy_price_eur_per_kwh,
+            electricity_emission_factor_kg_per_kwh: settings.electricity_emission_factor_kg_per_kwh !== undefined ? Number(settings.electricity_emission_factor_kg_per_kwh) : DEFAULT_PARAMS.electricity_emission_factor_kg_per_kwh,
+            copper_emission_factor_kg_per_kg: settings.copper_emission_factor_kg_per_kg !== undefined ? Number(settings.copper_emission_factor_kg_per_kg) : DEFAULT_PARAMS.copper_emission_factor_kg_per_kg,
+            max_voltage_drop_percent: settings.max_voltage_drop_percent !== undefined ? Number(settings.max_voltage_drop_percent) : DEFAULT_PARAMS.max_voltage_drop_percent,
+          };
+        },
+
+        get wizardCurrentCable() {
+          return this.wizardIsCableStep() ? this.wizardCables[this.wizardStepIndex] : null;
+        },
+
+        get wizardCurrentCableKey() {
+          return this.wizardCurrentCable?._wizard_key || '';
+        },
+
+        wizardDisplayTotalSteps() {
+          return this.wizardCables.length + 2;
+        },
+
+        wizardDisplayStep() {
+          return Math.min(this.wizardStepIndex + 1, this.wizardDisplayTotalSteps());
+        },
+
+        wizardStepLabel() {
+          if (this.wizardIsCableStep()) {
+            return 'Kabel ' + (this.wizardStepIndex + 1);
+          }
+          if (this.wizardIsObjectiveStep()) {
+            return 'Zielauswahl';
+          }
+          return 'Ergebnis';
+        },
+
+        wizardProgressPercent() {
+          const total = this.wizardDisplayTotalSteps();
+          if (total <= 0) return 0;
+          return Math.max(0, Math.min(100, Math.round((this.wizardDisplayStep() / total) * 100)));
+        },
+
+        wizardIsCableStep() {
+          return this.wizardStepIndex < this.wizardCables.length;
+        },
+
+        wizardIsObjectiveStep() {
+          return this.wizardStepIndex === this.wizardCables.length;
+        },
+
+        wizardIsResultStep() {
+          return this.wizardStepIndex === this.wizardCables.length + 1;
+        },
+
+        wizardCurrentStepValid() {
+          if (!this.wizardIsCableStep()) return true;
+          if (this.wizardIsCurrentCableSkipped()) return true;
+          if (!this.wizardCurrentCableCanOptimize()) return false;
+          const key = this.wizardCurrentCableKey;
+          const input = this.wizardInputsByCable[key];
+          if (!input) return false;
+
+          const current = Number(input.current_a);
+          const voltage = Number(input.system_voltage_v);
+          const length = Number(input.length_m);
+          const cores = parseInt(input.loaded_cores, 10);
+          return Number.isFinite(current) && current > 0
+            && Number.isFinite(voltage) && voltage > 0
+            && Number.isFinite(length) && length > 0
+            && Number.isFinite(cores) && cores >= 1;
+        },
+
+        async startCableWizard() {
+          if (!this.graphData) return;
+
+          this.selectedComponent = null;
+          this.selectedFgGroup = null;
+          this.selectedCable = null;
+          this.selectedCableShop = null;
+          this.selectedCableShopError = '';
+          this.selectedCableShopLoading = false;
+
+          this._wizardResetState();
+          this.wizardCables = this._wizardCableList();
+          this.wizardInputsByCable = {};
+          this.wizardSkipByCable = {};
+          this.wizardCables.forEach(cable => {
+            this.wizardInputsByCable[cable._wizard_key] = this._wizardDefaultInputForCable(cable);
+            this.wizardSkipByCable[cable._wizard_key] = false;
+          });
+          this.wizardStepIndex = this.wizardCables.length > 0 ? 0 : this.wizardCables.length;
+          this.wizardOpen = true;
+          this.wizardShopPreloadRunning = true;
+          await this.wizardPrimeShopChecks();
+          this.wizardShopPreloadRunning = false;
+          this.wizardEnsureCurrentCableShopCheck();
+        },
+
+        closeCableWizard() {
+          this._wizardResetState();
+        },
+
+        restartCableWizard() {
+          this.wizardRunning = false;
+          this.wizardError = '';
+          this.wizardReport = [];
+          this.wizardSummary = this._emptyWizardSummary();
+          this.wizardProgress = { done: 0, total: 0 };
+          this.wizardCables.forEach(cable => {
+            this.wizardSkipByCable[cable._wizard_key] = false;
+          });
+          this.wizardStepIndex = this.wizardCables.length > 0 ? 0 : this.wizardCables.length;
+          this.wizardEnsureCurrentCableShopCheck();
+        },
+
+        wizardPrevStep() {
+          if (this.wizardRunning) return;
+          this.wizardStepIndex = Math.max(0, this.wizardStepIndex - 1);
+          this.wizardEnsureCurrentCableShopCheck();
+        },
+
+        wizardSetCurrentCableSkip(skip) {
+          const key = this.wizardCurrentCableKey;
+          if (!key) return;
+          this.wizardSkipByCable[key] = !!skip;
+        },
+
+        wizardSkipCurrentCableAndNext() {
+          if (this.wizardRunning || !this.wizardIsCableStep()) return;
+          this.wizardSetCurrentCableSkip(true);
+          this.wizardStepIndex = Math.min(this.wizardStepIndex + 1, this.wizardCables.length);
+          this.wizardEnsureCurrentCableShopCheck();
+        },
+
+        wizardNextStep() {
+          if (this.wizardRunning || !this.wizardIsCableStep() || !this.wizardCurrentStepValid()) return;
+          // "Weiter" means this cable should be processed, not skipped.
+          this.wizardSetCurrentCableSkip(false);
+          this.wizardStepIndex = Math.min(this.wizardStepIndex + 1, this.wizardCables.length);
+          this.wizardEnsureCurrentCableShopCheck();
+        },
+
+        wizardStatusLabel(status) {
+          const map = {
+            skipped: 'Übersprungen',
+            changed: 'Geändert',
+            unchanged: 'Unverändert',
+            no_baseline: 'Kein Ist-Wert',
+            no_admissible: 'Keine zulässige Option',
+            no_options: 'Keine Optionen',
+            error: 'Fehler',
+          };
+          return map[status] || status || 'Unbekannt';
+        },
+
+        wizardStatusClass(status) {
+          const map = {
+            skipped: 'bg-amber-100 text-amber-800 border border-amber-200',
+            changed: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+            unchanged: 'bg-blue-100 text-blue-800 border border-blue-200',
+            no_baseline: 'bg-amber-100 text-amber-800 border border-amber-200',
+            no_admissible: 'bg-rose-100 text-rose-800 border border-rose-200',
+            no_options: 'bg-rose-100 text-rose-800 border border-rose-200',
+            error: 'bg-red-100 text-red-800 border border-red-200',
+          };
+          return map[status] || 'bg-slate-100 text-slate-700 border border-slate-200';
+        },
+
+        _wizardFindBaselineRow(rows, originalMm2) {
+          const installed = Number(originalMm2);
+          if (!Number.isFinite(installed)) return null;
+          return rows.find(r => Math.abs(Number(r.cross_section_mm2) - installed) < 1e-9) || null;
+        },
+
+        _wizardFilterOptions(options, params) {
+          return options.filter(o => {
+            const cores = parseInt(o.num_cores, 10);
+            if (!isNaN(cores) && cores < params.loaded_cores) return false;
+            if (o.ampacity_a != null && params.current_a > 0 && Number(o.ampacity_a) < params.current_a) return false;
+            return true;
+          });
+        },
+
+        async _wizardFetchVariant(articleNumber, variantCache) {
+          const normalized = this._wizardNormalizeArticleNumber(articleNumber);
+          if (!normalized) return null;
+          if (variantCache.has(normalized)) return variantCache.get(normalized);
+
+          try {
+            const resp = await fetch(`/api/shop/variant/${encodeURIComponent(normalized)}`);
+            if (!resp.ok) {
+              variantCache.set(normalized, null);
+              return null;
+            }
+            const data = await resp.json();
+            variantCache.set(normalized, data);
+            return data;
+          } catch (_err) {
+            variantCache.set(normalized, null);
+            return null;
+          }
+        },
+
+        async _wizardFetchOptions(baseProductCode, optionsCache) {
+          if (!baseProductCode) return [];
+          if (optionsCache.has(baseProductCode)) return optionsCache.get(baseProductCode);
+
+          try {
+            const resp = await fetch('/api/shop/product/' + encodeURIComponent(baseProductCode) + '/cable-options');
+            if (!resp.ok) {
+              optionsCache.set(baseProductCode, []);
+              return [];
+            }
+            const opts = await resp.json();
+            const safeOpts = Array.isArray(opts) ? opts : [];
+            optionsCache.set(baseProductCode, safeOpts);
+            return safeOpts;
+          } catch (_err) {
+            optionsCache.set(baseProductCode, []);
+            return [];
+          }
+        },
+
+        async _wizardResolveOptionsForCable(cable, variantCache, optionsCache) {
+          const shopState = this._wizardShopStateForCable(cable);
+          let baseProductCode = shopState.base_product_code || '';
+          if (!baseProductCode) {
+            const variant = await this._wizardFetchVariant(cable?.sap_number || cable?.article_part_nr || '', variantCache);
+            baseProductCode = variant?.base_product_code || '';
+          }
+          if (!baseProductCode) {
+            return { options: [], usedFallback: false };
+          }
+
+          const shopOptions = await this._wizardFetchOptions(baseProductCode, optionsCache);
+          if (!shopOptions || shopOptions.length === 0) {
+            return { options: [], usedFallback: false };
+          }
+          return { options: shopOptions, usedFallback: false };
+        },
+
+        _wizardBuildParams(input) {
+          const global = this._wizardGlobalParams();
+          return {
+            length_m: Number(input.length_m),
+            current_a: Number(input.current_a),
+            loaded_cores: parseInt(input.loaded_cores, 10),
+            years: global.years,
+            days_per_year: global.days_per_year,
+            hours_per_day: global.hours_per_day,
+            energy_price_eur_per_kwh: global.energy_price_eur_per_kwh,
+            electricity_emission_factor_kg_per_kwh: global.electricity_emission_factor_kg_per_kwh,
+            copper_emission_factor_kg_per_kg: global.copper_emission_factor_kg_per_kg,
+            max_voltage_drop_percent: global.max_voltage_drop_percent,
+            system_voltage_v: Number(input.system_voltage_v),
+            ac_3phase: !!input.ac_3phase,
+          };
+        },
+
+        _wizardBuildSkippedReportRow(cable, shopInfo = null) {
+          const recommended = this.wizardShouldRecommendSkip(cable);
+          const resolvedShopInfo = shopInfo || this._wizardShopStateForCable(cable);
+          let reason = 'Vom Nutzer übersprungen.';
+
+          if (resolvedShopInfo.status === 'no_article') {
+            reason = 'Vom Nutzer übersprungen (keine SAP-/Artikelnummer vorhanden).';
+          } else if (resolvedShopInfo.status === 'missing') {
+            reason = 'Vom Nutzer übersprungen (nicht im LAPP Shop gefunden).';
+          } else if (resolvedShopInfo.status === 'error') {
+            reason = 'Vom Nutzer übersprungen (Shop-Prüfung fehlgeschlagen).';
+          } else if (recommended) {
+            reason = 'Vom Nutzer übersprungen (empfohlen für Patch-/Datenkabel).';
+          }
+
+          return {
+            report_key: cable._wizard_key || cable.cable_name || [cable.from_location || '', cable.to_location || '', cable.sap_number || ''].join('|'),
+            cable_name: cable.cable_name || 'Unbenanntes Kabel',
+            sap_number: cable.sap_number || '',
+            original_mm2: cable.cross_section_mm2 ?? null,
+            recommended_mm2: null,
+            status: 'skipped',
+            reason,
+            tco_before: null,
+            tco_after: null,
+            delta_tco: null,
+            co2_before: null,
+            co2_after: null,
+            delta_co2: null,
+          };
+        },
+
+        async _wizardOptimizeCable(cable, variantCache, optionsCache) {
+          const input = this.wizardInputsByCable[cable._wizard_key] || this._wizardDefaultInputForCable(cable);
+          const params = this._wizardBuildParams(input);
+          const objectiveKey = this.wizardObjective === 'co2' ? 'co2' : 'tco';
+          const baseRow = {
+            report_key: cable._wizard_key || cable.cable_name || [cable.from_location || '', cable.to_location || '', cable.sap_number || ''].join('|'),
+            cable_name: cable.cable_name || 'Unbenanntes Kabel',
+            sap_number: cable.sap_number || '',
+            original_mm2: cable.cross_section_mm2 ?? null,
+            recommended_mm2: null,
+            status: 'error',
+            reason: '',
+            tco_before: null,
+            tco_after: null,
+            delta_tco: null,
+            co2_before: null,
+            co2_after: null,
+            delta_co2: null,
+          };
+
+          const resolved = await this._wizardResolveOptionsForCable(cable, variantCache, optionsCache);
+          const filteredOptions = this._wizardFilterOptions(resolved.options || [], params);
+          if (filteredOptions.length === 0) {
+            return {
+              ...baseRow,
+              status: 'no_options',
+              reason: 'Keine passenden Kabelvarianten für die Eingaben.',
+            };
+          }
+
+          try {
+            const resp = await fetch('/api/calculate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ params, options: filteredOptions }),
+            });
+            if (!resp.ok) {
+              const errText = await resp.text();
+              throw new Error(errText || 'Berechnung fehlgeschlagen.');
+            }
+
+            const result = await resp.json();
+            const rows = result?.rows || [];
+            const recommended = result?.optimum?.[objectiveKey] || null;
+            if (!recommended) {
+              return {
+                ...baseRow,
+                status: 'no_admissible',
+                reason: 'Keine zulässige Variante gefunden.',
+              };
+            }
+
+            const baseline = this._wizardFindBaselineRow(rows, cable.cross_section_mm2);
+            if (!baseline) {
+              return {
+                ...baseRow,
+                recommended_mm2: recommended.cross_section_mm2 ?? null,
+                status: 'no_baseline',
+                reason: 'Kein Referenzwert für den verbauten Querschnitt.',
+                tco_after: recommended.tco_eur ?? null,
+                co2_after: recommended.co2_total_kg ?? null,
+              };
+            }
+
+            const changed = Number(recommended.cross_section_mm2) !== Number(baseline.cross_section_mm2);
+            return {
+              ...baseRow,
+              original_mm2: baseline.cross_section_mm2 ?? baseRow.original_mm2,
+              recommended_mm2: recommended.cross_section_mm2 ?? null,
+              status: changed ? 'changed' : 'unchanged',
+              reason: changed ? 'Optimierungspotenzial erkannt.' : 'Verbaute Variante bereits optimal.',
+              tco_before: baseline.tco_eur ?? null,
+              tco_after: recommended.tco_eur ?? null,
+              delta_tco: (baseline.tco_eur != null && recommended.tco_eur != null) ? (recommended.tco_eur - baseline.tco_eur) : null,
+              co2_before: baseline.co2_total_kg ?? null,
+              co2_after: recommended.co2_total_kg ?? null,
+              delta_co2: (baseline.co2_total_kg != null && recommended.co2_total_kg != null) ? (recommended.co2_total_kg - baseline.co2_total_kg) : null,
+            };
+          } catch (e) {
+            return {
+              ...baseRow,
+              status: 'error',
+              reason: 'Fehler bei der Berechnung: ' + (e.message || 'Unbekannter Fehler'),
+            };
+          }
+        },
+
+        async runCableWizardOptimization() {
+          if (this.wizardRunning) return;
+
+          this.wizardStepIndex = this.wizardCables.length + 1;
+          this.wizardRunning = true;
+          this.wizardError = '';
+          this.wizardReport = [];
+          this.wizardSummary = this._emptyWizardSummary();
+          this.wizardProgress = { done: 0, total: this.wizardCables.length };
+
+          if (this.wizardCables.length === 0) {
+            this.wizardRunning = false;
+            this.wizardError = 'Keine Kabelverbindungen gefunden.';
+            return;
+          }
+
+          const variantCache = new Map();
+          const optionsCache = new Map();
+          const report = [];
+
+          for (const cable of this.wizardCables) {
+            const shopInfo = await this.wizardEnsureShopInfoForCable(cable);
+            if (this.wizardSkipByCable[cable._wizard_key]) {
+              report.push(this._wizardBuildSkippedReportRow(cable, shopInfo));
+              this.wizardProgress.done += 1;
+              continue;
+            }
+            if (shopInfo.status !== 'found') {
+              report.push(this._wizardBuildSkippedReportRow(cable, shopInfo));
+              this.wizardProgress.done += 1;
+              continue;
+            }
+            const row = await this._wizardOptimizeCable(cable, variantCache, optionsCache);
+            report.push(row);
+            this.wizardProgress.done += 1;
+          }
+
+          const summary = report.reduce((acc, row) => {
+            acc.total += 1;
+            if (row.status === 'skipped') {
+              acc.skipped += 1;
+            } else if (row.status === 'changed') {
+              acc.changed += 1;
+            } else if (row.status === 'unchanged') {
+              acc.unchanged += 1;
+            } else {
+              acc.not_optimizable += 1;
+            }
+            if (row.delta_tco != null) acc.delta_tco_total += row.delta_tco;
+            if (row.delta_co2 != null) acc.delta_co2_total += row.delta_co2;
+            return acc;
+          }, this._emptyWizardSummary());
+
+          this.wizardReport = report;
+          this.wizardSummary = summary;
+          this.wizardRunning = false;
+        },
+
+        applyWizardResults() {
+          if (!this.graphData || !this.wizardReport) return;
+          
+          let changedCount = 0;
+          const reportMap = new Map();
+          this.wizardReport.forEach(r => {
+            if (r.status === 'changed' && r.recommended_mm2 != null) {
+              reportMap.set(r.cable_name, r);
+            }
+          });
+          
+          this.graphData.connections.forEach(c => {
+            if (c.connection_type === 'cable' && reportMap.has(c.cable_name)) {
+              c.cross_section_mm2 = reportMap.get(c.cable_name).recommended_mm2;
+              changedCount++;
+            }
+          });
+          
+          if (changedCount > 0) {
+            this.clearGraphHighlight();
+            if (typeof this.renderGraph === 'function') {
+              this.renderGraph();
+            }
+            alert(`${changedCount} Kabelverbindungen wurden in der Maschine aktualisiert.`);
+          }
+          this.closeCableWizard();
+        },
+
+        exportWizardCSV() {
+          if (!this.wizardReport || this.wizardReport.length === 0) return;
+          const header = ['Kabel', 'SAP', 'Ist mm2', 'Neu mm2', 'Status', 'Delta TCO EUR', 'Delta CO2 kg', 'Hinweis'];
+          const rows = this.wizardReport.map(r => {
+            return [
+              `"${(r.cable_name || '').replace(/"/g, '""')}"`,
+              `"${(r.sap_number || '').replace(/"/g, '""')}"`,
+              r.original_mm2 != null ? r.original_mm2 : '',
+              r.recommended_mm2 != null ? r.recommended_mm2 : '',
+              `"${(this.wizardStatusLabel(r.status) || '').replace(/"/g, '""')}"`,
+              r.delta_tco != null ? r.delta_tco.toFixed(2) : '',
+              r.delta_co2 != null ? r.delta_co2.toFixed(2) : '',
+              `"${(r.reason || '').replace(/"/g, '""')}"`
+            ].join(';');
+          });
+          
+          const csvContent = [header.join(';'), ...rows].join('\r\n');
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.setAttribute('href', url);
+          link.setAttribute('download', `Kabeloptimierung_${new Date().toISOString().slice(0, 10)}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
         },
 
         getComponentCables(component) {
@@ -1070,12 +2281,27 @@
           return this.graphData.io_assignments;
         },
 
+        async reloadOriginalGraph() {
+          const token = new URLSearchParams(window.location.search).get('token');
+          if (token) {
+            await this.loadFromToken(token);
+          } else {
+            await this.loadDatabaseGraph();
+          }
+        },
+
         async loadDatabaseGraph() {
           this.loadingMessage = 'Snapshot wird geladen…';
           this.loading = true;
           this.error = '';
           this.graphData = null;
           this.selectedComponent = null;
+          this.selectedFgGroup = null;
+          this.selectedCable = null;
+          this.selectedCableShop = null;
+          this.selectedCableShopError = '';
+          this.selectedCableShopLoading = false;
+          this._wizardResetState();
           try {
             const resp = await fetch('/api/machine-db');
             if (!resp.ok) {
@@ -1097,6 +2323,12 @@
           this.error = '';
           this.graphData = null;
           this.selectedComponent = null;
+          this.selectedFgGroup = null;
+          this.selectedCable = null;
+          this.selectedCableShop = null;
+          this.selectedCableShopError = '';
+          this.selectedCableShopLoading = false;
+          this._wizardResetState();
           try {
             const resp = await fetch('/api/machine-db/' + encodeURIComponent(token));
             if (!resp.ok) {
@@ -1332,7 +2564,7 @@
             this._touchMoved = false;
             this._pinchStartDist = null;
           } else if (e.touches.length === 2) {
-            // Begin pinch – cancel any ongoing pan
+            // Begin pinch - cancel any ongoing pan
             this._touchStart = null;
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
