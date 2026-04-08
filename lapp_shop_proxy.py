@@ -45,7 +45,7 @@ HEADERS = {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept": "application/json",
     "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
     "Connection": "keep-alive",
 }
@@ -187,7 +187,10 @@ async def search_lapp(query: str, page: int = 0, page_size: int = 100) -> dict:
         },
     )
     resp.raise_for_status()
-    return resp.json()
+    try:
+        return resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Invalid JSON from Lapp API. Status: {resp.status_code}. Response: {resp.text[:200]}")
 
 
 async def search_all_pages(query: str, page_size: int = 100) -> list[dict]:
