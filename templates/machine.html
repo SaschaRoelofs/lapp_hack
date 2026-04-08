@@ -28,7 +28,7 @@
     [x-cloak] { display: none !important; }
 
     /* Graph styles */
-    .graph-container { position: relative; overflow: hidden; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; }
+    .graph-container { position: relative; overflow: hidden; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; touch-action: none; }
     .graph-svg { cursor: grab; }
     .graph-svg:active { cursor: grabbing; }
     .graph-svg .node rect { cursor: pointer; transition: filter 0.15s; }
@@ -1338,20 +1338,67 @@
         doPan(e)  { if (this.isPanning) { this.panX = e.clientX - this.panStart.x; this.panY = e.clientY - this.panStart.y; } },
         endPan()  { this.isPanning = false; },
 
-        // Touch pan support
+        // Touch support: 1-finger pan, 2-finger pinch-to-zoom, tap-to-select
         _touchStart: null,
+        _touchMoved: false,
+        _pinchStartDist: null,
+        _pinchStartZoom: null,
+
         handleTouchStart(e) {
           if (e.touches.length === 1) {
-            this._touchStart = { x: e.touches[0].clientX - this.panX, y: e.touches[0].clientY - this.panY };
+            const cx = e.touches[0].clientX;
+            const cy = e.touches[0].clientY;
+            this._touchStart = { x: cx - this.panX, y: cy - this.panY, startX: cx, startY: cy };
+            this._touchMoved = false;
+            this._pinchStartDist = null;
+          } else if (e.touches.length === 2) {
+            // Begin pinch – cancel any ongoing pan
+            this._touchStart = null;
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            this._pinchStartDist = Math.sqrt(dx * dx + dy * dy);
+            this._pinchStartZoom = this.zoom;
           }
         },
+
         handleTouchMove(e) {
           if (e.touches.length === 1 && this._touchStart) {
-            this.panX = e.touches[0].clientX - this._touchStart.x;
-            this.panY = e.touches[0].clientY - this._touchStart.y;
+            const cx = e.touches[0].clientX;
+            const cy = e.touches[0].clientY;
+            if (Math.abs(cx - this._touchStart.startX) > 6 || Math.abs(cy - this._touchStart.startY) > 6) {
+              this._touchMoved = true;
+            }
+            this.panX = cx - this._touchStart.x;
+            this.panY = cy - this._touchStart.y;
+          } else if (e.touches.length === 2 && this._pinchStartDist !== null) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const container = document.getElementById('graphContainer');
+            const rect = container.getBoundingClientRect();
+            const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+            const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+            this._zoomAt(this._pinchStartZoom * (dist / this._pinchStartDist), midX, midY);
           }
         },
-        handleTouchEnd(e) { this._touchStart = null; },
+
+        handleTouchEnd(e) {
+          // Tap detection: short touch with no significant movement → fire synthetic click
+          if (!this._touchMoved && this._touchStart && e.changedTouches.length > 0) {
+            const touch = e.changedTouches[0];
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (target) {
+              target.dispatchEvent(new MouseEvent('click', {
+                bubbles: true, cancelable: true,
+                clientX: touch.clientX, clientY: touch.clientY,
+              }));
+            }
+          }
+          if (e.touches.length === 0) {
+            this._touchStart = null;
+            this._pinchStartDist = null;
+          }
+        },
 
         // --------------- Graph rendering with Dagre ---------------
         renderGraph() {
