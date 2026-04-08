@@ -188,6 +188,25 @@
 
     /* Legend */
     .legend-dot { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; display: inline-block; }
+
+    /* Clickable cable edge labels */
+    .cable-label-bg {
+      cursor: pointer;
+      transition: fill 0.12s, stroke 0.12s;
+    }
+    .cable-label-bg:hover {
+      fill: #fff7ed !important;
+      stroke: #e95e0f !important;
+      stroke-width: 1.5 !important;
+    }
+    .cable-label-text {
+      cursor: pointer;
+      transition: fill 0.12s;
+    }
+    .cable-label-bg:hover ~ .cable-label-text,
+    .cable-label-text:hover {
+      fill: #c94e0a !important;
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen antialiased" x-data="machineViz()" x-init="init()" x-cloak>
@@ -773,7 +792,7 @@
                   <div class="flex flex-wrap items-center gap-2">
                     <span class="info-chip" x-text="selectedFgGroup.components.length + ' Geräte'"></span>
                     <span class="detail-muted" x-text="selectedFgGroup.subsystem"></span>
-                    <span x-show="selectedFgGroup.components[0]?.related_cables?.length > 0" class="info-chip info-chip--green" x-text="selectedFgGroup.components[0]?.related_cables?.length + ' Kabel'"></span>
+                    <span x-show="fgCables(selectedFgGroup).length > 0" class="info-chip info-chip--green" x-text="fgCables(selectedFgGroup).length + ' Kabel'"></span>
                   </div>
                 </div>
 
@@ -797,20 +816,7 @@
                   </div>
                 </div>
 
-                <!-- Cables for this FG group's location -->
-                <template x-if="selectedFgGroup.components[0]?.related_cables?.length > 0">
-                  <div class="detail-block">
-                    <div class="detail-label">Kabel am Standort</div>
-                    <div class="space-y-2">
-                      <template x-for="cable in selectedFgGroup.components[0].related_cables" :key="cable.cable_name">
-                          <div class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs">
-                          <div class="font-medium text-gray-800" x-text="cable.cable_name"></div>
-                          <div class="detail-muted mt-0.5" x-text="cable.cable_spec"></div>
-                        </div>
-                      </template>
-                    </div>
-                  </div>
-                </template>
+
               </div>
             </div>
             </div>
@@ -876,24 +882,6 @@
                   <div class="detail-grid-item">
                     <div class="detail-label">Technische Daten</div>
                     <div class="detail-value font-mono" x-text="selectedComponent.technical_specs"></div>
-                  </div>
-                </template>
-              </div>
-
-              <!-- Connected cables -->
-              <div x-show="getComponentCables(selectedComponent).length > 0" class="detail-block">
-                <div class="detail-label">Verbundene Kabel</div>
-                <template x-for="cable in getComponentCables(selectedComponent)" :key="cable.cable_name">
-                  <div class="rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 mb-2 text-xs">
-                    <div class="font-medium text-gray-800" x-text="cable.cable_name"></div>
-                    <div class="detail-muted" x-text="cable.cable_spec"></div>
-                    <div class="detail-muted" x-text="cable.cable_type" x-show="cable.cable_type && cable.cable_type !== cable.cable_spec"></div>
-                    <template x-if="cable.cross_section_mm2">
-                      <a :href="'/?cs=' + cable.cross_section_mm2 + '&cores=' + (cable.num_cores || 3)"
-                         class="text-lapp-600 hover:underline mt-1 inline-block">
-                        → Querschnitt optimieren
-                      </a>
-                    </template>
                   </div>
                 </template>
               </div>
@@ -1070,18 +1058,25 @@
 
         getComponentCables(component) {
           if (!component || !this.graphData) return [];
-          if (Array.isArray(component.related_cables) && component.related_cables.length > 0) {
-            return component.related_cables;
-          }
+          const loc = component.subsystem;
+          if (!loc) return [];
+          return this.graphData.connections.filter(c =>
+            c.connection_type === 'cable' &&
+            (c.from_location === loc || c.to_location === loc)
+          );
+        },
 
-          const designation = component.designation;
-          if (!designation) return [];
-          return this.graphData.connections.filter(c => {
-            // Cable name typically contains the component designation after 'W'
-            const short = c.cable_name.includes('-') ? c.cable_name.split('-').slice(1).join('-') : c.cable_name;
-            const target = short.startsWith('W') ? short.substring(1).replace(/-\d+$/, '') : '';
-            return target === designation || c.to_component?.includes(designation) || c.from_component?.includes(designation);
-          });
+        fgCables(fgGroup) {
+          if (!fgGroup || !this.graphData) return [];
+          const fgLocs = new Set(fgGroup.components.map(c => c.subsystem));
+          const seen = new Map();
+          for (const c of this.graphData.connections) {
+            if (c.connection_type !== 'cable') continue;
+            if (fgLocs.has(c.from_location) || fgLocs.has(c.to_location)) {
+              if (!seen.has(c.cable_name)) seen.set(c.cable_name, c);
+            }
+          }
+          return Array.from(seen.values());
         },
 
         getComponentIO(component) {
@@ -1710,7 +1705,7 @@
                 labelBg.setAttribute('fill', '#f8fafc');
                 labelBg.setAttribute('stroke', '#cbd5e1');
                 labelBg.setAttribute('stroke-width', '1');
-                labelBg.setAttribute('style', 'cursor:pointer');
+                labelBg.setAttribute('class', 'cable-label-bg');
                 group.appendChild(labelBg);
                 edgeLabelBgEl = labelBg;
 
@@ -1724,7 +1719,7 @@
                   textEl.setAttribute('font-size', '10');
                   textEl.setAttribute('font-weight', '600');
                   textEl.setAttribute('fill', '#475569');
-                  textEl.setAttribute('style', 'cursor:pointer');
+                  textEl.setAttribute('class', 'cable-label-text');
                   textEl.textContent = line;
                   group.appendChild(textEl);
                   edgeLabelTextEls.push(textEl);
@@ -1741,13 +1736,32 @@
                   }
                 });
 
-                // Click on background opens first cable detail
+                // Click on background opens first cable detail + hover highlight
                 if (cables.length > 0) {
                   labelBg.addEventListener('click', () => {
                     self.selectedComponent = null;
                     self.selectedFgGroup = null;
                     self.selectedCable = cables[0];
                     self.loadCableShopInfo(cables[0]);
+                  });
+                  // Hover: highlight bg + all text els together
+                  const hoverIn = () => {
+                    labelBg.setAttribute('fill', '#fff7ed');
+                    labelBg.setAttribute('stroke', '#e95e0f');
+                    labelBg.setAttribute('stroke-width', '1.5');
+                    edgeLabelTextEls.forEach(t => t.setAttribute('fill', '#c94e0a'));
+                  };
+                  const hoverOut = () => {
+                    labelBg.setAttribute('fill', '#f8fafc');
+                    labelBg.setAttribute('stroke', '#cbd5e1');
+                    labelBg.setAttribute('stroke-width', '1');
+                    edgeLabelTextEls.forEach(t => t.setAttribute('fill', '#475569'));
+                  };
+                  labelBg.addEventListener('mouseenter', hoverIn);
+                  labelBg.addEventListener('mouseleave', hoverOut);
+                  edgeLabelTextEls.forEach(t => {
+                    t.addEventListener('mouseenter', hoverIn);
+                    t.addEventListener('mouseleave', hoverOut);
                   });
                 }
               }
