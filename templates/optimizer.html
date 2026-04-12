@@ -116,17 +116,13 @@
             <text x="60" y="46" text-anchor="middle" font-size="22" font-weight="700" fill="#374151" x-text="params.ac_3phase ? '3~' : '1~'"></text>
             <text x="60" y="72" text-anchor="middle" font-size="13" font-weight="600" fill="#e95e0f" x-text="(params.system_voltage_v||400)+' V'"></text>
             <text x="60" y="116" text-anchor="middle" font-size="10" fill="#9ca3af">Netz</text>
-            <!-- Conductors -->
-            <line x1="105" y1="32" x2="545" y2="32" stroke="#e95e0f" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="105" y1="50" x2="545" y2="50" stroke="#e95e0f" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="105" y1="68" x2="545" y2="68" stroke="#e95e0f" stroke-width="2.5" stroke-linecap="round" x-show="params.loaded_cores >= 3"/>
-            <line x1="105" y1="88" x2="545" y2="88" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="8 4" stroke-linecap="round"/>
-            <text x="120" y="86" font-size="8" fill="#16a34a" font-weight="600">PE</text>
+            <!-- Conductors (dynamisch nach Adernzahl) -->
+            <g x-html="getConductorsSvg()"></g>
             <!-- Dimension -->
-            <line x1="140" y1="112" x2="500" y2="112" stroke="#9ca3af" stroke-width="1" marker-start="url(#dimL)" marker-end="url(#dimR)"/>
-            <rect x="272" y="102" width="96" height="18" rx="3" fill="white"/>
-            <text x="320" y="116" text-anchor="middle" font-size="14" font-weight="700" fill="#e95e0f" x-text="params.length_m+' m'"></text>
-            <text x="320" y="142" text-anchor="middle" font-size="11" fill="#6b7280" font-style="italic" x-text="selectedProductName || ''"></text>
+            <line x1="140" y1="122" x2="500" y2="122" stroke="#9ca3af" stroke-width="1" marker-start="url(#dimL)" marker-end="url(#dimR)"/>
+            <rect x="272" y="112" width="96" height="18" rx="3" fill="white"/>
+            <text x="320" y="126" text-anchor="middle" font-size="14" font-weight="700" fill="#e95e0f" x-text="params.length_m+' m'"></text>
+            <text x="320" y="146" text-anchor="middle" font-size="11" fill="#6b7280" font-style="italic" x-text="selectedProductName || ''"></text>
             <!-- Load -->
             <circle cx="595" cy="52" r="40" fill="white" stroke="#d1d5db" stroke-width="1.5"/>
             <text x="595" y="48" text-anchor="middle" font-size="26" font-weight="700" fill="#374151">M</text>
@@ -155,11 +151,13 @@
             <div>
               <label class="block text-sm font-medium text-gray-600 mb-1">Gesamtaderzahl</label>
               <input type="number" x-model.number="params.total_cores" step="1" min="1"
+                @input="if(params.loaded_cores > params.total_cores) params.loaded_cores = params.total_cores"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none text-gray-800 transition-shadow">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-600 mb-1">Davon belastet</label>
-              <input type="number" x-model.number="params.loaded_cores" step="1" min="1"
+              <input type="number" x-model.number="params.loaded_cores" step="1" min="1" :max="params.total_cores"
+                @input="if(params.loaded_cores > params.total_cores) params.loaded_cores = params.total_cores"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-lapp-600 focus:border-lapp-600 outline-none">
             </div>
             <div>
@@ -1136,6 +1134,25 @@
           this.options = [];
           this.optionsPage = 0;
           this.result = null;
+        },
+
+        getConductorsSvg() {
+          const totalCores = Math.max(1, Number(this.params.total_cores) || 1);
+          const loadedCores = Number(this.params.loaded_cores) || 1;
+          let svg = '';
+          const spacing = Math.min(16, 80 / totalCores);
+          const startY = 60 - ((totalCores - 1) * spacing) / 2;
+          
+          for (let i = 1; i <= totalCores; i++) {
+            const isLoaded = i <= loadedCores;
+            const y = startY + (i - 1) * spacing;
+            const stroke = isLoaded ? '#e95e0f' : '#9ca3af';
+            const strokeWidth = isLoaded ? '2.5' : '1.5';
+            const dash = isLoaded ? 'none' : '8 4';
+            
+            svg += `<line x1="105" y1="${y}" x2="545" y2="${y}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-dasharray="${dash}" stroke-linecap="round"/>`;
+          }
+          return svg;
         },
 
         applyScenario() {
