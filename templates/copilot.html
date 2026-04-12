@@ -60,12 +60,14 @@
     /* eKanban mode adjustments for copilot layout */
     body.ekanban-mode .copilot-flex-wrapper {
       margin-left: 16rem;
+      width: calc(100% - 16rem);
       padding-top: 5rem;
       min-height: calc(100vh - 3.5rem);
     }
     @media (max-width: 768px) {
       body.ekanban-mode .copilot-flex-wrapper {
         margin-left: 0;
+        width: 100%;
       }
     }
 
