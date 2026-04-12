@@ -11,6 +11,7 @@ COPY app.py optimizer.py machine_db.py lapp_shop_proxy.py README.md ./
 COPY templates/ templates/
 COPY static/ static/
 COPY graph_store/ graph_store/
+COPY application_szenarios.csv ./
 
 EXPOSE 8000
 
