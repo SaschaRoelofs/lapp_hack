@@ -45,10 +45,15 @@
     }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen antialiased" x-data="optimizer()">
+<body class="bg-gray-50 text-gray-800 min-h-screen antialiased transition-colors" x-data="optimizer()" :class="{'ekanban-mode': ekanbanMode}">
+
+  <!-- eKanban UI Skin -->
+  {% include '_ekanban_skin.html' %}
 
   <!-- Header -->
-  {% include '_header.html' %}
+  <div x-show="!ekanbanMode">
+    {% include '_header.html' %}
+  </div>
 
   <main class="max-w-7xl mx-auto px-4 py-8 space-y-8">
 
@@ -482,7 +487,9 @@
   </main>
 
   <!-- Footer -->
-  {% include '_footer.html' %}
+  <div x-show="!ekanbanMode" x-transition.opacity>
+    {% include '_footer.html' %}
+  </div>
 
   <script type="application/json" id="default-params">{{ default_params | tojson }}</script>
   <script type="application/json" id="scenarios-data">{{ scenarios | tojson }}</script>
@@ -885,6 +892,12 @@
 
     function optimizer() {
       return {
+        ekanbanMode: localStorage.getItem('ekanbanMode') === 'true',
+        toggleEkanban() {
+          this.ekanbanMode = !this.ekanbanMode;
+          localStorage.setItem('ekanbanMode', this.ekanbanMode);
+        },
+
         inputMode: 'manual', // 'manual' or 'scenario'
         scenarios: SCENARIOS,
         selectedScenarioId: '',

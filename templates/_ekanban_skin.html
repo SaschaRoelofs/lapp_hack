@@ -1,0 +1,167 @@
+<!-- eKanban Skin Partial -->
+<div x-show="ekanbanMode" class="font-sans antialiased text-gray-800" x-cloak>
+  <!-- Top Navbar -->
+  <div class="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-4 shadow-sm">
+    <div class="flex items-center">
+      <button class="text-lapp-600 focus:outline-none ml-1 mr-4 hover:bg-orange-50 p-1.5 rounded-lg transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+      </button>
+      <div class="text-xl font-bold font-sans tracking-wide text-gray-800 pr-2">
+         LAPP <span class="font-normal text-lapp-600">eKanban</span>
+      </div>
+    </div>
+    
+    <div class="flex items-center space-x-5 text-gray-600">
+      <!-- Toggle Switch for Normal mode -->
+      <div class="flex items-center space-x-2 mr-3 px-4 border-r border-gray-200">
+        <span class="text-xs font-semibold uppercase text-gray-400 tracking-wider">eKanban UI</span>
+        <button @click="toggleEkanban()" class="relative inline-flex h-5 w-9 items-center rounded-full bg-lapp-600 focus:outline-none transition-colors border-2 border-transparent">
+          <span class="inline-block h-3.5 w-3.5 translate-x-4 rounded-full bg-white transition-transform"></span>
+        </button>
+      </div>
+
+      <!-- eKanban system icons (visual only for realism) -->
+      <button class="hover:text-lapp-600 transition-colors"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg></button>
+      <button class="hover:text-lapp-600 transition-colors"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg></button>
+      <button class="hover:text-lapp-600 transition-colors mr-2"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="fixed top-14 left-0 bottom-0 w-64 text-gray-300 overflow-y-auto z-40 shadow-lg text-sm select-none" style="background-color: #4a4a4a;">
+    
+    <!-- Mandator Selector -->
+    <div class="px-4 py-5 border-b border-gray-600/50">
+       <div class="text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest mb-2">Mandator</div>
+       <div class="relative">
+         <select class="w-full bg-white text-gray-800 text-sm font-medium py-1.5 px-3 rounded shadow-inner border-none focus:ring-2 focus:ring-lapp-600 appearance-none cursor-pointer">
+            <option>Lapp / LogiMAT 2026</option>
+         </select>
+         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+           <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" /></svg>
+         </div>
+       </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="py-3">
+       
+       <!-- Items that look like normal eKanban -->
+       <a href="#" class="flex items-center px-4 py-2 text-gray-300 hover:bg-[#3d3d3d] hover:text-white transition-colors border-l-4 border-transparent cursor-default">
+          <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-lapp-600" fill="currentColor" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg></div>
+          <span class="text-sm font-semibold text-white">Dashboard</span>
+       </a>
+       
+       <a href="#" class="flex items-center px-4 py-2 text-gray-300 hover:bg-[#3d3d3d] hover:text-white transition-colors border-l-4 border-transparent cursor-default">
+          <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></div>
+          <span class="text-sm font-semibold">ToDo's</span>
+       </a>
+
+       <div class="flex items-center justify-between px-4 py-2 text-gray-300 hover:bg-[#3d3d3d] hover:text-white transition-colors border-l-4 border-transparent cursor-default mt-1">
+          <div class="flex items-center">
+             <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+             <span class="text-sm font-semibold">Customers</span>
+          </div>
+          <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+       </div>
+
+       <div class="flex items-center justify-between px-4 py-2 text-gray-300 hover:bg-[#3d3d3d] hover:text-white transition-colors border-l-4 border-transparent cursor-default mt-1">
+          <div class="flex items-center">
+             <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg></div>
+             <span class="text-sm font-semibold">Articles</span>
+          </div>
+          <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+       </div>
+
+       <div class="flex items-center justify-between px-4 py-2 text-gray-300 hover:bg-[#3d3d3d] hover:text-white transition-colors border-l-4 border-transparent cursor-default mt-1">
+          <div class="flex items-center">
+             <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/></svg></div>
+             <span class="text-sm font-semibold">Sensorunits</span>
+          </div>
+          <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+       </div>
+
+       <a href="#" class="flex items-center px-4 py-2 text-gray-300 hover:bg-[#3d3d3d] hover:text-white transition-colors border-l-4 border-transparent cursor-default mt-1">
+          <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3v18h18V3H3zm16 16H5V5h14v14zM11 7h2v2h-2zM7 7h2v2H7zm8 0h2v2h-2zM7 11h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zM7 15h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg></div>
+          <span class="text-sm font-semibold">2D Racks</span>
+       </a>
+
+       <div class="flex items-center justify-between px-4 py-2 text-gray-300 hover:bg-[#3d3d3d] hover:text-white transition-colors border-l-4 border-transparent cursor-default mt-1">
+          <div class="flex items-center">
+             <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
+             <span class="text-sm font-semibold">Documentation</span>
+          </div>
+          <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+       </div>
+
+       <a href="#" class="flex items-center px-4 py-2 text-gray-300 hover:bg-[#3d3d3d] hover:text-white transition-colors border-l-4 border-transparent cursor-default mt-1">
+          <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
+          <span class="text-sm font-semibold">Settings</span>
+       </a>
+
+       <div class="h-px bg-gray-600/30 my-4 mx-4"></div>
+
+       <!-- Hackathon Pages -->
+       <div class="mt-2 mb-1 px-4 text-[0.65rem] font-bold text-gray-400 uppercase tracking-widest cursor-default">
+          CABLE OPTIMIZER
+       </div>
+       
+       <a href="/optimizer" class="flex items-center pl-[2.25rem] pr-3 py-2 text-sm transition-colors border-l-4"
+          :class="window.location.pathname.startsWith('/optimizer') ? 'border-lapp-600 bg-[#3d3d3d] text-white shadow-inner font-semibold' : 'border-transparent text-gray-400 hover:text-white hover:bg-[#3d3d3d]'">
+          <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></div>
+          <span>Optimierer</span>
+       </a>
+       
+       <a href="/search" class="flex items-center pl-[2.25rem] pr-3 py-2 text-sm transition-colors border-l-4"
+          :class="window.location.pathname.startsWith('/search') ? 'border-lapp-600 bg-[#3d3d3d] text-white shadow-inner font-semibold' : 'border-transparent text-gray-400 hover:text-white hover:bg-[#3d3d3d]'">
+          <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div>
+          <span>Suche</span>
+       </a>
+       
+       <a href="/machine" class="flex items-center pl-[2.25rem] pr-3 py-2 text-sm transition-colors border-l-4"
+          :class="window.location.pathname.startsWith('/machine') ? 'border-lapp-600 bg-[#3d3d3d] text-white shadow-inner font-semibold' : 'border-transparent text-gray-400 hover:text-white hover:bg-[#3d3d3d]'">
+          <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
+          <span>Maschine</span>
+       </a>
+       
+       <a href="/settings" class="flex items-center pl-[2.25rem] pr-3 py-2 text-sm transition-colors border-l-4"
+          :class="window.location.pathname.startsWith('/settings') ? 'border-lapp-600 bg-[#3d3d3d] text-white shadow-inner font-semibold' : 'border-transparent text-gray-400 hover:text-white hover:bg-[#3d3d3d]'">
+          <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg></div>
+          <span>Einstellungen</span>
+       </a>
+
+    </nav>
+  </div>
+
+  <style>
+    /* Adjusting container sizing when eKanban mode is active */
+    body.ekanban-mode {
+      background-color: #f7f9fa !important; /* Lighter background typical for eKanban */
+    }
+    body.ekanban-mode header,
+    body.ekanban-mode footer {
+      display: none !important;
+    }
+    body.ekanban-mode > main {
+      margin-left: 16rem !important; /* w-64 = 256px = 16rem */
+      max-width: none !important;
+      padding-top: 5rem !important; /* h-14 + padding = 3.5rem + 1.5rem */
+      min-height: calc(100vh - 3.5rem);
+    }
+    /* Restyle internal boxes tighter */
+    body.ekanban-mode > main .max-w-7xl {
+      max-width: 1400px;
+    }
+    body.ekanban-mode > main .bg-white.rounded-2xl {
+      border-radius: 4px;
+      border: 1px solid #dcdfe3;
+      box-shadow: none;
+    }
+    
+    @media (max-width: 768px) {
+      body.ekanban-mode > main {
+        margin-left: 0 !important;
+      }
+    }
+  </style>
+</div>

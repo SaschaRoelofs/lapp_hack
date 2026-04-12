@@ -27,14 +27,20 @@
     [x-cloak] { display: none !important; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen antialiased" x-data="shopViewer()" x-init="init()">
+<body class="bg-gray-50 text-gray-800 min-h-screen antialiased transition-colors" x-data="shopViewer()" x-init="init()" :class="{'ekanban-mode': ekanbanMode}">
+
+  <!-- eKanban UI Skin -->
+  {% include '_ekanban_skin.html' %}
 
   <!-- Header -->
-  {% include '_header.html' %}
+  <div x-show="!ekanbanMode">
+    {% include '_header.html' %}
+  </div>
 
-  <div class="flex flex-col md:flex-row h-[calc(100vh-76px)]">
+  <main>
+    <div class="flex flex-col md:flex-row shadow-sm border border-gray-200 bg-white" :style="ekanbanMode ? 'height: calc(100vh - 5rem)' : 'height: calc(100vh - 76px)'">
 
-    <!-- Left Panel: Search & Results -->
+      <!-- Left Panel: Search & Results -->
     <aside class="w-full md:w-96 md:flex-shrink-0 bg-white border-r border-gray-200 min-h-0"
       :class="mobileShowDetail ? 'hidden md:flex md:flex-col' : 'flex flex-col'">
       <!-- Search -->
@@ -303,7 +309,12 @@
           </div>
         </template>
       </div>
-    </main>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <div x-show="!ekanbanMode" x-transition.opacity>
+    {% include '_footer.html' %}
   </div>
 
   <script>
@@ -312,6 +323,11 @@
 
     function shopViewer() {
       return {
+        ekanbanMode: localStorage.getItem('ekanbanMode') === 'true',
+        toggleEkanban() {
+          this.ekanbanMode = !this.ekanbanMode;
+          localStorage.setItem('ekanbanMode', this.ekanbanMode);
+        },
         query: '',
         searching: false,
         searchResults: [],

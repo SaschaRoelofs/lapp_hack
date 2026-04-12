@@ -24,10 +24,15 @@
     }
   </script>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen antialiased" x-data="settingsPage()">
+<body class="bg-gray-50 text-gray-800 min-h-screen antialiased transition-colors" x-data="settingsPage()" :class="{'ekanban-mode': ekanbanMode}">
+
+  <!-- eKanban UI Skin -->
+  {% include '_ekanban_skin.html' %}
 
   <!-- Header -->
-  {% include '_header.html' %}
+  <div x-show="!ekanbanMode">
+    {% include '_header.html' %}
+  </div>
 
   <main class="max-w-xl mx-auto px-4 py-8">
     <section class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm overflow-hidden">
@@ -75,7 +80,9 @@
     </section>
   </main>
 
-  {% include '_footer.html' %}
+  <div x-show="!ekanbanMode" x-transition.opacity>
+    {% include '_footer.html' %}
+  </div>
 
   <script id="defaults-data" type="application/json">{{ defaults | tojson }}</script>
   <script>
@@ -83,6 +90,11 @@
 
     function settingsPage() {
       return {
+        ekanbanMode: localStorage.getItem('ekanbanMode') === 'true',
+        toggleEkanban() {
+          this.ekanbanMode = !this.ekanbanMode;
+          localStorage.setItem('ekanbanMode', this.ekanbanMode);
+        },
         settings: { ...DEFAULTS },
         saved: false,
 

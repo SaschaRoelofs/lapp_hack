@@ -425,11 +425,26 @@
       .cta-row { flex-direction: column; width: 100%; }
     }
   </style>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
 </head>
-<body class="text-gray-800 min-h-screen antialiased bg-slate-50">
+<body class="bg-gray-50 text-gray-800 min-h-screen antialiased transition-colors" x-data="{
+  ekanbanMode: localStorage.getItem('ekanbanMode') === 'true',
+  toggleEkanban() {
+    this.ekanbanMode = !this.ekanbanMode;
+    localStorage.setItem('ekanbanMode', this.ekanbanMode);
+  }
+}" :class="{'ekanban-mode': ekanbanMode}">
+
+  <!-- eKanban UI Skin -->
+  {% include '_ekanban_skin.html' %}
 
   <!-- Header -->
-  {% include '_header.html' %}
+  <div x-show="!ekanbanMode">
+    {% include '_header.html' %}
+  </div>
+
+  <main>
 
   <!-- Hero Section -->
   <section class="hero">
@@ -604,13 +619,18 @@
   </div>
 
   <!-- README Content -->
-  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
     <div id="readme-content">
       {{ readme_html | safe }}
     </div>
-  </main>
+  </div>
 
-  {% include '_footer.html' %}
+  </main>
+  
+  <!-- Footer -->
+  <div x-show="!ekanbanMode" x-transition.opacity>
+    {% include '_footer.html' %}
+  </div>
 
   <script>
     // Wrap all tables in a scroll container for small screens

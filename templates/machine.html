@@ -266,10 +266,15 @@
     }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen antialiased" x-data="machineViz()" x-init="init()" x-cloak>
+<body class="bg-gray-50 text-gray-800 min-h-screen antialiased transition-colors" x-data="machineViz()" x-init="init()" x-cloak :class="{'ekanban-mode': ekanbanMode}">
+
+  <!-- eKanban UI Skin -->
+  {% include '_ekanban_skin.html' %}
 
   <!-- Header -->
-  {% include '_header.html' %}
+  <div x-show="!ekanbanMode">
+    {% include '_header.html' %}
+  </div>
 
   <main class="max-w-full mx-auto px-4 py-6">
 
@@ -1283,6 +1288,11 @@
 
     function machineViz() {
       return {
+        ekanbanMode: localStorage.getItem('ekanbanMode') === 'true',
+        toggleEkanban() {
+          this.ekanbanMode = !this.ekanbanMode;
+          localStorage.setItem('ekanbanMode', this.ekanbanMode);
+        },
         graphData: null,
         loading: false,
         loadingMessage: 'Snapshot wird geladen…',
