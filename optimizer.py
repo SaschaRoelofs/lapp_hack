@@ -43,6 +43,7 @@ class CableOption:
 class InputParams:
     length_m: float
     current_a: float
+    total_cores: int
     loaded_cores: int
     years: float
     days_per_year: float
@@ -233,6 +234,7 @@ def main() -> None:
     params = InputParams(
         length_m=50.0,
         current_a=16.0,
+        total_cores=4,
         loaded_cores=3,
         years=10.0,
         days_per_year=220.0,

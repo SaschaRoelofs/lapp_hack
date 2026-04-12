@@ -249,9 +249,10 @@ async def get_variant_price(article_code: str) -> dict:
     unit_price = data.get("unitPrice", {})
     price_unit = data.get("priceUnit", 1)
 
-    # price is per priceUnit (typically 100m), calculate per meter
+    # price is per priceUnit (typically 100m), calculate per meter using unitPrice
     price_value = price_info.get("value")
-    price_per_m = round(price_value / price_unit, 4) if price_value and price_unit else None
+    unit_price_value = unit_price.get("value")
+    price_per_m = round(unit_price_value / price_unit, 4) if unit_price_value and price_unit else None
 
     volume_prices = []
     for vp in data.get("volumePrices", []):
@@ -336,7 +337,8 @@ async def get_variant_detail(article_code: str) -> dict:
     unit_price = data.get("unitPrice", {})
     price_unit = data.get("priceUnit", 1)
     price_value = price_info.get("value")
-    price_per_m = round(price_value / price_unit, 4) if price_value and price_unit else None
+    unit_price_value = unit_price.get("value")
+    price_per_m = round(unit_price_value / price_unit, 4) if unit_price_value and price_unit else None
 
     images = data.get("images", [])
     image_url = next((img.get("url", "") for img in images if img.get("format") in {"zoom", "product"}), "")
@@ -410,7 +412,8 @@ async def get_variant_price_and_tech(article_code: str) -> dict:
     unit_price = data.get("unitPrice", {})
     price_unit = data.get("priceUnit", 1)
     price_value = price_info.get("value")
-    price_per_m = round(price_value / price_unit, 4) if price_value and price_unit else None
+    unit_price_value = unit_price.get("value")
+    price_per_m = round(unit_price_value / price_unit, 4) if unit_price_value and price_unit else None
 
     volume_prices = []
     for vp in data.get("volumePrices", []):

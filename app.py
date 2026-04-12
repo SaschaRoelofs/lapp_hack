@@ -63,6 +63,7 @@ DEFAULT_OPTIONS = [
 DEFAULT_PARAMS = {
     "length_m": 50.0,
     "current_a": 16.0,
+    "total_cores": 4,
     "loaded_cores": 3,
     "years": 10.0,
     "days_per_year": 220.0,
@@ -90,6 +91,7 @@ class CableOptionIn(BaseModel):
 class ParamsIn(BaseModel):
     length_m: float
     current_a: float
+    total_cores: int
     loaded_cores: int
     years: float
     days_per_year: float
@@ -156,6 +158,18 @@ async def index(request: Request):
     )
 
 
+import csv
+
+def _load_scenarios() -> list[dict[str, Any]]:
+    scenarios = []
+    csv_path = Path(__file__).parent / "application_scenarios.csv"
+    if csv_path.exists():
+        with open(csv_path, encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                scenarios.append(row)
+    return scenarios
+
 @app.get("/optimizer", response_class=HTMLResponse)
 async def optimizer_page(request: Request):
     return templates.TemplateResponse(
@@ -163,6 +177,7 @@ async def optimizer_page(request: Request):
         name="optimizer.html",
         context={
             "default_params": DEFAULT_PARAMS,
+            "scenarios": _load_scenarios(),
         },
     )
 
