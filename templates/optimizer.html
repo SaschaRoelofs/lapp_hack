@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
   <script>
     tailwind.config = {
@@ -28,6 +30,19 @@
     [x-cloak] { display: none !important; }
     input[type=number]::-webkit-inner-spin-button { opacity: 1; }
     .chart-container { position: relative; height: 320px; }
+    
+    @media print {
+      @page { margin: 1.2cm; size: A4; }
+      body { background: #fff !important; color: #000 !important; }
+      .no-print, header, footer, button, select, input { display: none !important; }
+      section { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
+      .chart-container { page-break-inside: avoid; height: 280px !important; }
+      .print-force-bg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      
+      /* Show custom print header */
+      #print-header { display: flex !important; }
+      main { margin: 0 !important; padding: 0 !important; }
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen antialiased" x-data="optimizer()">
@@ -37,8 +52,32 @@
 
   <main class="max-w-7xl mx-auto px-4 py-8 space-y-8">
 
+    <!-- Print Header (hidden on screen) -->
+    <div id="print-header" class="hidden flex items-center justify-between border-b-2 border-lapp-600 pb-4 mb-6 text-black print-force-bg">
+      <div class="flex items-center gap-4">
+        <div class="bg-lapp-600 rounded-lg p-2 flex items-center justify-center print-force-bg" style="width: 50px; height: 50px; background-color: #e95e0f !important;">
+          <svg viewBox="0 0 64 64" fill="none" stroke="white" stroke-width="4" style="width: 32px; height: 32px;">
+            <circle cx="32" cy="32" r="22"/>
+            <circle cx="32" cy="18" r="4" fill="white" stroke="none"/><circle cx="43.7" cy="25" r="4" fill="white" stroke="none"/><circle cx="43.7" cy="39" r="4" fill="white" stroke="none"/><circle cx="32" cy="46" r="4" fill="white" stroke="none"/><circle cx="20.3" cy="39" r="4" fill="white" stroke="none"/><circle cx="20.3" cy="25" r="4" fill="white" stroke="none"/><circle cx="32" cy="32" r="5" fill="white" stroke="none"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900">Leitungsquerschnitt-Optimierer</h1>
+          <p class="text-sm font-medium text-slate-500">TCO- & CO₂-Analyse Report</p>
+        </div>
+      </div>
+      <div class="text-right text-sm text-slate-500 max-w-xs">
+        <div>Datum: <span x-text="new Date().toLocaleDateString('de-DE')"></span></div>
+        <div>Kabel: <span class="font-medium text-slate-700" x-text="selectedProductName || 'LAPP Kabel'"></span></div>
+        <div class="text-xs mt-1 text-slate-400">
+          <span x-text="params.length_m"></span>m &middot; <span x-text="params.current_a"></span>A &middot; 
+          <span x-text="params.total_cores"></span> Adern &middot; <span x-text="params.ac_3phase ? '3-phasig' : '1-phasig'"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- Input Section -->
-    <section class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm overflow-hidden">
+    <section class="no-print bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm overflow-hidden">
       <div class="bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 class="text-[0.95rem] font-bold text-slate-900 tracking-tight">Eingabeparameter</h2>
         <div class="flex items-center gap-1 bg-gray-200/50 p-1 rounded-lg">
@@ -306,9 +345,9 @@
       <div class="space-y-8">
 
         <!-- Metric Cards -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4 border-none shadow-none print:grid-cols-3 print:gap-4 print:mt-4 print-force-bg">
           <!-- TCO Optimum -->
-          <div class="bg-white/90 rounded-2xl p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-l-4 border-l-emerald-500 border border-slate-200/70">
+          <div class="bg-white/90 rounded-2xl p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-l-4 border-l-emerald-500 border border-slate-200/70 print:shadow-none print-force-bg">
             <div class="text-sm text-gray-500 font-medium">TCO-Optimum</div>
             <template x-if="result.optimum.tco">
               <div>
@@ -325,11 +364,11 @@
           </div>
 
           <!-- CO2 Optimum -->
-          <div class="bg-white/90 rounded-2xl p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-l-4 border-l-blue-500 border border-slate-200/70">
+          <div class="bg-white/90 rounded-2xl p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-l-4 border-l-blue-500 border border-slate-200/70 print:shadow-none print-force-bg">
             <div class="text-sm text-gray-500 font-medium">CO2-Optimum</div>
             <template x-if="result.optimum.co2">
               <div>
-                <div class="text-2xl font-bold text-blue-600" x-text="result.optimum.co2.cross_section_mm2 + ' mm²'"></div>
+                <div class="text-2xl font-bold text-blue-600 print:text-blue-700" x-text="result.optimum.co2.cross_section_mm2 + ' mm²'"></div>
                 <div class="text-sm text-gray-500 mt-1">
                   TCO: <span class="font-semibold text-gray-700" x-text="fmt(result.optimum.co2.tco_eur) + ' €'"></span>
                   &middot; CO2: <span class="font-semibold text-gray-700" x-text="fmt(result.optimum.co2.co2_total_kg) + ' kg'"></span>
@@ -337,16 +376,16 @@
               </div>
             </template>
             <template x-if="!result.optimum.co2">
-              <div class="text-sm text-red-500 mt-1">Kein zulässiger Querschnitt</div>
+              <div class="text-sm text-red-500 mt-1 print:text-red-700">Kein zulässiger Querschnitt</div>
             </template>
           </div>
 
           <!-- Payback -->
-          <div class="bg-white/90 rounded-2xl p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-l-4 border-l-amber-500 border border-slate-200/70">
+          <div class="bg-white/90 rounded-2xl p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg border-l-4 border-l-amber-500 border border-slate-200/70 print:shadow-none print-force-bg">
             <div class="text-sm text-gray-500 font-medium">Amortisation (TCO-Opt. vs. Min.)</div>
             <template x-if="result.optimum.payback_tco_years !== null && result.optimum.payback_tco_years !== undefined">
               <div>
-                <div class="text-2xl font-bold text-amber-600" x-text="fmt(result.optimum.payback_tco_years) + ' Jahre'"></div>
+                <div class="text-2xl font-bold text-amber-600 print:text-amber-700" x-text="fmt(result.optimum.payback_tco_years) + ' Jahre'"></div>
                 <div class="text-sm text-gray-500 mt-1" x-show="result.optimum.smallest_admissible">
                   Gegenüber <span class="font-semibold" x-text="result.optimum.smallest_admissible?.cross_section_mm2 + ' mm²'"></span>
                 </div>
@@ -358,10 +397,15 @@
           </div>
         </section>
 
-        <!-- Results Table -->
-        <section class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm overflow-hidden">
-          <div class="bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 px-4 sm:px-6 py-4">
+      <!-- Results Table -->
+        <section class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm overflow-hidden break-inside-avoid">
+          <div class="print-force-bg bg-gradient-to-br from-slate-50 to-slate-100 border-b border-slate-200 px-4 sm:px-6 py-4 flex justify-between items-center">
             <h2 class="text-[0.95rem] font-bold text-slate-900 tracking-tight">Ergebnisübersicht</h2>
+            <button @click="exportPdf()" :disabled="exportingPdf" class="no-print bg-white border border-slate-200 shadow-sm text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:text-lapp-600 transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              <span x-show="!exportingPdf">PDF Report</span>
+              <span x-show="exportingPdf" x-cloak>Exportiere...</span>
+            </button>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -411,24 +455,24 @@
         </section>
 
         <!-- Charts -->
-        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 border-none shadow-none print:grid-cols-2 print:gap-4 print:mt-6">
           <!-- TCO Breakdown -->
-          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5">
+          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5 print:shadow-none print-force-bg chart-card">
             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">TCO-Aufschlüsselung</h3>
             <div class="chart-container"><canvas id="chartTCO"></canvas></div>
           </div>
           <!-- CO2 Breakdown -->
-          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5">
+          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5 print:shadow-none print-force-bg chart-card">
             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">CO2-Aufschlüsselung</h3>
             <div class="chart-container"><canvas id="chartCO2"></canvas></div>
           </div>
           <!-- Voltage Drop -->
-          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5">
+          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5 print:shadow-none print-force-bg chart-card">
             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Spannungsfall</h3>
             <div class="chart-container"><canvas id="chartVDrop"></canvas></div>
           </div>
           <!-- Payback Timeline -->
-          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5">
+          <div class="bg-white/90 backdrop-blur-sm border border-slate-200/70 rounded-2xl shadow-sm p-5 print:shadow-none print-force-bg chart-card">
             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Amortisationsverlauf</h3>
             <div class="chart-container"><canvas id="chartPayback"></canvas></div>
           </div>
@@ -454,6 +498,392 @@
     const numFmt = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const numFmt1 = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const priceFmt = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+    let lappLogoDataUrlPromise = null;
+
+    function formatPdfNumber(value, digits = 2) {
+      if (value === null || value === undefined || Number.isNaN(value)) return '-';
+      return new Intl.NumberFormat('de-DE', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      }).format(value);
+    }
+
+    function formatPdfCurrency(value) {
+      return value === null || value === undefined || Number.isNaN(value)
+        ? '-'
+        : formatPdfNumber(value, 2) + ' EUR';
+    }
+
+    function formatPdfPercent(value) {
+      return value === null || value === undefined || Number.isNaN(value)
+        ? '-'
+        : formatPdfNumber(value, 2) + ' %';
+    }
+
+    function sanitizeFilenamePart(value) {
+      return (value || 'optimierungsreport')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toLowerCase() || 'optimierungsreport';
+    }
+
+    function waitForPaint() {
+      return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    }
+
+    function canvasToPngDataUrl(canvas) {
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = canvas.width;
+      exportCanvas.height = canvas.height;
+      const ctx = exportCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+      ctx.drawImage(canvas, 0, 0);
+      return exportCanvas.toDataURL('image/png', 1.0);
+    }
+
+    function getChartImage(chart) {
+      if (!chart || !chart.canvas) return null;
+      chart.resize();
+      chart.update('none');
+      return canvasToPngDataUrl(chart.canvas);
+    }
+
+    async function loadLappLogoDataUrl() {
+      if (!lappLogoDataUrlPromise) {
+        lappLogoDataUrlPromise = fetch('/static/favicon.svg')
+          .then(resp => {
+            if (!resp.ok) throw new Error('Logo konnte nicht geladen werden.');
+            return resp.text();
+          })
+          .then(svgText => new Promise((resolve, reject) => {
+            const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+            const blobUrl = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = 256;
+              canvas.height = 256;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              URL.revokeObjectURL(blobUrl);
+              resolve(canvas.toDataURL('image/png', 1.0));
+            };
+            img.onerror = () => {
+              URL.revokeObjectURL(blobUrl);
+              reject(new Error('Logo konnte nicht gerendert werden.'));
+            };
+            img.src = blobUrl;
+          }))
+          .catch(() => null);
+      }
+      return lappLogoDataUrlPromise;
+    }
+
+    function buildExecutiveSummary(state) {
+      const tco = state.result?.optimum?.tco;
+      const co2 = state.result?.optimum?.co2;
+      const cableName = state.selectedProductName || 'Ausgewaehltes LAPP Kabel';
+      const base = 'Der Report bewertet das Kabel ' + cableName + ' fuer ' + formatPdfNumber(state.params.length_m, 0) + ' m Leitungslänge bei ' + formatPdfNumber(state.params.current_a, 1) + ' A Betriebsstrom.';
+      if (tco && co2) {
+        return base + ' Das wirtschaftlich beste Ergebnis liegt bei ' + formatPdfNumber(tco.cross_section_mm2, 1) + ' mm2, waehrend das CO2-Optimum bei ' + formatPdfNumber(co2.cross_section_mm2, 1) + ' mm2 erreicht wird.';
+      }
+      if (tco) {
+        return base + ' Das beste zulässige Ergebnis liegt bei ' + formatPdfNumber(tco.cross_section_mm2, 1) + ' mm2.';
+      }
+      return base + ' Fuer die aktuelle Konfiguration wurde kein zulaessiger Querschnitt gefunden.';
+    }
+
+    function createPdfReport(doc, state, assets) {
+      const margin = 16;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      
+      const summaryText = buildExecutiveSummary(state);
+      const summaryLines = doc.splitTextToSize(summaryText, pageWidth - margin * 2);
+      const optimumTco = state.result?.optimum?.tco;
+      const optimumCo2 = state.result?.optimum?.co2;
+      const smallest = state.result?.optimum?.smallest_admissible;
+      const scenarioName = state.currentScenario?.scenario_name || 'Manuelle Konfiguration';
+
+      // ==========================================
+      // PAGE 1: DECKBLATT (Title Page)
+      // ==========================================
+      doc.setFillColor(15, 23, 42); // slate-900 background
+      doc.rect(0, 0, pageWidth, pageHeight, 'F');
+      
+      // Decorative Circle
+      doc.setFillColor(233, 94, 15);
+      doc.circle(pageWidth, 0, 110, 'F');
+      
+      if (assets.logoDataUrl) {
+         doc.addImage(assets.logoDataUrl, 'PNG', margin, margin, 24, 24);
+      }
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(32);
+      doc.text('Optimierungs-', margin, 110);
+      doc.text('Report', margin, 124);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(14);
+      doc.setTextColor(148, 163, 184); // slate-400
+      doc.text('TCO- & CO2-Analyse fuer Leitungsquerschnitte', margin, 136);
+      
+      doc.setDrawColor(233, 94, 15);
+      doc.setLineWidth(1.5);
+      doc.line(margin, 146, margin + 40, 146);
+      
+      doc.setFontSize(11);
+      doc.setTextColor(248, 250, 252);
+      doc.text('Datum:', margin, 166);
+      doc.text(new Date().toLocaleDateString('de-DE'), margin + 30, 166);
+      
+      doc.text('Kabel:', margin, 174);
+      doc.text(state.selectedProductName || 'LAPP Standard', margin + 30, 174);
+      
+      doc.text('Szenario:', margin, 182);
+      doc.text(scenarioName, margin + 30, 182);
+
+      // ==========================================
+      // Helper for standard headers on following pages
+      // ==========================================
+      const drawStandardHeader = (title) => {
+        doc.setFillColor(255, 255, 255);
+        doc.rect(0, 0, pageWidth, 26, 'F');
+        if (assets.logoDataUrl) {
+          doc.addImage(assets.logoDataUrl, 'PNG', margin, 8.5, 11, 11);
+        }
+        doc.setTextColor(15, 23, 42);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text(title, margin + 15, 16.5);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        const rightText = (state.selectedProductName || 'LAPP Kabel') + ' • ' + new Date().toLocaleDateString('de-DE');
+        doc.text(rightText, pageWidth - margin, 16.5, { align: 'right' });
+        
+        doc.setDrawColor(233, 94, 15);
+        doc.setLineWidth(0.6);
+        doc.line(margin, 25, pageWidth - margin, 25);
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.2);
+        doc.line(margin, 26, pageWidth - margin, 26);
+      };
+
+      const drawStandardFooter = (pageNumber) => {
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.3);
+        doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text('LAPP Hackathon 2026', margin, pageHeight - 7);
+        doc.text('Seite ' + pageNumber, pageWidth - margin, pageHeight - 7, { align: 'right' });
+      };
+
+      const drawInfoBox = (x, y, w, title, lines) => {
+        const lh = 5.2;
+        const wrappedLinesInfo = lines.map(line => {
+           const parts = doc.splitTextToSize(String(line.value), Math.max(10, (w / 2) - 4)); 
+           return { label: line.label, parts };
+        });
+        const numLines = wrappedLinesInfo.reduce((acc, curr) => acc + Math.max(1, curr.parts.length), 0);
+        const boxH = 14 + numLines * lh;
+        
+        doc.setFillColor(250, 250, 250);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(x, y, w, boxH, 2, 2, 'FD');
+        doc.setFillColor(233, 94, 15);
+        doc.circle(x + 5.5, y + 6.5, 1.2, 'F');
+        
+        doc.setTextColor(15, 23, 42);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(title, x + 9, y + 8);
+        
+        doc.setFontSize(9);
+        let cy = y + 16;
+        wrappedLinesInfo.forEach(line => {
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(100, 116, 139);
+          doc.text(line.label, x + 5, cy);
+          
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(15, 23, 42);
+          line.parts.forEach(part => {
+            doc.text(part, x + w - 5, cy, { align: 'right' });
+            cy += lh;
+          });
+        });
+        return boxH;
+      };
+
+      const drawKpiCard = (x, y, w, h, accent, title, value, details) => {
+        doc.setDrawColor(226, 232, 240);
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(x, y, w, h, 2, 2, 'FD');
+        doc.setFillColor(...accent);
+        doc.roundedRect(x, y, w, 2.5, 2, 2, 'F'); 
+        doc.rect(x, y + 1.25, w, 1.25, 'F');
+        
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.text(title, x + 6, y + 9.5);
+        doc.setTextColor(...accent);
+        doc.setFontSize(17);
+        doc.text(value, x + 6, y + 17.5);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(71, 85, 105);
+        const dLines = Array.isArray(details) ? details : [details];
+        dLines.forEach((line, idx) => doc.text(line, x + 6, y + 23.5 + idx * 4.5));
+      };
+
+      const drawChartPanel = (x, y, w, h, title, imageData) => {
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(x, y, w, h, 2, 2, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(15, 23, 42);
+        doc.text(title, x + 6, y + 8);
+        if (imageData) {
+          doc.addImage(imageData, 'PNG', x + 6, y + 12, w - 12, h - 16, undefined, 'FAST');
+        } else {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(100, 116, 139);
+          doc.text('Diagramm nicht verfuegbar.', x + 6, y + 20);
+        }
+      };
+
+      // ==========================================
+      // PAGE 2: Management Summary
+      // ==========================================
+      doc.addPage();
+      drawStandardHeader('Management Summary');
+      
+      let cursorY = 38;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Zusammenfassung', margin, cursorY);
+      
+      cursorY += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(71, 85, 105);
+      doc.text(summaryLines, margin, cursorY, { lineHeightFactor: 1.4 });
+      cursorY += summaryLines.length * 5 + 8;
+
+      const kpiY = cursorY;
+      const kpiWidth = (pageWidth - margin * 2 - 8) / 3;
+      drawKpiCard(margin, kpiY, kpiWidth, 31, [16, 185, 129], 'TCO-Optimum', 
+        optimumTco ? formatPdfNumber(optimumTco.cross_section_mm2, 1) + ' mm2' : 'Kein Wert',
+        optimumTco ? ['TCO: ' + formatPdfCurrency(optimumTco.tco_eur), 'CO2: ' + formatPdfNumber(optimumTco.co2_total_kg, 2) + ' kg'] : 'Kein zulaessiger Querschnitt'
+      );
+      drawKpiCard(margin + kpiWidth + 4, kpiY, kpiWidth, 31, [59, 130, 246], 'CO2-Optimum', 
+        optimumCo2 ? formatPdfNumber(optimumCo2.cross_section_mm2, 1) + ' mm2' : 'Kein Wert',
+        optimumCo2 ? ['TCO: ' + formatPdfCurrency(optimumCo2.tco_eur), 'CO2: ' + formatPdfNumber(optimumCo2.co2_total_kg, 2) + ' kg'] : 'Kein zulaessiger Querschnitt'
+      );
+      drawKpiCard(margin + (kpiWidth + 4) * 2, kpiY, kpiWidth, 31, [245, 158, 11], 'Amortisation', 
+        (state.result.optimum.payback_tco_years != null) ? formatPdfNumber(state.result.optimum.payback_tco_years, 2) + ' J.' : 'Nicht erreicht',
+        smallest ? 'Vergleich gg. ' + formatPdfNumber(smallest.cross_section_mm2, 1) + ' mm2' : 'Keine Referenz verfuegbar'
+      );
+      cursorY += 40;
+
+      const halfW = (pageWidth - margin * 2 - 6) / 2;
+      const lh1 = drawInfoBox(margin, cursorY, halfW, 'Betriebsparameter', [
+        { label: 'Leitungslänge', value: formatPdfNumber(state.params.length_m, 1) + ' m' },
+        { label: 'Betriebsstrom', value: formatPdfNumber(state.params.current_a, 1) + ' A' },
+        { label: 'Systemspannung', value: state.params.system_voltage_v != null ? formatPdfNumber(state.params.system_voltage_v, 0) + ' V' : '-' },
+        { label: 'Phasen', value: state.params.ac_3phase ? '3-phasig' : '1-phasig' },
+        { label: 'Belastete Adern', value: state.params.loaded_cores + ' / ' + state.params.total_cores },
+        { label: 'Nutzungsdauer', value: formatPdfNumber(state.params.years, 0) + ' Jahre' },
+      ]);
+      const lh2 = drawInfoBox(margin + halfW + 6, cursorY, halfW, 'Bewertungsdaten', [
+        { label: 'Szenario', value: scenarioName },
+        { label: 'Varianten vergl.', value: state.result?.rows?.length || 0 },
+        { label: 'Strompreis', value: formatPdfCurrency(state.params.energy_price_eur_per_kwh) + ' / kWh' },
+        { label: 'Max. Spannungsv.', value: formatPdfPercent(state.params.max_voltage_drop_percent) },
+        { label: 'Emissionsfaktor', value: formatPdfNumber(state.params.electricity_emission_factor_kg_per_kwh, 3) + ' kg/kWh' },
+        { label: 'Cu-Emissionen', value: formatPdfNumber(state.params.copper_emission_factor_kg_per_kg, 3) + ' kg/kg' },
+      ]);
+      
+      drawStandardFooter(2);
+
+      // ==========================================
+      // PAGE 3: Detailergebnisse (Tabelle)
+      // ==========================================
+      doc.addPage();
+      drawStandardHeader('Detailergebnisse');
+      
+      doc.autoTable({
+        startY: 34,
+        margin: { left: margin, right: margin },
+        head: [['mm2', 'Zul.', 'P_v [W]', 'E_v [kWh]', 'Kabel [EUR]', 'Verlust [EUR]', 'TCO [EUR]', 'CO2 [kg]', 'dU [%]']],
+        body: state.result.rows.map(row => ([
+          formatPdfNumber(row.cross_section_mm2, 1),
+          row.admissible ? 'Ja' : 'Nein',
+          formatPdfNumber(row.p_loss_w, 2),
+          formatPdfNumber(row.energy_loss_kwh, 2),
+          formatPdfNumber(row.cable_price_eur, 2),
+          formatPdfNumber(row.loss_cost_eur, 2),
+          formatPdfNumber(row.tco_eur, 2),
+          formatPdfNumber(row.co2_total_kg, 2),
+          row.voltage_drop_percent != null ? formatPdfNumber(row.voltage_drop_percent, 2) : '-',
+        ])),
+        theme: 'grid',
+        styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 3, textColor: [15, 23, 42], lineColor: [226, 232, 240], lineWidth: 0.1 },
+        headStyles: { fillColor: [233, 94, 15], textColor: [255, 255, 255], fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        didParseCell(data) {
+          if (data.section !== 'body') return;
+          const rowRow = state.result.rows[data.row.index];
+          if (!rowRow.admissible) {
+             data.cell.styles.fillColor = [254, 242, 242];
+             data.cell.styles.textColor = [153, 27, 27];
+          } else if (optimumTco && rowRow.cross_section_mm2 === optimumTco.cross_section_mm2) {
+             data.cell.styles.fillColor = [236, 253, 245];
+          } else if (optimumCo2 && rowRow.cross_section_mm2 === optimumCo2.cross_section_mm2) {
+             data.cell.styles.fillColor = [239, 246, 255];
+          }
+          if (data.column.index === 0 || data.column.index === 6) data.cell.styles.fontStyle = 'bold';
+          if (data.column.index > 1) data.cell.styles.halign = 'right';
+        },
+      });
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Gruen markiert = TCO-Optimum | Blau markiert = CO2-Optimum | Rot markiert = Unzulaessig', margin, doc.lastAutoTable.finalY + 6);
+
+      drawStandardFooter(3);
+
+      // ==========================================
+      // PAGE 4+: Diagramme (Charts)
+      // ==========================================
+      const chartGroups = [assets.chartImages.slice(0, 2), assets.chartImages.slice(2, 4)].filter(g => g.length > 0);
+      let pageNum = 4;
+      chartGroups.forEach((group, groupIndex) => {
+        doc.addPage();
+        drawStandardHeader('Visualisierung (Teil ' + (groupIndex + 1) + ')');
+        const panelY = 34;
+        group.forEach((chart, index) => {
+          drawChartPanel(margin, panelY + index * 120, pageWidth - margin * 2, 110, chart.title, chart.imageData);
+        });
+        drawStandardFooter(pageNum++);
+      });
+    }
 
     function optimizer() {
       return {
@@ -478,6 +908,7 @@
         optionsPerPage: 8,
         optSortCol: 'cross_section_mm2',
         optSortDir: 'asc',
+        exportingPdf: false,
 
         get filteredOptions() {
           return this.options.filter(o => {
@@ -620,6 +1051,52 @@
             alert('Fehler bei der Berechnung: ' + e.message);
           } finally {
             this.loading = false;
+          }
+        },
+
+        async exportPdf() {
+          if (!this.result || this.exportingPdf) return;
+          this.exportingPdf = true;
+          try {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+              throw new Error('PDF-Bibliothek nicht verfügbar.');
+            }
+
+            if (!chartTCO || !chartCO2 || !chartVDrop || !chartPayback) {
+              this.renderCharts();
+            }
+
+            await waitForPaint();
+
+            const chartImages = [
+              { title: 'TCO-Aufschlüsselung', imageData: getChartImage(chartTCO), accent: [16, 185, 129] },
+              { title: 'CO2-Aufschlüsselung', imageData: getChartImage(chartCO2), accent: [59, 130, 246] },
+              { title: 'Spannungsfall', imageData: getChartImage(chartVDrop), accent: [245, 158, 11] },
+              { title: 'Amortisationsverlauf', imageData: getChartImage(chartPayback), accent: [100, 116, 139] },
+            ];
+            const logoDataUrl = await loadLappLogoDataUrl();
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+            doc.setProperties({
+              title: 'LAPP Optimierungsreport',
+              subject: 'Leitungsquerschnitt-Optimierung',
+              author: 'LAPP Hackathon 2026',
+              creator: 'LAPP Leitungsquerschnitt-Optimierer',
+            });
+
+            createPdfReport(doc, this, { logoDataUrl, chartImages });
+
+            const filename = [
+              'lapp-optimierungsreport',
+              sanitizeFilenamePart(this.selectedProductName || this.currentScenario?.scenario_name || 'report'),
+              new Date().toISOString().slice(0, 10),
+            ].join('-') + '.pdf';
+            doc.save(filename);
+          } catch (e) {
+            console.error('PDF export error:', e);
+            alert('Fehler beim PDF-Export: ' + e.message);
+          } finally {
+            this.exportingPdf = false;
           }
         },
 
