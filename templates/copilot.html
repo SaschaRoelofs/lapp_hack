@@ -223,9 +223,9 @@
     </div>
 
     <!-- Input area -->
-    <div class="border-t border-gray-200 bg-white px-2 sm:px-4 py-2 sm:py-3">
+    <div class="border-t border-gray-200 bg-white px-2 sm:px-4 py-2 sm:py-3 shrink-0">
       <form @submit.prevent="sendMessage()" class="max-w-5xl mx-auto flex gap-2 items-end">
-        <div class="flex-1 relative">
+        <div class="flex-1 relative min-w-0">
           <textarea
             x-ref="chatInput"
             x-model="inputText"
@@ -233,7 +233,7 @@
             :disabled="isStreaming"
             rows="1"
             placeholder="Beschreibe deine Kabelanforderungen..."
-            class="w-full resize-none rounded-xl border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lapp-600/30 focus:border-lapp-600 disabled:opacity-50 transition-colors"
+            class="w-full block resize-none rounded-xl border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lapp-600/30 focus:border-lapp-600 disabled:opacity-50 transition-colors"
             style="max-height:120px"
             @input="autoResize($event.target)"
           ></textarea>
