@@ -203,6 +203,11 @@ async def settings_page(request: Request):
     )
 
 
+@app.get("/snake", response_class=HTMLResponse)
+async def snake_page(request: Request):
+    return templates.TemplateResponse(request=request, name="snake.html")
+
+
 @app.post("/api/calculate", response_model=CalculateResponse)
 async def calculate(req: CalculateRequest):
     options = [CableOption(**o.model_dump()) for o in req.options]
