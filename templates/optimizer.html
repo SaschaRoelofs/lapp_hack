@@ -196,6 +196,15 @@
         <div>
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide">Kabeloptionen</h3>
+            
+            <div x-show="options.length > 0" x-cloak class="flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200">
+              <button @click="optViewMode = 'list'" :class="optViewMode === 'list' ? 'bg-white text-lapp-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'" class="p-1 px-2 rounded-md transition-all flex items-center justify-center cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+              </button>
+              <button @click="optViewMode = 'grid'" :class="optViewMode === 'grid' ? 'bg-white text-lapp-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'" class="p-1 px-2 rounded-md transition-all flex items-center justify-center cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+              </button>
+            </div>
           </div>
           <!-- Search bar -->
           <div class="mb-4 relative" @click.away="shopDropdownOpen = false">
@@ -244,14 +253,11 @@
             <svg class="animate-spin w-6 h-6 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
             <span class="text-sm">Lade Kabelvarianten…</span>
           </div>
-          <div x-show="filteredOptions.length > 0" class="overflow-x-auto border border-gray-200 rounded-lg">
+          <div x-show="filteredOptions.length > 0 && optViewMode === 'list'" class="overflow-x-auto border border-gray-200 rounded-lg">
             <table class="w-full text-sm">
               <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
                 <tr>
-                  <th class="px-3 py-2 text-left cursor-pointer hover:text-lapp-600" @click="optSortCol === 'name' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'name', optSortDir = 'asc')">
-                    Name <span x-show="optSortCol==='name'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
-                  </th>
-                  <th class="px-3 py-2 text-left cursor-pointer hover:text-lapp-600 hidden sm:table-cell" @click="optSortCol === 'article_number' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'article_number', optSortDir = 'asc')">
+                  <th class="px-3 py-2 text-left cursor-pointer hover:text-lapp-600" @click="optSortCol === 'article_number' ? (optSortDir = optSortDir === 'asc' ? 'desc' : 'asc') : (optSortCol = 'article_number', optSortDir = 'asc')">
                     Artikelnr. <span x-show="optSortCol==='article_number'" x-text="optSortDir==='asc'?'▲':'▼'"></span>
                   </th>
                   <th class="px-3 py-2 text-center hidden sm:table-cell">Adern</th>
@@ -278,8 +284,7 @@
               <tbody>
                 <template x-for="(opt, i) in pagedOptions" :key="optionsPage + '-' + i">
                   <tr class="border-t border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td class="px-3 py-1.5 text-sm font-medium text-gray-800" x-text="opt.name"></td>
-                    <td class="px-3 py-1.5 font-mono text-xs text-gray-600 hidden sm:table-cell" x-text="opt.article_number"></td>
+                    <td class="px-3 py-1.5 font-mono text-xs text-gray-800" x-text="opt.article_number"></td>
                     <td class="px-3 py-1.5 text-center hidden sm:table-cell" x-text="opt.num_cores || '-'"></td>
                     <td class="px-3 py-1.5 text-center hidden sm:table-cell">
                       <span x-show="opt.protective_conductor === 'Ja'" class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">G</span>
@@ -308,6 +313,57 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Grid View -->
+          <div x-show="filteredOptions.length > 0 && optViewMode === 'grid'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <template x-for="(opt, i) in pagedOptions" :key="'grid-' + optionsPage + '-' + i">
+              <div class="bg-white border border-gray-200 rounded-xl p-4 hover:border-lapp-600 transition-colors shadow-sm group">
+                <div class="flex justify-between items-start mb-2">
+                  <div class="font-mono text-sm font-semibold text-gray-800" x-text="opt.article_number"></div>
+                  <div class="flex items-center gap-2">
+                    <span x-show="opt.orderable && !opt.end_of_sales" class="inline-block w-2.5 h-2.5 rounded-full bg-green-500 shadow-sm" title="Bestellbar"></span>
+                    <span x-show="opt.end_of_sales" class="inline-block w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" title="Auslaufartikel"></span>
+                    <span x-show="!opt.orderable && !opt.end_of_sales" class="inline-block w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-sm" title="Nicht bestellbar"></span>
+                    <a x-show="opt.url" :href="opt.url" target="_blank" class="text-gray-400 hover:text-lapp-600 transition-colors">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    </a>
+                  </div>
+                </div>
+                
+                <div class="text-xs text-gray-600 font-medium mb-3 line-clamp-1" x-text="opt.name"></div>
+
+                <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs">
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Querschnitt</span>
+                    <span class="font-semibold text-gray-800" x-text="(opt.cross_section || opt.cross_section_mm2) + ' mm²'"></span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Adern</span>
+                    <span class="font-semibold text-gray-800">
+                      <span x-text="opt.num_cores || '-'"></span>
+                      <span x-show="opt.protective_conductor === 'Ja'" class="text-green-600 ml-0.5">G</span>
+                      <span x-show="opt.protective_conductor === 'Nein'" class="text-gray-400 ml-0.5">X</span>
+                    </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Außen-Ø</span>
+                    <span class="font-semibold text-gray-800" x-text="opt.outer_diameter_mm != null ? numFmt1.format(opt.outer_diameter_mm) + ' mm' : '-'"></span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-500">Cu-Zahl</span>
+                    <span class="font-semibold text-gray-800" x-text="opt.copper_mass_kg_per_km != null ? numFmt1.format(opt.copper_mass_kg_per_km) + ' kg' : '-'"></span>
+                  </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
+                  <span class="text-xs text-gray-500">Listenpreis</span>
+                  <span x-show="opt.cable_price_eur_per_m > 0" class="text-sm font-bold text-gray-900" x-text="priceFmt.format(opt.cable_price_eur_per_m) + ' €/m'"></span>
+                  <span x-show="!opt.cable_price_eur_per_m || opt.cable_price_eur_per_m === 0" class="text-sm font-bold text-gray-300">—</span>
+                </div>
+              </div>
+            </template>
+          </div>
+
           <!-- Filtered-out info -->
           <div x-show="options.length > 0 && filteredOptions.length === 0" class="flex flex-col items-center justify-center py-8 text-gray-400">
             <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -917,6 +973,7 @@
         selectedProductImage: '',
         optionsPage: 0,
         optionsPerPage: 8,
+        optViewMode: 'list',
         optSortCol: 'cross_section_mm2',
         optSortDir: 'asc',
         exportingPdf: false,
