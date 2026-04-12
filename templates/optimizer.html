@@ -249,9 +249,16 @@
             <p class="text-sm">Kabel suchen und auswählen</p>
           </div>
           <!-- Loading state -->
-          <div x-show="shopLoadingOptions" x-cloak class="flex items-center justify-center py-12 text-gray-400">
-            <svg class="animate-spin w-6 h-6 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-            <span class="text-sm">Lade Kabelvarianten…</span>
+          <div x-show="shopLoadingOptions" x-cloak class="flex flex-col items-center justify-center py-10 px-4">
+            <div class="w-full max-w-sm mb-3">
+              <div class="flex justify-between items-end mb-1">
+                <span class="text-sm font-medium text-gray-700" x-text="shopLoadingMessage"></span>
+                <span class="text-xs font-bold text-lapp-600" x-text="shopLoadingProgress + '%'"></span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                <div class="bg-lapp-600 h-2.5 rounded-full transition-all duration-300 ease-out" :style="'width: ' + shopLoadingProgress + '%'"></div>
+              </div>
+            </div>
           </div>
           <div x-show="filteredOptions.length > 0 && optViewMode === 'list'" class="overflow-x-auto border border-gray-200 rounded-lg">
             <table class="w-full text-sm">
@@ -967,6 +974,8 @@
         shopResults: [],
         shopSearching: false,
         shopLoadingOptions: false,
+        shopLoadingProgress: 0,
+        shopLoadingMessage: 'Lade Kabelvarianten...',
         shopDropdownOpen: false,
         selectedProductName: '',
         selectedBaseCode: '',
@@ -1058,16 +1067,65 @@
           this.shopQuery = product.name;
           this.shopResults = [];
           this.shopLoadingOptions = true;
+          this.shopLoadingProgress = 0;
+          this.shopLoadingMessage = 'Verbinde mit LAPP...';
+          
           try {
-            const resp = await fetch('/api/shop/product/' + encodeURIComponent(product.base_product_code) + '/cable-options');
-            if (!resp.ok) throw new Error(await resp.text());
-            const opts = await resp.json();
-            if (opts.length > 0) {
-              this.options = opts;
-              this.optionsPage = 0;
+            const response = await fetch('/api/shop/product/' + encodeURIComponent(product.base_product_code) + '/cable-options');
+            
+            // Wait, we need to handle SSE stream if Content-Type is text/event-stream
+            if (response.headers.get('content-type')?.includes('text/event-stream')) {
+              const reader = response.body.getReader();
+              const decoder = new TextDecoder();
+              let buffer = '';
+              
+              while (true) {
+                const { done, value } = await reader.read();
+                if (value) buffer += decoder.decode(value, { stream: true });
+                if (done) {
+                  buffer += decoder.decode();
+                }
+                
+                const parts = buffer.split('\n\n');
+                buffer = parts.pop(); 
+                
+                for (const part of parts) {
+                  const line = part.split('\n').find(l => l.startsWith('data: '));
+                  if (line) {
+                    const dataStr = line.substring(6);
+                    try {
+                      const data = JSON.parse(dataStr);
+                      if (data.error) throw new Error(data.error);
+                      if (data.progress !== undefined) this.shopLoadingProgress = data.progress;
+                      if (data.message !== undefined) this.shopLoadingMessage = data.message;
+                      if (data.options) {
+                        this.options = data.options;
+                        this.optionsPage = 0;
+                      }
+                    } catch(e) {
+                      console.error('SSE JSON error', e);
+                    }
+                  }
+                }
+                if (done) break;
+              }
+            } else {
+              if (!response.ok) throw new Error(await response.text());
+              const opts = await response.json();
+              if (opts.length > 0) {
+                this.options = opts;
+                this.optionsPage = 0;
+              }
             }
-          } catch (e) { console.error('Failed to load cable options:', e); }
-          finally { this.shopLoadingOptions = false; }
+          } catch (e) {
+            console.error('Failed to load cable options:', e);
+            this.shopLoadingMessage = 'Fehler beim Laden.';
+          } finally {
+            // Little delay to let user see 100%
+            setTimeout(() => {
+              this.shopLoadingOptions = false;
+            }, 300);
+          }
         },
 
         clearShopProduct() {

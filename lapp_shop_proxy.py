@@ -15,6 +15,7 @@ from typing import Optional
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
@@ -742,21 +743,111 @@ async def shop_product(base_product_code: str):
 async def shop_cable_options(base_product_code: str):
     """
     Get optimizer-compatible cable options from a Lapp shop product.
-    Can be used directly with the /api/calculate endpoint.
+    Streams progress using Server-Sent Events to build the options.
     """
-    try:
-        if base_product_code == "fallback_product":
-            from app import DEFAULT_OPTIONS
-            return DEFAULT_OPTIONS
+    import json
+    
+    async def sse_generator():
+        try:
+            if base_product_code == "fallback_product":
+                from app import DEFAULT_OPTIONS
+                yield f"data: {json.dumps({'progress': 100, 'message': 'Fertig.', 'options': DEFAULT_OPTIONS})}\n\n"
+                return
+            
+            yield f"data: {json.dumps({'progress': 10, 'message': 'Lade Produktdaten aus dem Shop...'})}\n\n"
+            product = await get_product_clean(base_product_code)
+            
+            valid_variants = [v for v in product["variants"] if (v.get("cross_section_mm2") or 0) > 0]
+            article_codes = [v.get("article_number", "") for v in valid_variants if v.get("article_number")]
+            total = len(article_codes)
+            
+            if total == 0:
+                yield f"data: {json.dumps({'progress': 100, 'message': 'Keine gültigen Varianten gefunden.', 'options': []})}\n\n"
+                return
+            
+            yield f"data: {json.dumps({'progress': 15, 'message': f'{total} Varianten gefunden. Lade technische Details...'})}\n\n"
+            
+            # Use asyncio.Semaphore for better concurrency management instead of static chunks
+            semaphore = asyncio.Semaphore(25)  # 25 simultaneous connections
+            tech_data = []
+            completed = 0
+            
+            async def fetch_tech_data(code):
+                async with semaphore:
+                    res = await get_variant_price_and_tech(code)
+                    return code, res
 
-        return await get_cable_options_from_shop(base_product_code)
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="Product not found in Lapp shop")
-        
-        # Fallback if API blocks us
-        from app import DEFAULT_OPTIONS
-        return DEFAULT_OPTIONS
+            # We process them as they complete to give a smooth progress bar
+            tasks = [asyncio.create_task(fetch_tech_data(c)) for c in article_codes]
+            
+            for future in asyncio.as_completed(tasks):
+                try:
+                    code, res = await future
+                    tech_data.append(res)
+                except Exception as e:
+                    # In real-world, we want to know WHICH code failed, but for simplicity:
+                    tech_data.append({"article_number": "unknown", "error": str(e)})
+
+                completed += 1
+                prog = 15 + int((completed / total) * 80)
+                
+                # Only yield every few percent to avoid flooding the browser with SSE events
+                if completed % 5 == 0 or completed == total:
+                    yield f"data: {json.dumps({'progress': prog, 'message': f'Verarbeite Variante {completed} / {total}...'})}\n\n"
+                
+            yield f"data: {json.dumps({'progress': 95, 'message': 'Erstelle Optimierungs-Modell...'})}\n\n"
+            
+            tech_map = {d["article_number"]: d for d in tech_data if "error" not in d}
+            from app import STANDARD_RESISTANCE_OHM_PER_KM, STANDARD_AMPACITY_A
+
+            options = []
+            for v in valid_variants:
+                cs = v["cross_section_mm2"]
+                art_nr = v.get("article_number", "")
+                vdata = tech_map.get(art_nr, {})
+
+                resistance = vdata.get("resistance_ohm_per_km")
+                resistance_source = "api"
+                if resistance is None:
+                    resistance = STANDARD_RESISTANCE_OHM_PER_KM.get(cs, round(17.241 / cs, 3) if cs > 0 else 0)
+                    resistance_source = "standard_table"
+
+                ampacity = STANDARD_AMPACITY_A.get(cs)
+                copper = v.get("copper_index_kg_per_km", 0) or 0
+                price_per_m = vdata.get("price_per_meter") or 0
+
+                options.append({
+                    "article_number": art_nr,
+                    "name": v.get("name", ""),
+                    "cross_section_mm2": cs,
+                    "cross_section": v.get("cross_section", ""),
+                    "resistance_ohm_per_km": resistance,
+                    "resistance_source": resistance_source,
+                    "copper_mass_kg_per_km": copper,
+                    "cable_price_eur_per_m": price_per_m,
+                    "ampacity_a": ampacity,
+                    "num_cores": v.get("num_cores", ""),
+                    "protective_conductor": v.get("protective_conductor", ""),
+                    "outer_diameter_mm": v.get("outer_diameter_mm"),
+                    "weight_kg_per_km": v.get("weight_kg_per_km"),
+                    "url": v.get("url", ""),
+                    "orderable": v.get("orderable", False),
+                    "end_of_sales": v.get("end_of_sales", False),
+                })
+            
+            yield f"data: {json.dumps({'progress': 100, 'message': 'Laden abgeschlossen.', 'options': options})}\n\n"
+            
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 404:
+                yield f"data: {json.dumps({'error': 'Product not found in Lapp shop'})}\n\n"
+            else:
+                from app import DEFAULT_OPTIONS
+                yield f"data: {json.dumps({'progress': 100, 'message': 'API-Limit, benutze Fallback.', 'options': DEFAULT_OPTIONS})}\n\n"
+        except Exception as e:
+            from app import DEFAULT_OPTIONS
+            yield f"data: {json.dumps({'progress': 100, 'message': 'Fehler, benutze Fallback.', 'options': DEFAULT_OPTIONS})}\n\n"
+
+    return StreamingResponse(sse_generator(), media_type="text/event-stream")
 
 
 @router.get("/product/{base_product_code}/prices")
