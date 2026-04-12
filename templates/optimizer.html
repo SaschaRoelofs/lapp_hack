@@ -587,7 +587,7 @@
       const tco = state.result?.optimum?.tco;
       const co2 = state.result?.optimum?.co2;
       const cableName = state.selectedProductName || 'Ausgewaehltes LAPP Kabel';
-      const base = 'Der Report bewertet das Kabel ' + cableName + ' fuer ' + formatPdfNumber(state.params.length_m, 0) + ' m Leitungslänge bei ' + formatPdfNumber(state.params.current_a, 1) + ' A Betriebsstrom.';
+      const base = 'Der Report bewertet das Kabel ' + cableName + ' für ' + formatPdfNumber(state.params.length_m, 0) + ' m Leitungslänge bei ' + formatPdfNumber(state.params.current_a, 1) + ' A Betriebsstrom.';
       if (tco && co2) {
         return base + ' Das wirtschaftlich beste Ergebnis liegt bei ' + formatPdfNumber(tco.cross_section_mm2, 1) + ' mm2, waehrend das CO2-Optimum bei ' + formatPdfNumber(co2.cross_section_mm2, 1) + ' mm2 erreicht wird.';
       }
@@ -632,7 +632,7 @@
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(14);
       doc.setTextColor(148, 163, 184); // slate-400
-      doc.text('TCO- & CO2-Analyse fuer Leitungsquerschnitte', margin, 136);
+      doc.text('TCO- & CO2-Analyse für Leitungsquerschnitte', margin, 136);
       
       doc.setDrawColor(233, 94, 15);
       doc.setLineWidth(1.5);
