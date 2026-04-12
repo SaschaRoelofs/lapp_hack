@@ -26,10 +26,12 @@ from optimizer import (
 )
 from machine_db import build_machine_graph_from_json, build_machine_graph_from_data
 from lapp_shop_proxy import router as shop_router
+from copilot import router as copilot_router
 
 app = FastAPI(title="Leitungsquerschnitt-Optimierer")
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 app.include_router(shop_router)
+app.include_router(copilot_router)
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
 # ---------------------------------------------------------------------------
@@ -185,6 +187,11 @@ async def optimizer_page(request: Request):
 @app.get("/search", response_class=HTMLResponse)
 async def search_page(request: Request):
     return templates.TemplateResponse(request=request, name="search.html")
+
+
+@app.get("/copilot", response_class=HTMLResponse)
+async def copilot_page(request: Request):
+    return templates.TemplateResponse(request=request, name="copilot.html")
 
 
 @app.get("/settings", response_class=HTMLResponse)

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cable Copilot – LAPP Kabelberater</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { lapp: { 600: '#e95e0f', 700: '#c94e0a' } },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        },
+      },
+    };
+  </script>
+  <style>
+    /* Chat message prose styling */
+    .msg-content p { margin-bottom: 0.5rem; }
+    .msg-content p:last-child { margin-bottom: 0; }
+    .msg-content ul, .msg-content ol { margin: 0.25rem 0 0.5rem 1.25rem; }
+    .msg-content ul { list-style-type: disc; }
+    .msg-content ol { list-style-type: decimal; }
+    .msg-content li { margin-bottom: 0.15rem; }
+    .msg-content strong { font-weight: 600; }
+    .msg-content code { background: rgba(0,0,0,0.15); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.875em; }
+    .msg-content pre { background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 8px; overflow-x: auto; margin: 0.5rem 0; }
+    .msg-content pre code { background: none; padding: 0; }
+    .msg-content h3, .msg-content h4 { font-weight: 600; margin: 0.75rem 0 0.25rem; }
+
+    /* Typing indicator */
+    .typing-dot { animation: typingBounce 1.4s infinite ease-in-out both; }
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Smooth scroll */
+    .chat-scroll { scroll-behavior: smooth; }
+
+    /* Product card hover */
+    .product-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .product-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+
+    /* Sidebar */
+    .sidebar-chat-item { transition: background-color 0.1s ease; }
+    .sidebar-chat-item .chat-delete-btn { opacity: 0; transition: opacity 0.15s ease; }
+    .sidebar-chat-item:hover .chat-delete-btn { opacity: 1; }
+
+    /* eKanban mode adjustments for copilot layout */
+    body.ekanban-mode .copilot-flex-wrapper {
+      margin-left: 16rem;
+      padding-top: 5rem;
+      min-height: calc(100vh - 3.5rem);
+    }
+    @media (max-width: 768px) {
+      body.ekanban-mode .copilot-flex-wrapper {
+        margin-left: 0;
+      }
+    }
+
+    /* Mobile sidebar slides in from right, below header */
+    .copilot-sidebar-open { top: 0; bottom: 0; }
+    body:not(.ekanban-mode) .copilot-sidebar-open { top: 4.5rem; }
+    body.ekanban-mode .copilot-sidebar-open { top: 3.5rem; }
+    @media (min-width: 768px) {
+      .copilot-sidebar-open { top: 0 !important; bottom: 0; }
+    }
+  </style>
+</head>
+<body class="h-full bg-gray-50 font-sans text-gray-900 flex flex-col" x-data="copilotChat()" :class="{'ekanban-mode': ekanbanMode}">
+
+  <!-- eKanban UI Skin -->
+  {% include '_ekanban_skin.html' %}
+
+  {% include '_header.html' %}
+
+  <!-- Layout: Chat + Sidebar (right) -->
+  <div class="copilot-flex-wrapper flex-1 flex" style="min-height:0">
+
+    <!-- Main chat area -->
+    <main class="flex-1 flex flex-col" style="min-height:0">
+
+    <!-- Chat messages -->
+    <div class="flex-1 overflow-y-auto chat-scroll px-2 sm:px-4 py-4 sm:py-6" x-ref="chatContainer" id="chat-container">
+     <div class="max-w-5xl mx-auto space-y-3 sm:space-y-4">
+
+      <!-- Welcome message -->
+      <template x-if="messages.length === 0">
+        <div class="flex flex-col items-center justify-center h-full text-center px-4 py-12">
+          <div class="bg-gradient-to-br from-lapp-600 to-orange-500 rounded-2xl p-4 mb-6 shadow-lg" style="box-shadow:0 0 30px rgba(233,94,15,0.3)">
+            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">Cable Copilot</h2>
+          <p class="text-gray-500 max-w-md mb-8">
+            Ich helfe dir, das richtige LAPP-Kabel für deine Anwendung zu finden. Beschreibe einfach, was du brauchst!
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
+            <template x-for="suggestion in suggestions" :key="suggestion">
+              <button @click="sendMessage(suggestion)"
+                      class="text-left text-sm text-gray-600 bg-white border border-gray-200 rounded-xl px-4 py-3 hover:border-lapp-600 hover:bg-orange-50 transition-colors">
+                <span x-text="suggestion"></span>
+              </button>
+            </template>
+          </div>
+        </div>
+      </template>
+
+      <!-- Message list -->
+      <template x-for="(msg, idx) in messages" :key="idx">
+        <div>
+          <!-- User message -->
+          <template x-if="msg.role === 'user'">
+            <div class="flex justify-end">
+              <div class="max-w-[85%] sm:max-w-[70%] bg-lapp-600 text-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm">
+                <p class="text-sm whitespace-pre-wrap" x-text="msg.content"></p>
+              </div>
+            </div>
+          </template>
+
+          <!-- Assistant message -->
+          <template x-if="msg.role === 'assistant'">
+            <div class="flex justify-start gap-2.5">
+              <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center shadow-sm">
+                <svg class="w-4 h-4 text-orange-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+              </div>
+              <div class="max-w-[85%] sm:max-w-[75%]">
+                <div class="bg-white border border-gray-200 rounded-2xl rounded-tl-md px-4 py-2.5 shadow-sm">
+                  <div class="text-sm msg-content text-gray-700 leading-relaxed" x-html="renderMarkdown(msg.content)"></div>
+                </div>
+                <!-- Product cards -->
+                <template x-if="msg.products && msg.products.length > 0">
+                  <div class="mt-3 space-y-2">
+                    <template x-for="(product, pidx) in msg.products" :key="pidx">
+                      <div class="product-card bg-white border border-gray-200 rounded-xl p-3">
+                        <div class="flex items-center gap-3">
+                          <div class="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                            <template x-if="product.image_url">
+                              <img :src="product.image_url" :alt="product.name" class="w-full h-full object-contain" loading="lazy"/>
+                            </template>
+                            <template x-if="!product.image_url">
+                              <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"/>
+                              </svg>
+                            </template>
+                          </div>
+                          <div class="min-w-0 flex-1">
+                            <h4 class="text-sm font-semibold text-gray-800 truncate" x-text="product.name"></h4>
+                            <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-gray-500">
+                              <span x-show="product.from_price" x-text="product.from_price" class="font-medium text-lapp-600"></span>
+                              <span x-show="product.variant_count > 1" x-text="product.variant_count + ' Varianten'"></span>
+                              <span x-show="product.cross_section" x-text="product.cross_section"></span>
+                              <span x-show="product.num_cores" x-text="product.num_cores + ' Adern'"></span>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="flex gap-2 mt-2.5 pt-2 border-t border-gray-100">
+                          <a :href="'/search?q=' + encodeURIComponent(product.code || product.base_product_code || product.name)"
+                             class="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg px-3 py-1.5 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                            In Suche öffnen
+                          </a>
+                          <a :href="product.url" target="_blank" rel="noopener"
+                             class="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-lapp-600 bg-orange-50 hover:bg-orange-100 rounded-lg px-3 py-1.5 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                            Im Shop öffnen
+                          </a>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <!-- Streaming indicator -->
+      <template x-if="isStreaming">
+        <div class="flex justify-start gap-2.5">
+          <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center shadow-sm">
+            <svg class="w-4 h-4 text-orange-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <div class="max-w-[85%] sm:max-w-[75%]">
+            <div class="bg-white border border-gray-200 rounded-2xl rounded-tl-md px-4 py-2.5 shadow-sm">
+              <!-- Show streamed text so far -->
+              <template x-if="streamingContent">
+                <div class="text-sm msg-content text-gray-700 leading-relaxed" x-html="renderMarkdown(streamingContent)"></div>
+              </template>
+              <!-- Typing dots when no content yet -->
+              <template x-if="!streamingContent">
+                <div class="flex items-center gap-1.5 py-1">
+                  <template x-if="toolCallInfo">
+                    <span class="text-xs text-gray-400 mr-2" x-text="toolCallInfo"></span>
+                  </template>
+                  <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full"></div>
+                  <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full"></div>
+                  <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full"></div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </template>
+
+     </div>
+    </div>
+
+    <!-- Input area -->
+    <div class="border-t border-gray-200 bg-white px-2 sm:px-4 py-2 sm:py-3">
+      <form @submit.prevent="sendMessage()" class="max-w-5xl mx-auto flex gap-2 items-end">
+        <div class="flex-1 relative">
+          <textarea
+            x-ref="chatInput"
+            x-model="inputText"
+            @keydown.enter="if(!$event.shiftKey){ $event.preventDefault(); sendMessage() }"
+            :disabled="isStreaming"
+            rows="1"
+            placeholder="Beschreibe deine Kabelanforderungen..."
+            class="w-full resize-none rounded-xl border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lapp-600/30 focus:border-lapp-600 disabled:opacity-50 transition-colors"
+            style="max-height:120px"
+            @input="autoResize($event.target)"
+          ></textarea>
+        </div>
+        <button
+          type="submit"
+          :disabled="isStreaming || !inputText.trim()"
+          class="flex-shrink-0 bg-lapp-600 hover:bg-lapp-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl p-2.5 transition-colors shadow-sm"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
+          </svg>
+        </button>
+      </form>
+      <p class="text-center text-[0.65rem] text-gray-400 mt-2">
+        Cable Copilot kann Fehler machen. Empfehlungen ersetzen keine Fachplanung nach VDE/IEC.
+      </p>
+    </div>
+
+  </main>
+
+    <!-- Sidebar: Chat History (right) -->
+    <aside class="w-64 flex-shrink-0 border-l border-gray-200 bg-white flex-col hidden md:flex"
+           :class="sidebarOpen ? 'copilot-sidebar-open fixed right-0 z-40 !flex shadow-xl md:relative md:inset-auto md:z-auto md:shadow-none' : ''">
+      <!-- New Chat button -->
+      <div class="p-3 border-b border-gray-100">
+        <button @click="newChat()"
+                class="w-full flex items-center justify-center gap-2 bg-lapp-600 hover:bg-lapp-700 text-white text-sm font-medium rounded-lg px-3 py-2 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+          </svg>
+          Neuer Chat
+        </button>
+      </div>
+      <!-- Chat list -->
+      <div class="flex-1 overflow-y-auto">
+        <template x-for="chat in sortedChats" :key="chat.id">
+          <div @click="switchChat(chat.id); sidebarOpen = false"
+               class="sidebar-chat-item w-full text-left px-3 py-2.5 border-b border-gray-50 flex items-center gap-2 cursor-pointer"
+               :class="chat.id === activeChatId ? 'bg-orange-50 border-r-2 border-r-lapp-600' : 'hover:bg-gray-50'">
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-medium truncate" :class="chat.id === activeChatId ? 'text-lapp-700' : 'text-gray-700'" x-text="chat.title"></div>
+              <div class="text-[0.65rem] text-gray-400 mt-0.5" x-text="formatDate(chat.updatedAt)"></div>
+            </div>
+            <button @click.stop="deleteChat(chat.id)"
+                    class="chat-delete-btn flex-shrink-0 p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors"
+                    title="Chat löschen">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+              </svg>
+            </button>
+          </div>
+        </template>
+        <div x-show="sortedChats.length === 0" class="px-4 py-6 text-center text-xs text-gray-400">
+          Noch keine Chats
+        </div>
+      </div>
+    </aside>
+
+    <!-- Mobile sidebar toggle -->
+    <button @click="sidebarOpen = !sidebarOpen"
+            class="md:hidden fixed bottom-32 right-3 z-30 bg-white border border-gray-200 shadow-lg rounded-full p-2.5 text-gray-600 hover:text-lapp-600 transition-colors"
+            x-show="!sidebarOpen">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+    </button>
+
+    <!-- Mobile sidebar overlay -->
+    <div x-show="sidebarOpen" @click="sidebarOpen = false"
+         class="md:hidden fixed inset-0 bg-black/30 z-30" x-transition.opacity></div>
+
+  </div><!-- /flex layout -->
+
+  <script>
+    function copilotChat() {
+      const STORAGE_KEY = 'copilot_chats';
+
+      function loadChats() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        } catch { return []; }
+      }
+
+      function saveChats(chats) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+      }
+
+      function generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      }
+
+      function deriveTitle(messages) {
+        const first = messages.find(m => m.role === 'user');
+        if (!first) return 'Neuer Chat';
+        const text = first.content.trim();
+        return text.length > 50 ? text.slice(0, 50) + '…' : text;
+      }
+
+      const chats = loadChats();
+
+      // Deep-copy helper to isolate message arrays between chats
+      function cloneMessages(msgs) {
+        return JSON.parse(JSON.stringify(msgs || []));
+      }
+
+      return {
+        chats,
+        activeChatId: chats.length > 0 ? chats[0].id : null,
+        messages: chats.length > 0 ? cloneMessages(chats[0].messages) : [],
+        inputText: '',
+        isStreaming: false,
+        streamingContent: '',
+        toolCallInfo: null,
+        sidebarOpen: false,
+        ekanbanMode: localStorage.getItem('ekanbanMode') === 'true' && window.innerWidth >= 768,
+        toggleEkanban() {
+          if (window.innerWidth < 768) return;
+          this.ekanbanMode = !this.ekanbanMode;
+          localStorage.setItem('ekanbanMode', this.ekanbanMode);
+        },
+        suggestions: [
+          'Ich brauche ein Steuerkabel für eine Werkzeugmaschine, 400V, 16A',
+          'Welches Kabel eignet sich für eine Schleppkette?',
+          'Suche ein 5-adriges Kabel mit 2,5mm² Querschnitt',
+          'Was ist der Unterschied zwischen ÖLFLEX CLASSIC 110 und 100?',
+        ],
+
+        get sortedChats() {
+          return [...this.chats].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        },
+
+        formatDate(ts) {
+          if (!ts) return '';
+          const d = new Date(ts);
+          const now = new Date();
+          const diff = now - d;
+          if (diff < 60000) return 'Gerade eben';
+          if (diff < 3600000) return Math.floor(diff / 60000) + ' Min.';
+          if (diff < 86400000) return Math.floor(diff / 3600000) + ' Std.';
+          return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        },
+
+        persistCurrentChat() {
+          if (!this.activeChatId) return;
+          const idx = this.chats.findIndex(c => c.id === this.activeChatId);
+          if (idx === -1) return;
+          this.chats[idx].messages = cloneMessages(this.messages);
+          this.chats[idx].title = deriveTitle(this.messages);
+          this.chats[idx].updatedAt = Date.now();
+          saveChats(this.chats);
+        },
+
+        newChat() {
+          const id = generateId();
+          const chat = { id, title: 'Neuer Chat', messages: [], createdAt: Date.now(), updatedAt: Date.now() };
+          this.chats.unshift(chat);
+          this.activeChatId = id;
+          this.messages = [];
+          saveChats(this.chats);
+          this.sidebarOpen = false;
+        },
+
+        switchChat(id) {
+          if (id === this.activeChatId) return;
+          this.persistCurrentChat();
+          const chat = this.chats.find(c => c.id === id);
+          if (!chat) return;
+          this.activeChatId = id;
+          this.messages = cloneMessages(chat.messages);
+          this.scrollToBottom();
+        },
+
+        deleteChat(id) {
+          this.chats = this.chats.filter(c => c.id !== id);
+          saveChats(this.chats);
+          if (id === this.activeChatId) {
+            if (this.chats.length > 0) {
+              this.activeChatId = this.sortedChats[0].id;
+              this.messages = cloneMessages(this.sortedChats[0].messages);
+            } else {
+              this.activeChatId = null;
+              this.messages = [];
+            }
+          }
+        },
+
+        renderMarkdown(text) {
+          if (!text) return '';
+          try {
+            return marked.parse(text, { breaks: true, gfm: true });
+          } catch (e) {
+            return text.replace(/\n/g, '<br>');
+          }
+        },
+
+        autoResize(el) {
+          el.style.height = 'auto';
+          el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+        },
+
+        scrollToBottom() {
+          this.$nextTick(() => {
+            const container = this.$refs.chatContainer;
+            if (container) {
+              container.scrollTop = container.scrollHeight;
+            }
+          });
+        },
+
+        async sendMessage(prefill) {
+          const text = (prefill || this.inputText).trim();
+          if (!text || this.isStreaming) return;
+
+          // Create a new chat if none active
+          if (!this.activeChatId) {
+            this.newChat();
+          }
+
+          // Capture which chat this response belongs to
+          const targetChatId = this.activeChatId;
+
+          // Add user message
+          this.messages.push({ role: 'user', content: text });
+          this.inputText = '';
+          this.isStreaming = true;
+          this.streamingContent = '';
+          this.toolCallInfo = null;
+
+          // Persist immediately so user message is saved
+          this.persistCurrentChat();
+
+          // Reset textarea height
+          if (this.$refs.chatInput) {
+            this.$refs.chatInput.style.height = 'auto';
+          }
+
+          this.scrollToBottom();
+
+          try {
+            const payload = {
+              messages: this.messages.map(m => ({ role: m.role, content: m.content }))
+            };
+
+            const response = await fetch('/api/copilot/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let collectedProducts = [];
+            let streamedText = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+
+              // Parse SSE events from buffer
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';  // Keep incomplete line in buffer
+
+              let eventType = null;
+              for (const line of lines) {
+                if (line.startsWith('event: ')) {
+                  eventType = line.slice(7).trim();
+                } else if (line.startsWith('data: ')) {
+                  const dataStr = line.slice(6);
+                  try {
+                    const data = JSON.parse(dataStr);
+
+                    if (eventType === 'token' && data.token) {
+                      streamedText += data.token;
+                      // Only update UI if still viewing the target chat
+                      if (this.activeChatId === targetChatId) {
+                        this.streamingContent = streamedText;
+                        this.toolCallInfo = null;
+                        this.scrollToBottom();
+                      }
+                    } else if (eventType === 'tool_call') {
+                      const toolNames = {
+                        'search_cables': '🔍 Suche im Shop',
+                        'get_product_details': '📋 Lade Produktdetails',
+                        'get_variant_info': '🔧 Lade Variantendetails'
+                      };
+                      if (this.activeChatId === targetChatId) {
+                        this.toolCallInfo = toolNames[data.tool] || ('⚙️ ' + data.tool);
+                        this.scrollToBottom();
+                      }
+                    } else if (eventType === 'products' && data.products) {
+                      collectedProducts = data.products;
+                    } else if (eventType === 'error' && data.error) {
+                      streamedText += '\n\n⚠️ ' + data.error;
+                      if (this.activeChatId === targetChatId) {
+                        this.streamingContent = streamedText;
+                      }
+                    }
+                  } catch (e) {
+                    // Ignore JSON parse errors for incomplete data
+                  }
+                  eventType = null;
+                }
+              }
+            }
+
+            // Finalize: save to the correct chat, regardless of which chat is active now
+            const assistantMsg = {
+              role: 'assistant',
+              content: streamedText,
+              products: collectedProducts.length > 0 ? collectedProducts : null,
+            };
+
+            if (streamedText) {
+              if (this.activeChatId === targetChatId) {
+                // Still viewing the same chat — update live
+                this.messages.push(assistantMsg);
+              } else {
+                // User switched away — save directly to the target chat in storage
+                const idx = this.chats.findIndex(c => c.id === targetChatId);
+                if (idx !== -1) {
+                  this.chats[idx].messages.push(cloneMessages([assistantMsg])[0]);
+                  this.chats[idx].updatedAt = Date.now();
+                  saveChats(this.chats);
+                }
+              }
+            }
+
+          } catch (error) {
+            const errorMsg = {
+              role: 'assistant',
+              content: '⚠️ Verbindungsfehler: ' + error.message + '. Bitte versuche es erneut.',
+              products: null,
+            };
+            if (this.activeChatId === targetChatId) {
+              this.messages.push(errorMsg);
+            } else {
+              const idx = this.chats.findIndex(c => c.id === targetChatId);
+              if (idx !== -1) {
+                this.chats[idx].messages.push(cloneMessages([errorMsg])[0]);
+                this.chats[idx].updatedAt = Date.now();
+                saveChats(this.chats);
+              }
+            }
+          } finally {
+            this.isStreaming = false;
+            this.streamingContent = '';
+            this.toolCallInfo = null;
+            // Persist the target chat
+            if (this.activeChatId === targetChatId) {
+              this.persistCurrentChat();
+            }
+            this.scrollToBottom();
+            this.$nextTick(() => {
+              if (this.$refs.chatInput) this.$refs.chatInput.focus();
+            });
+          }
+        },
+      };
+    }
+  </script>
+</body>
+</html>

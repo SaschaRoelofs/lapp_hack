@@ -1,4 +1,17 @@
 <!-- eKanban Skin Partial -->
+<script>
+(function(){
+  var MQ=768;
+  function checkEkanban(){
+    if(window.innerWidth<MQ){
+      localStorage.setItem('ekanbanMode','false');
+      document.body&&document.body.__x&&(document.body.__x.$data.ekanbanMode=false);
+    }
+  }
+  checkEkanban();
+  window.addEventListener('resize',checkEkanban);
+})();
+</script>
 <div x-show="ekanbanMode" class="font-sans antialiased text-gray-800" x-cloak>
   <!-- Top Navbar -->
   <div class="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-50 flex items-center justify-between px-4 shadow-sm">
@@ -116,6 +129,12 @@
           :class="window.location.pathname.startsWith('/search') ? 'border-lapp-600 bg-[#3d3d3d] text-white shadow-inner font-semibold' : 'border-transparent text-gray-400 hover:text-white hover:bg-[#3d3d3d]'">
           <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div>
           <span>Suche</span>
+       </a>
+       
+       <a href="/copilot" class="flex items-center pl-[2.25rem] pr-3 py-2 text-sm transition-colors border-l-4"
+          :class="window.location.pathname.startsWith('/copilot') ? 'border-lapp-600 bg-[#3d3d3d] text-white shadow-inner font-semibold' : 'border-transparent text-gray-400 hover:text-white hover:bg-[#3d3d3d]'">
+          <div class="w-6 flex justify-center mr-3"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/></svg></div>
+          <span>Copilot</span>
        </a>
        
        <a href="/machine" class="flex items-center pl-[2.25rem] pr-3 py-2 text-sm transition-colors border-l-4"

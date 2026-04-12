@@ -90,8 +90,9 @@
 
     function settingsPage() {
       return {
-        ekanbanMode: localStorage.getItem('ekanbanMode') === 'true',
+        ekanbanMode: localStorage.getItem('ekanbanMode') === 'true' && window.innerWidth >= 768,
         toggleEkanban() {
+          if (window.innerWidth < 768) return;
           this.ekanbanMode = !this.ekanbanMode;
           localStorage.setItem('ekanbanMode', this.ekanbanMode);
         },
