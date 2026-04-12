@@ -2,7 +2,7 @@
 <html lang="de" class="h-full">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Cable Copilot – LAPP Kabelberater</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -22,6 +22,7 @@
   </script>
   <style>
     /* Chat message prose styling */
+    .msg-content { word-break: break-word; }
     .msg-content p { margin-bottom: 0.5rem; }
     .msg-content p:last-child { margin-bottom: 0; }
     .msg-content ul, .msg-content ol { margin: 0.25rem 0 0.5rem 1.25rem; }
@@ -77,7 +78,7 @@
     }
   </style>
 </head>
-<body class="h-full bg-gray-50 font-sans text-gray-900 flex flex-col" x-data="copilotChat()" :class="{'ekanban-mode': ekanbanMode}">
+<body class="h-full bg-gray-50 font-sans text-gray-900 flex flex-col overflow-x-hidden" x-data="copilotChat()" :class="{'ekanban-mode': ekanbanMode}">
 
   <!-- eKanban UI Skin -->
   {% include '_ekanban_skin.html' %}
@@ -85,10 +86,10 @@
   {% include '_header.html' %}
 
   <!-- Layout: Chat + Sidebar (right) -->
-  <div class="copilot-flex-wrapper flex-1 flex" style="min-height:0">
+  <div class="copilot-flex-wrapper flex-1 flex flex-col md:flex-row w-full" style="min-height:0">
 
     <!-- Main chat area -->
-    <main class="flex-1 flex flex-col" style="min-height:0">
+    <main class="flex-1 flex flex-col min-w-0" style="min-height:0">
 
     <!-- Chat messages -->
     <div class="flex-1 overflow-y-auto chat-scroll px-2 sm:px-4 py-4 sm:py-6" x-ref="chatContainer" id="chat-container">
@@ -123,8 +124,8 @@
           <!-- User message -->
           <template x-if="msg.role === 'user'">
             <div class="flex justify-end">
-              <div class="max-w-[85%] sm:max-w-[70%] bg-lapp-600 text-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm">
-                <p class="text-sm whitespace-pre-wrap" x-text="msg.content"></p>
+              <div class="max-w-[90%] sm:max-w-[70%] min-w-0 bg-lapp-600 text-white rounded-2xl rounded-br-md px-4 py-2.5 shadow-sm">
+                <p class="text-sm whitespace-pre-wrap break-words" x-text="msg.content"></p>
               </div>
             </div>
           </template>
@@ -137,9 +138,9 @@
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
               </div>
-              <div class="max-w-[85%] sm:max-w-[75%]">
-                <div class="bg-white border border-gray-200 rounded-2xl rounded-tl-md px-4 py-2.5 shadow-sm">
-                  <div class="text-sm msg-content text-gray-700 leading-relaxed" x-html="renderMarkdown(msg.content)"></div>
+              <div class="max-w-[85%] sm:max-w-[75%] min-w-0">
+                <div class="bg-white border border-gray-200 rounded-2xl rounded-tl-md px-4 py-2.5 shadow-sm overflow-hidden">
+                  <div class="text-sm msg-content text-gray-700 leading-relaxed overflow-x-auto" x-html="renderMarkdown(msg.content)"></div>
                 </div>
                 <!-- Product cards -->
                 <template x-if="msg.products && msg.products.length > 0">
@@ -197,11 +198,11 @@
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
           </div>
-          <div class="max-w-[85%] sm:max-w-[75%]">
-            <div class="bg-white border border-gray-200 rounded-2xl rounded-tl-md px-4 py-2.5 shadow-sm">
+          <div class="max-w-[85%] sm:max-w-[75%] min-w-0">
+            <div class="bg-white border border-gray-200 rounded-2xl rounded-tl-md px-4 py-2.5 shadow-sm overflow-hidden">
               <!-- Show streamed text so far -->
               <template x-if="streamingContent">
-                <div class="text-sm msg-content text-gray-700 leading-relaxed" x-html="renderMarkdown(streamingContent)"></div>
+                <div class="text-sm msg-content text-gray-700 leading-relaxed overflow-x-auto" x-html="renderMarkdown(streamingContent)"></div>
               </template>
               <!-- Typing dots when no content yet -->
               <template x-if="!streamingContent">
@@ -223,7 +224,7 @@
     </div>
 
     <!-- Input area -->
-    <div class="border-t border-gray-200 bg-white px-2 sm:px-4 py-2 sm:py-3 shrink-0">
+    <div class="border-t border-gray-200 bg-white px-2 sm:px-4 pt-2 sm:pt-3 shrink-0" style="padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));">
       <form @submit.prevent="sendMessage()" class="max-w-5xl mx-auto flex gap-2 items-end">
         <div class="flex-1 relative min-w-0">
           <textarea
