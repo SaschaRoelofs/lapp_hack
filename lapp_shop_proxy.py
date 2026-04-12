@@ -637,7 +637,7 @@ async def _resolve_variant_with_retry(article_code: str, retries: int = 2) -> di
 
 @router.get("/search")
 async def shop_search(
-    q: str = Query(..., description="Search query, e.g. 'oelflex'"),
+    q: str = Query(..., description="Search query, e.g. 'ölflex'"),
     page: int = Query(0, ge=0),
     page_size: int = Query(50, ge=1, le=100),
 ):

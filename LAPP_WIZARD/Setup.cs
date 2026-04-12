@@ -97,7 +97,7 @@ public class DataExportAction
                 if (project == null)
                 {
                     new Decider().Decide(EnumDecisionType.eOkDecision,
-                        "Kein Projekt geoeffnet.", "DataExportAction",
+                        "Kein Projekt geöffnet.", "DataExportAction",
                         EnumDecisionReturn.eOK, EnumDecisionReturn.eOK,
                         "", false, EnumDecisionIcon.eEXCLAMATION);
                     return;
@@ -114,8 +114,8 @@ public class DataExportAction
                     log.AppendLine();
 
 
-                    // --- Export 2: Vollstaendiger Projekt-Export ---
-                    log.AppendLine("--- 2. Vollstaendiger Projekt-Export (JSON) ---");
+                    // --- Export 2: Vollständiger Projekt-Export ---
+                    log.AppendLine("--- 2. Vollständiger Projekt-Export (JSON) ---");
                     try
                     {
                         ExportFullProjectData(project, projectType, dataModelAsm, baseUrl, timestamp, token, log);
@@ -137,7 +137,7 @@ public class DataExportAction
                         "Export erfolgreich!\n\n" +
                         "Token: " + token + "\n" +
                         "(Token wurde in die Zwischenablage kopiert)\n\n" +
-                        "Machine-Seite oeffnen?",
+                        "Machine-Seite öffnen?",
                         "Export abgeschlossen",
                         EnumDecisionReturn.eYES, EnumDecisionReturn.eYES,
                         "", false, EnumDecisionIcon.eINFORMATION);
@@ -166,7 +166,7 @@ public class DataExportAction
 
 
     // =====================================================================
-    //  Vollstaendiger Projekt-Export (Funktionen, Verbindungen, Kabel)
+    //  Vollständiger Projekt-Export (Funktionen, Verbindungen, Kabel)
     // =====================================================================
     private void ExportFullProjectData(object project, Type projectType,
         Assembly dataModelAsm, string baseUrl, string timestamp, string token, StringBuilder log)
@@ -295,7 +295,7 @@ public class DataExportAction
                 string cableTypeName = "";
                 string kabelQuerschnitt = "";
                 string kabelQuerschnittMitAnzahl = "";
-                string kabelLaenge = "";
+                string kabelLänge = "";
                 string belasteteAdern = "";
                 string betriebsstrom = "";
                 string systemspannung = "";
@@ -329,7 +329,7 @@ public class DataExportAction
                                         {
                                             kabelQuerschnitt = SafeReadProp(funcIndexer, cableProps, propCableWireCrossSection, true);
                                             kabelQuerschnittMitAnzahl = SafeReadProp(funcIndexer, cableProps, propCableWireCountAndCrossSection, false);
-                                            kabelLaenge = SafeReadProp(funcIndexer, cableProps, propCableLength, false);
+                                            kabelLänge = SafeReadProp(funcIndexer, cableProps, propCableLength, false);
                                         }
 
                                         PropertyInfo cblIndexer = FindIndexer(cableProps, cablePropsEnumType);
@@ -411,7 +411,7 @@ public class DataExportAction
                         cableMap[cableName] = new List<string[]>();
                         cableInfo[cableName] = new string[] {
                                 cableTypeName, kabelQuerschnitt, kabelQuerschnittMitAnzahl,
-                                kabelLaenge, belasteteAdern, betriebsstrom, systemspannung,
+                                kabelLänge, belasteteAdern, betriebsstrom, systemspannung,
                                 articleDescr, articlePartNr
                             };
                     }

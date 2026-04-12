@@ -146,7 +146,7 @@ TOOLS = [
                 "properties": {
                     "base_product_code": {
                         "type": "string",
-                        "description": "Basis-Produktcode, z.B. 'oelflex-classic-110-3g1-5-1119203'",
+                        "description": "Basis-Produktcode, z.B. 'ölflex-classic-110-3g1-5-1119203'",
                     },
                 },
                 "required": ["base_product_code"],

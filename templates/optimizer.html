@@ -652,15 +652,15 @@
     function buildExecutiveSummary(state) {
       const tco = state.result?.optimum?.tco;
       const co2 = state.result?.optimum?.co2;
-      const cableName = state.selectedProductName || 'Ausgewaehltes LAPP Kabel';
+      const cableName = state.selectedProductName || 'Ausgewähltes LAPP Kabel';
       const base = 'Der Report bewertet das Kabel ' + cableName + ' für ' + formatPdfNumber(state.params.length_m, 0) + ' m Leitungslänge bei ' + formatPdfNumber(state.params.current_a, 1) + ' A Betriebsstrom.';
       if (tco && co2) {
-        return base + ' Das wirtschaftlich beste Ergebnis liegt bei ' + formatPdfNumber(tco.cross_section_mm2, 1) + ' mm², waehrend das CO2-Optimum bei ' + formatPdfNumber(co2.cross_section_mm2, 1) + ' mm² erreicht wird.';
+        return base + ' Das wirtschaftlich beste Ergebnis liegt bei ' + formatPdfNumber(tco.cross_section_mm2, 1) + ' mm², während das CO2-Optimum bei ' + formatPdfNumber(co2.cross_section_mm2, 1) + ' mm² erreicht wird.';
       }
       if (tco) {
         return base + ' Das beste zulässige Ergebnis liegt bei ' + formatPdfNumber(tco.cross_section_mm2, 1) + ' mm².';
       }
-      return base + ' Fuer die aktuelle Konfiguration wurde kein zulaessiger Querschnitt gefunden.';
+      return base + ' Fuer die aktuelle Konfiguration wurde kein zulässiger Querschnitt gefunden.';
     }
 
     function createPdfReport(doc, state, assets) {
@@ -855,11 +855,11 @@
       const kpiWidth = (pageWidth - margin * 2 - 8) / 3;
       drawKpiCard(margin, kpiY, kpiWidth, 31, [16, 185, 129], 'TCO-Optimum', 
         optimumTco ? formatPdfNumber(optimumTco.cross_section_mm2, 1) + ' mm²' : 'Kein Wert',
-        optimumTco ? ['TCO: ' + formatPdfCurrency(optimumTco.tco_eur), 'CO2: ' + formatPdfNumber(optimumTco.co2_total_kg, 2) + ' kg'] : 'Kein zulaessiger Querschnitt'
+        optimumTco ? ['TCO: ' + formatPdfCurrency(optimumTco.tco_eur), 'CO2: ' + formatPdfNumber(optimumTco.co2_total_kg, 2) + ' kg'] : 'Kein zulässiger Querschnitt'
       );
       drawKpiCard(margin + kpiWidth + 4, kpiY, kpiWidth, 31, [59, 130, 246], 'CO2-Optimum', 
         optimumCo2 ? formatPdfNumber(optimumCo2.cross_section_mm2, 1) + ' mm²' : 'Kein Wert',
-        optimumCo2 ? ['TCO: ' + formatPdfCurrency(optimumCo2.tco_eur), 'CO2: ' + formatPdfNumber(optimumCo2.co2_total_kg, 2) + ' kg'] : 'Kein zulaessiger Querschnitt'
+        optimumCo2 ? ['TCO: ' + formatPdfCurrency(optimumCo2.tco_eur), 'CO2: ' + formatPdfNumber(optimumCo2.co2_total_kg, 2) + ' kg'] : 'Kein zulässiger Querschnitt'
       );
       drawKpiCard(margin + (kpiWidth + 4) * 2, kpiY, kpiWidth, 31, [245, 158, 11], 'Amortisation', 
         (state.result.optimum.payback_tco_years != null) ? formatPdfNumber(state.result.optimum.payback_tco_years, 2) + ' J.' : 'Nicht erreicht',
@@ -931,7 +931,7 @@
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
-      doc.text('Gruen markiert = TCO-Optimum | Blau markiert = CO2-Optimum | Rot markiert = Unzulaessig', margin, doc.lastAutoTable.finalY + 6);
+      doc.text('Gruen markiert = TCO-Optimum | Blau markiert = CO2-Optimum | Rot markiert = Unzulässig', margin, doc.lastAutoTable.finalY + 6);
 
       drawStandardFooter(3);
 
