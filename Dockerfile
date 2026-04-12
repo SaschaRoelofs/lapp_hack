@@ -7,7 +7,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY app.py optimizer.py machine_db.py lapp_shop_proxy.py README.md ./
+COPY app.py optimizer.py machine_db.py copilot.py lapp_shop_proxy.py README.md ./
 COPY templates/ templates/
 COPY static/ static/
 COPY graph_store/ graph_store/
