@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_JSON_PATH = Path(__file__).parent / "ProjektDaten_20260403_082320.json"
+DEFAULT_JSON_PATH = Path(__file__).parent / "example.json"
 
 # Categories to skip – infrastructure nodes that clutter the graph
 _SKIP_CATEGORIES = frozenset({
