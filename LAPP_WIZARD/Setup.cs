@@ -60,8 +60,18 @@ public class DataExportAction
     [DeclareAction("DataExportAction")]
     public void Execute()
     {
+        Eplan.EplApi.Base.Progress progress = null;
         try
         {
+            progress = new Eplan.EplApi.Base.Progress("SimpleProgress");
+            progress.ShowImmediately();
+            progress.SetAllowCancel(false);
+            progress.SetAskOnCancel(false);
+            progress.SetNeededSteps(3);
+            progress.SetTitle("Lapp Wizard");
+            progress.SetActionText("Projekt wird exportiert... Bitte warten!");
+            progress.Step(1);
+
             Assembly dataModelAsm = null;
             Assembly heServicesAsm = null;
             Assembly eServicesAsm = null;
@@ -161,6 +171,13 @@ public class DataExportAction
                 "DataExportAction",
                 EnumDecisionReturn.eOK, EnumDecisionReturn.eOK,
                 "", false, EnumDecisionIcon.eFATALERROR);
+        }
+        finally
+        {
+            if (progress != null)
+            {
+                progress.EndPart(true);
+            }
         }
     }
 
@@ -562,28 +579,6 @@ public class DataExportAction
     //  Hilfsmethoden
     // =====================================================================
 
-    private static void WriteAllProperties(StringBuilder json, object obj, string indent)
-    {
-        bool first = true;
-        try
-        {
-            foreach (PropertyInfo pi in obj.GetType().GetProperties(DeclaredPublic))
-            {
-                if (pi.GetIndexParameters().Length > 0) continue;
-                if (pi.Name == "Properties") continue;
-                try
-                {
-                    object val = pi.GetValue(obj, null);
-                    if (!first) json.AppendLine(",");
-                    first = false;
-                    json.Append(indent + JsonEscape(pi.Name) + ": " + JsonEscape(val != null ? val.ToString() : ""));
-                }
-                catch { }
-            }
-        }
-        catch { }
-        if (!first) json.AppendLine();
-    }
 
     private static string SafeReadProp(PropertyInfo indexer, object props, object enumVal, bool asDouble)
     {
@@ -643,47 +638,6 @@ public class DataExportAction
             partNr = SafeReadProp(artIndexer, artProps, propPartNr, false);
         }
         catch { }
-    }
-
-    private static Type FindTypeByName(Assembly[] assemblies, string typeName)
-    {
-        foreach (Assembly asm in assemblies)
-        {
-            if (asm == null) continue;
-            try
-            {
-                foreach (Type t in asm.GetExportedTypes())
-                {
-                    if (t.Name == typeName) return t;
-                }
-            }
-            catch { }
-        }
-        return null;
-    }
-
-    private static void ListRelevantTypes(StringBuilder log, params string[] keywords)
-    {
-        foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
-        {
-            string asmName = asm.GetName().Name;
-            if (!asmName.StartsWith("Eplan")) continue;
-            try
-            {
-                foreach (Type t in asm.GetExportedTypes())
-                {
-                    foreach (string kw in keywords)
-                    {
-                        if (t.Name.Contains(kw))
-                        {
-                            log.AppendLine("  " + t.FullName + " [" + asmName + "]");
-                            break;
-                        }
-                    }
-                }
-            }
-            catch { }
-        }
     }
 
     private static PropertyInfo FindIndexer(object propsObj, Type enumType)
@@ -791,7 +745,7 @@ public class DataExportAction
         try
         {
             var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8000/health");
-            request.Timeout = 2000;
+            request.Timeout = 500;
             request.Method = "HEAD";
             using (request.GetResponse()) { }
             return "http://127.0.0.1:8000";
