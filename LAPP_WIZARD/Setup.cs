@@ -1,12 +1,16 @@
-using Eplan.EplApi.Scripting;
+﻿using Eplan.EplApi.Scripting;
 using Eplan.EplApi.Base;
 using Eplan.EplApi.Gui;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Windows.Forms;
+using System.Linq;
+using System.Threading.Tasks;
 
 
 public class LappWizardRibbon
@@ -19,7 +23,7 @@ public class LappWizardRibbon
         string tabName = "Lapp";
         string groupName = "Lapp Wizard";
 
-        // vorhandene Registerkarte löschen
+        // vorhandene Registerkarte l�schen
         var existingTab = ribbonBar.Tabs.FirstOrDefault(t => t.Name == tabName);
         if (existingTab != null) existingTab.Remove();
 
@@ -27,16 +31,25 @@ public class LappWizardRibbon
         var tab = ribbonBar.AddTab(tabName);
         var group = tab.AddCommandGroup(groupName);
 
-        // SVG‑Icon mit Lapp‑Orange (#F39200) erzeugen (32x32 für großen Button)
+        // SVG-Icon mit Lapp-Orange (#F39200) erzeugen (32x32 f�r gro�en Button)
         string svgIcon =
             "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\">" +
             "<rect width=\"32\" height=\"32\" rx=\"4\" ry=\"4\" fill=\"#F39200\" />" +
             "<text x=\"16\" y=\"21\" font-family=\"Arial\" font-size=\"14\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"white\">LW</text>" +
             "</svg>";
 
-        // Icon zur RibbonBar hinzufügen und als großen Button darstellen (\n erzwingt Icon oben, Text unten)
+        string svgCopilotIcon =
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\">" +
+            "<rect width=\"32\" height=\"32\" rx=\"4\" ry=\"4\" fill=\"#333333\" />" +
+            "<text x=\"16\" y=\"21\" font-family=\"Arial\" font-size=\"14\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"#F39200\">AI</text>" +
+            "</svg>";
+
+        // Icon zur RibbonBar hinzuf�gen und als gro�en Button darstellen (\n erzwingt Icon oben, Text unten)
         RibbonIcon lappIcon = ribbonBar.AddIcon(svgIcon);
         group.AddCommand("Lapp Wizard", "DataExportAction", lappIcon);
+
+        RibbonIcon aiIcon = ribbonBar.AddIcon(svgCopilotIcon);
+        group.AddCommand("Copilot", "CopilotAction", aiIcon);
     }
 
     // Reiter wieder entfernen
@@ -47,6 +60,7 @@ public class LappWizardRibbon
         string tabName = "Lapp Wizard";
 
         ribbonBar.RemoveCommand("DataExportAction");
+        ribbonBar.RemoveCommand("CopilotAction");
 
         var tab = ribbonBar.Tabs.FirstOrDefault(t => t.Name == tabName);
         if (tab != null) tab.Remove();
@@ -107,7 +121,7 @@ public class DataExportAction
                 if (project == null)
                 {
                     new Decider().Decide(EnumDecisionType.eOkDecision,
-                        "Kein Projekt geöffnet.", "DataExportAction",
+                        "Kein Projekt ge�ffnet.", "DataExportAction",
                         EnumDecisionReturn.eOK, EnumDecisionReturn.eOK,
                         "", false, EnumDecisionIcon.eEXCLAMATION);
                     return;
@@ -124,8 +138,8 @@ public class DataExportAction
                     log.AppendLine();
 
 
-                    // --- Export 2: Vollständiger Projekt-Export ---
-                    log.AppendLine("--- 2. Vollständiger Projekt-Export (JSON) ---");
+                    // --- Export 2: Vollst�ndiger Projekt-Export ---
+                    log.AppendLine("--- 2. Vollst�ndiger Projekt-Export (JSON) ---");
                     try
                     {
                         ExportFullProjectData(project, projectType, dataModelAsm, baseUrl, timestamp, token, log);
@@ -147,7 +161,7 @@ public class DataExportAction
                         "Export erfolgreich!\n\n" +
                         "Token: " + token + "\n" +
                         "(Token wurde in die Zwischenablage kopiert)\n\n" +
-                        "Machine-Seite öffnen?",
+                        "Machine-Seite �ffnen?",
                         "Export abgeschlossen",
                         EnumDecisionReturn.eYES, EnumDecisionReturn.eYES,
                         "", false, EnumDecisionIcon.eINFORMATION);
@@ -183,7 +197,7 @@ public class DataExportAction
 
 
     // =====================================================================
-    //  Vollständiger Projekt-Export (Funktionen, Verbindungen, Kabel)
+    //  Vollst�ndiger Projekt-Export (Funktionen, Verbindungen, Kabel)
     // =====================================================================
     private void ExportFullProjectData(object project, Type projectType,
         Assembly dataModelAsm, string baseUrl, string timestamp, string token, StringBuilder log)
@@ -787,6 +801,70 @@ public class DataExportAction
         catch (Exception ex)
         {
             log.AppendLine("FEHLER beim Senden an " + url + ": " + ex.Message);
+        }
+    }
+}
+
+public class CopilotAction
+{
+    [DeclareAction("CopilotAction")]
+    public void Execute()
+    {
+        CopilotForm form = new CopilotForm();
+        form.ShowDialog();
+    }
+}
+
+public class CopilotForm : Form
+{
+    private Control webView;
+
+    public CopilotForm()
+    {
+        this.Text = "Cable Copilot";
+        this.Size = new Size(1200, 800);
+        this.StartPosition = FormStartPosition.CenterScreen;
+        
+        try 
+        {
+            string eplanBin = AppDomain.CurrentDomain.BaseDirectory;
+            string dllPath = Path.Combine(eplanBin, "Microsoft.Web.WebView2.WinForms.dll");
+            
+            if (!File.Exists(dllPath))
+            {
+                Label err = new Label();
+                err.Text = "WebView2 DLL nicht gefunden in: " + dllPath;
+                err.Dock = DockStyle.Fill;
+                this.Controls.Add(err);
+                return;
+            }
+
+            // Dynamisches Laden der WebView2 (umgeht Compiler-Fehler im EPLAN-Skript)
+            Assembly wvAsm = Assembly.LoadFrom(dllPath);
+            Type wvType = wvAsm.GetType("Microsoft.Web.WebView2.WinForms.WebView2");
+            webView = (Control)Activator.CreateInstance(wvType);
+            webView.Dock = DockStyle.Fill;
+            this.Controls.Add(webView);
+            
+            // Initialisierung vorbereiten (UserDataFolder auf Temp setzen f�r Schreibrechte)
+            Type propsType = wvAsm.GetType("Microsoft.Web.WebView2.WinForms.CoreWebView2CreationProperties");
+            object props = Activator.CreateInstance(propsType);
+            
+            string tempFolder = Path.Combine(Path.GetTempPath(), "EplanWebView2Hack");
+            propsType.GetProperty("UserDataFolder").SetValue(props, tempFolder);
+            
+            wvType.GetProperty("CreationProperties").SetValue(webView, props);
+            
+            // Durch das Setzen der Source startet die WebView2 ihr Setup
+            Uri targetUri = new Uri("http://127.0.0.1:8000/copilot?embedded=true");
+            wvType.GetProperty("Source").SetValue(webView, targetUri);
+        }
+        catch (Exception ex)
+        {
+            Label lbl = new Label();
+            lbl.Text = "Fehler beim Laden von WebView2:\n\n" + ex.ToString();
+            lbl.Dock = DockStyle.Fill;
+            this.Controls.Add(lbl);
         }
     }
 }

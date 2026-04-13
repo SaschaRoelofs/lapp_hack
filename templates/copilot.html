@@ -74,19 +74,21 @@
 
     /* Mobile sidebar slides in from right, below header */
     .copilot-sidebar-open { top: 0; bottom: 0; }
-    body:not(.ekanban-mode) .copilot-sidebar-open { top: 4.5rem; }
-    body.ekanban-mode .copilot-sidebar-open { top: 3.5rem; }
+    body:not(.ekanban-mode):not(.embedded-mode) .copilot-sidebar-open { top: 4.5rem; }
+    body.ekanban-mode:not(.embedded-mode) .copilot-sidebar-open { top: 3.5rem; }
+    body.embedded-mode .copilot-sidebar-open { top: 0 !important; }
     @media (min-width: 768px) {
       .copilot-sidebar-open { top: 0 !important; bottom: 0; }
     }
   </style>
 </head>
-<body class="h-full bg-gray-50 font-sans text-gray-900 flex flex-col overflow-x-hidden" x-data="copilotChat()" :class="{'ekanban-mode': ekanbanMode}">
+<body class="h-full bg-gray-50 font-sans text-gray-900 flex flex-col overflow-x-hidden {% if embedded %}embedded-mode{% endif %}" x-data="copilotChat()" :class="{'ekanban-mode': ekanbanMode}">
 
-  <!-- eKanban UI Skin -->
   {% include '_ekanban_skin.html' %}
 
+  {% if not embedded %}
   {% include '_header.html' %}
+  {% endif %}
 
   <!-- Layout: Chat + Sidebar (right) -->
   <div class="copilot-flex-wrapper flex-1 flex flex-col md:flex-row w-full" style="min-height:0">

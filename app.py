@@ -191,7 +191,8 @@ async def search_page(request: Request):
 
 @app.get("/copilot", response_class=HTMLResponse)
 async def copilot_page(request: Request):
-    return templates.TemplateResponse(request=request, name="copilot.html")
+    embedded = request.query_params.get("embedded") == "true"
+    return templates.TemplateResponse(request=request, name="copilot.html", context={"embedded": embedded})
 
 
 @app.get("/settings", response_class=HTMLResponse)
