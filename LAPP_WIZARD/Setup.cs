@@ -905,7 +905,8 @@ public class CopilotForm : Form
             wvType.GetProperty("CreationProperties").SetValue(webView, props);
             
             // Durch das Setzen der Source startet die WebView2 ihr Setup
-            Uri targetUri = new Uri("http://127.0.0.1:8000/copilot?embedded=true");
+            string baseUrl = GetApiBaseUrl();
+            Uri targetUri = new Uri(baseUrl + "/copilot?embedded=true");
             wvType.GetProperty("Source").SetValue(webView, targetUri);
         }
         catch (Exception ex)
@@ -914,6 +915,22 @@ public class CopilotForm : Form
             lbl.Text = "Fehler beim Laden von WebView2:\n\n" + ex.ToString();
             lbl.Dock = DockStyle.Fill;
             this.Controls.Add(lbl);
+        }
+    }
+
+    private static string GetApiBaseUrl()
+    {
+        try
+        {
+            var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8000/health");
+            request.Timeout = 500;
+            request.Method = "HEAD";
+            using (request.GetResponse()) { }
+            return "http://127.0.0.1:8000";
+        }
+        catch
+        {
+            return "https://lapp-hack.de";
         }
     }
 }
