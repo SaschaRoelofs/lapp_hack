@@ -140,14 +140,29 @@ public class DataExportAction
 
                     // --- Export 2: Vollst�ndiger Projekt-Export ---
                     log.AppendLine("--- 2. Vollst�ndiger Projekt-Export (JSON) ---");
-                    try
+                    string jsonPayload = "";
+
+                    // Export auf Hintergrund-Thread ausfuehren, damit EPLAN nicht einfriert
+                    progress.SetActionText("Projektdaten werden gesammelt...");
+                    Exception bgError = null;
+                    var exportTask = System.Threading.Tasks.Task.Run(() =>
                     {
-                        ExportFullProjectData(project, projectType, dataModelAsm, baseUrl, timestamp, token, log);
+                        return ExportFullProjectData(project, projectType, dataModelAsm, baseUrl, timestamp, token, log);
+                    });
+                    while (!exportTask.IsCompleted)
+                    {
+                        System.Threading.Thread.Sleep(100);
+                        System.Windows.Forms.Application.DoEvents();
                     }
-                    catch (Exception ex)
+                    if (exportTask.IsFaulted)
                     {
-                        log.AppendLine("FEHLER: " + ex.Message);
-                        if (ex.InnerException != null) log.AppendLine("  Inner: " + ex.InnerException.Message);
+                        bgError = exportTask.Exception.InnerException ?? exportTask.Exception;
+                        log.AppendLine("FEHLER: " + bgError.Message);
+                        if (bgError.InnerException != null) log.AppendLine("  Inner: " + bgError.InnerException.Message);
+                    }
+                    else
+                    {
+                        jsonPayload = exportTask.Result;
                     }
 
                     log.AppendLine();
@@ -156,19 +171,50 @@ public class DataExportAction
                     string machineUrl = baseUrl + "/machine?token=" + token;
                     System.Windows.Forms.Clipboard.SetText(token);
 
-                    EnumDecisionReturn result = new Decider().Decide(
-                        EnumDecisionType.eYesNoDecision,
-                        "Export erfolgreich!\n\n" +
-                        "Token: " + token + "\n" +
-                        "(Token wurde in die Zwischenablage kopiert)\n\n" +
-                        "Machine-Seite �ffnen?",
-                        "Export abgeschlossen",
-                        EnumDecisionReturn.eYES, EnumDecisionReturn.eYES,
-                        "", false, EnumDecisionIcon.eINFORMATION);
-
-                    if (result == EnumDecisionReturn.eYES)
+                    if (!string.IsNullOrEmpty(jsonPayload))
                     {
-                        System.Diagnostics.Process.Start(machineUrl);
+                        // Upload auf Hintergrund-Thread
+                        progress.SetActionText("Daten werden zum Server hochgeladen...");
+                        var uploadTask = System.Threading.Tasks.Task.Run(() =>
+                        {
+                            PostJson(baseUrl, jsonPayload, token, log);
+                        });
+                        while (!uploadTask.IsCompleted)
+                        {
+                            System.Threading.Thread.Sleep(100);
+                            System.Windows.Forms.Application.DoEvents();
+                        }
+                        if (uploadTask.IsFaulted)
+                        {
+                            bgError = uploadTask.Exception.InnerException ?? uploadTask.Exception;
+                            log.AppendLine("FEHLER Upload: " + bgError.Message);
+                        }
+
+                        // Progressbar beenden BEVOR der Dialog erscheint
+                        if (progress != null)
+                        {
+                            progress.EndPart(true);
+                            progress = null;
+                        }
+
+                        EnumDecisionReturn result = new Decider().Decide(
+                            EnumDecisionType.eYesNoDecision,
+                            "Export erfolgreich!\n\n" +
+                            "Token: " + token + "\n" +
+                            "(Token wurde in die Zwischenablage kopiert)\n\n" +
+                            "Machine-Seite öffnen?",
+                            "Export abgeschlossen",
+                            EnumDecisionReturn.eYES, EnumDecisionReturn.eYES,
+                            "", false, EnumDecisionIcon.eINFORMATION);
+
+                        if (result == EnumDecisionReturn.eYES)
+                        {
+                            System.Diagnostics.Process.Start(machineUrl);
+                        }
+                    }
+                    else
+                    {
+                        new Decider().Decide(EnumDecisionType.eOkDecision, "Fehler beim Sammeln der Projekt-Daten.", "Export", EnumDecisionReturn.eOK, EnumDecisionReturn.eOK, "", false, EnumDecisionIcon.eFATALERROR);
                     }
                 }
             }
@@ -199,7 +245,7 @@ public class DataExportAction
     // =====================================================================
     //  Vollst�ndiger Projekt-Export (Funktionen, Verbindungen, Kabel)
     // =====================================================================
-    private void ExportFullProjectData(object project, Type projectType,
+    private string ExportFullProjectData(object project, Type projectType,
         Assembly dataModelAsm, string baseUrl, string timestamp, string token, StringBuilder log)
     {
         Type finderType = dataModelAsm.GetType("Eplan.EplApi.DataModel.DMObjectsFinder");
@@ -324,12 +370,12 @@ public class DataExportAction
                 // --- Kabel-Daten ---
                 string cableName = "";
                 string cableTypeName = "";
-                string kabelQuerschnitt = "";
-                string kabelQuerschnittMitAnzahl = "";
-                string kabelLänge = "";
-                string belasteteAdern = "";
-                string betriebsstrom = "";
-                string systemspannung = "";
+                string cableCrossSection = "";
+                string cableCrossSectionWithCount = "";
+                string cableLen = "";
+                string usedWiresCount = "";
+                string operatingCurrent = "";
+                string systemVoltage = "";
                 string articleDescr = "";
                 string articlePartNr = "";
 
@@ -358,14 +404,14 @@ public class DataExportAction
                                         PropertyInfo funcIndexer = FindIndexer(cableProps, funcPropsEnumType);
                                         if (funcIndexer != null)
                                         {
-                                            kabelQuerschnitt = SafeReadProp(funcIndexer, cableProps, propCableWireCrossSection, true);
-                                            kabelQuerschnittMitAnzahl = SafeReadProp(funcIndexer, cableProps, propCableWireCountAndCrossSection, false);
-                                            kabelLänge = SafeReadProp(funcIndexer, cableProps, propCableLength, false);
+                                            cableCrossSection = SafeReadProp(funcIndexer, cableProps, propCableWireCrossSection, true);
+                                            cableCrossSectionWithCount = SafeReadProp(funcIndexer, cableProps, propCableWireCountAndCrossSection, false);
+                                            cableLen = SafeReadProp(funcIndexer, cableProps, propCableLength, false);
                                         }
 
                                         PropertyInfo cblIndexer = FindIndexer(cableProps, cablePropsEnumType);
                                         if (cblIndexer != null)
-                                            belasteteAdern = SafeReadProp(cblIndexer, cableProps, propCableCountOfUsedWires, false);
+                                            usedWiresCount = SafeReadProp(cblIndexer, cableProps, propCableCountOfUsedWires, false);
                                     }
                                 }
                             }
@@ -375,7 +421,7 @@ public class DataExportAction
                             SafeReadArticleProperties(cable, articlePropsEnumType,
                                 propArticleCurrentCapacity, propArticleRatedVoltage,
                                 propArticleDescr1, propArticlePartNr,
-                                out betriebsstrom, out systemspannung, out articleDescr, out articlePartNr);
+                                out operatingCurrent, out systemVoltage, out articleDescr, out articlePartNr);
                         }
                     }
                 }
@@ -441,8 +487,8 @@ public class DataExportAction
                     {
                         cableMap[cableName] = new List<string[]>();
                         cableInfo[cableName] = new string[] {
-                                cableTypeName, kabelQuerschnitt, kabelQuerschnittMitAnzahl,
-                                kabelLänge, belasteteAdern, betriebsstrom, systemspannung,
+                                cableTypeName, cableCrossSection, cableCrossSectionWithCount,
+                                cableLen, usedWiresCount, operatingCurrent, systemVoltage,
                                 articleDescr, articlePartNr
                             };
                     }
@@ -586,7 +632,7 @@ public class DataExportAction
         json.AppendLine("  ]");
         json.AppendLine("}");
 
-        PostJson(baseUrl, json.ToString(), token, log);
+        return json.ToString();
     }
 
     // =====================================================================
@@ -619,28 +665,16 @@ public class DataExportAction
         {
             if (articlePropsEnumType == null) return;
 
-            PropertyInfo artRefsProp = cable.GetType().GetProperty("ArticleReferences", DeclaredPublic)
-                ?? cable.GetType().GetProperty("ArticleReferences");
-            if (artRefsProp == null) return;
-
-            Array artArr = artRefsProp.GetValue(cable, null) as Array;
+            Array artArr = SafeGetPropertyValue(cable, "ArticleReferences") as Array;
             if (artArr == null || artArr.Length == 0) return;
 
             object firstArtRef = artArr.GetValue(0);
             if (firstArtRef == null) return;
 
-            PropertyInfo articleProp = firstArtRef.GetType().GetProperty("Article", DeclaredPublic)
-                ?? firstArtRef.GetType().GetProperty("Article");
-            if (articleProp == null) return;
-
-            object article = articleProp.GetValue(firstArtRef, null);
+            object article = SafeGetPropertyValue(firstArtRef, "Article");
             if (article == null) return;
 
-            PropertyInfo artPropsProp = article.GetType().GetProperty("Properties", DeclaredPublic)
-                ?? article.GetType().GetProperty("Properties");
-            if (artPropsProp == null) return;
-
-            object artProps = artPropsProp.GetValue(article, null);
+            object artProps = SafeGetPropertyValue(article, "Properties");
             if (artProps == null) return;
 
             PropertyInfo artIndexer = FindIndexer(artProps, articlePropsEnumType);
@@ -663,6 +697,21 @@ public class DataExportAction
             if (idxParams.Length == 1 && idxParams[0].ParameterType == enumType)
                 return pi;
         }
+        return null;
+    }
+
+    private static object SafeGetPropertyValue(object obj, string propertyName)
+    {
+        if (obj == null) return null;
+        try
+        {
+            PropertyInfo prop = obj.GetType().GetProperty(propertyName, DeclaredPublic) ?? obj.GetType().GetProperty(propertyName);
+            if (prop != null)
+            {
+                return prop.GetValue(obj, null);
+            }
+        }
+        catch { }
         return null;
     }
 
