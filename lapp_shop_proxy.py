@@ -623,6 +623,27 @@ async def _resolve_variant_with_retry(article_code: str, retries: int = 2) -> di
             if attempt < retries:
                 await asyncio.sleep(0.5 * (attempt + 1))
 
+    # --- Search-based fallback ---
+    # get_variant_detail's internal search requires an exact variant article_number
+    # match, which fails when the EPLAN SAP number differs from the shop's article
+    # format.  The wizard only needs the base_product_code, so a simple search hit
+    # is sufficient.
+    for candidate in candidates:
+        try:
+            search_data = await search_lapp(candidate, page=0, page_size=5)
+            products = search_data.get("products", [])
+            if products:
+                base_code = products[0].get("baseProduct") or products[0].get("code") or ""
+                if base_code:
+                    return {
+                        "status": "found",
+                        "article_number": candidate,
+                        "base_product_code": base_code,
+                        "reason": "Über Shop-Suche gefunden.",
+                    }
+        except Exception:
+            pass  # search failed, continue
+
     if last_error:
         return {
             "status": "error",
@@ -850,6 +871,30 @@ async def shop_cable_options(base_product_code: str):
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
 
 
+@router.get("/product/{base_product_code}/cable-options-direct")
+async def shop_cable_options_direct(base_product_code: str):
+    """
+    Get optimizer-compatible cable options (non-streaming JSON response).
+    Used by the optimizer page and cable wizard for a simple fetch.
+    """
+    if base_product_code == "fallback_product":
+        from app import DEFAULT_OPTIONS
+        return {"options": DEFAULT_OPTIONS}
+
+    try:
+        options = await get_cable_options_from_shop(base_product_code)
+        return {"options": options}
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Product not found in Lapp shop")
+        # Fallback on API errors
+        from app import DEFAULT_OPTIONS
+        return {"options": DEFAULT_OPTIONS}
+    except Exception:
+        from app import DEFAULT_OPTIONS
+        return {"options": DEFAULT_OPTIONS}
+
+
 @router.get("/product/{base_product_code}/prices")
 async def shop_product_prices(base_product_code: str):
     """
@@ -890,6 +935,35 @@ async def shop_variant_detail(article_code: str):
     """Get the exact shop record for a single variant/article number."""
     try:
         return await get_variant_detail(article_code)
+    except HTTPException as exc:
+        if exc.status_code != 404:
+            raise
+        # get_variant_detail 404'd – try a search-based fallback so the wizard
+        # can still resolve the base_product_code even when the article number
+        # format doesn't match exactly.
+        normalized = _normalize_article_code(article_code)
+        try:
+            search_data = await search_lapp(normalized or article_code, page=0, page_size=5)
+            products = search_data.get("products", [])
+            if products:
+                hit = products[0]
+                base_code = hit.get("baseProduct") or hit.get("code") or ""
+                if base_code:
+                    return {
+                        "article_number": normalized or article_code,
+                        "name": hit.get("name", ""),
+                        "base_product_code": base_code,
+                        "url": f"https://www.lapp.com/de/de{hit.get('url', '')}",
+                        "image_url": next(
+                            (img["url"] for img in hit.get("images", []) if img.get("format") == "searchImageLarge"),
+                            "",
+                        ),
+                        "price_on_request": hit.get("priceOnRequest", False),
+                        "orderable": True,
+                    }
+        except Exception:
+            pass
+        raise HTTPException(status_code=404, detail="Variant not found")
     except httpx.HTTPStatusError as exc:
         if exc.response.status_code == 404:
             raise HTTPException(status_code=404, detail="Variant not found")

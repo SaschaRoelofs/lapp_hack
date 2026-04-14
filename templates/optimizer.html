@@ -1070,28 +1070,47 @@
           this.shopLoadingMessage = 'Verbinde mit LAPP...';
           
           try {
-            const response = await fetch('/api/shop/product/' + encodeURIComponent(product.base_product_code) + '/cable-options-direct');
+            const response = await fetch('/api/shop/product/' + encodeURIComponent(product.base_product_code) + '/cable-options');
             if (!response.ok) throw new Error(await response.text());
-            
-            this.shopLoadingProgress = 50;
-            this.shopLoadingMessage = 'Lade Produktdaten...';
-            
-            const opts = await response.json();
-            
-            this.shopLoadingProgress = 100;
-            this.shopLoadingMessage = 'Fertig.';
-            
-            if (Array.isArray(opts) && opts.length > 0) {
-              this.options = opts;
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let finalOptions = [];
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                try {
+                  const evt = JSON.parse(line.slice(6));
+                  if (evt.error) {
+                    this.shopLoadingMessage = 'Fehler: ' + evt.error;
+                    continue;
+                  }
+                  if (evt.progress != null) this.shopLoadingProgress = evt.progress;
+                  if (evt.message) this.shopLoadingMessage = evt.message;
+                  if (evt.options) finalOptions = evt.options;
+                } catch (_) { /* ignore malformed SSE */ }
+              }
+            }
+
+            if (finalOptions.length > 0) {
+              this.options = finalOptions;
               this.optionsPage = 0;
             } else {
-               console.warn('Empty options returned, using fallback fallback/default rules if needed');
+              console.warn('Empty options returned from SSE stream');
             }
           } catch (e) {
             console.error('Failed to load cable options:', e);
             this.shopLoadingMessage = 'Fehler beim Laden.';
           } finally {
-            // Little delay to let user see 100%
             setTimeout(() => {
               this.shopLoadingOptions = false;
             }, 300);
