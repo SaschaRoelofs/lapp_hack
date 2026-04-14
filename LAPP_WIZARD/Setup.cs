@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 public class LappWizardRibbon
 {
-    // Reiter und Button registrieren
+    // Register tab and button
     [DeclareRegister]
     public void RegisterRibbon()
     {
@@ -23,15 +23,15 @@ public class LappWizardRibbon
         string tabName = "Lapp";
         string groupName = "Lapp Wizard";
 
-        // vorhandene Registerkarte l�schen
+        // Delete existing tab if present
         var existingTab = ribbonBar.Tabs.FirstOrDefault(t => t.Name == tabName);
         if (existingTab != null) existingTab.Remove();
 
-        // neue Registerkarte und Gruppe anlegen
+        // Create new tab and group
         var tab = ribbonBar.AddTab(tabName);
         var group = tab.AddCommandGroup(groupName);
 
-        // SVG-Icon mit Lapp-Orange (#F39200) erzeugen (32x32 f�r gro�en Button)
+        // Create SVG icon with Lapp orange (#F39200) (32x32 for large button)
         string svgIcon =
             "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\">" +
             "<rect width=\"32\" height=\"32\" rx=\"4\" ry=\"4\" fill=\"#F39200\" />" +
@@ -44,7 +44,7 @@ public class LappWizardRibbon
             "<text x=\"16\" y=\"21\" font-family=\"Arial\" font-size=\"14\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"#F39200\">AI</text>" +
             "</svg>";
 
-        // Icon zur RibbonBar hinzuf�gen und als gro�en Button darstellen (\n erzwingt Icon oben, Text unten)
+        // Add icon to RibbonBar and render as large button (\n forces icon on top, text below)
         RibbonIcon lappIcon = ribbonBar.AddIcon(svgIcon);
         group.AddCommand("Lapp Wizard", "DataExportAction", lappIcon);
 
@@ -52,7 +52,7 @@ public class LappWizardRibbon
         group.AddCommand("Copilot", "CopilotAction", aiIcon);
     }
 
-    // Reiter wieder entfernen
+    // Remove tab
     [DeclareUnregister]
     public void UnregisterRibbon()
     {
@@ -138,11 +138,11 @@ public class DataExportAction
                     log.AppendLine();
 
 
-                    // --- Export 2: Vollst�ndiger Projekt-Export ---
+                    // --- Export 2: Full project export ---
                     log.AppendLine("--- 2. Vollst�ndiger Projekt-Export (JSON) ---");
                     string jsonPayload = "";
 
-                    // Export auf Hintergrund-Thread ausfuehren, damit EPLAN nicht einfriert
+                    // Run export on background thread to prevent EPLAN from freezing
                     progress.SetActionText("Projektdaten werden gesammelt...");
                     Exception bgError = null;
                     var exportTask = System.Threading.Tasks.Task.Run(() =>
@@ -173,7 +173,7 @@ public class DataExportAction
 
                     if (!string.IsNullOrEmpty(jsonPayload))
                     {
-                        // Upload auf Hintergrund-Thread
+                        // Upload on background thread
                         progress.SetActionText("Daten werden zum Server hochgeladen...");
                         var uploadTask = System.Threading.Tasks.Task.Run(() =>
                         {
@@ -190,7 +190,7 @@ public class DataExportAction
                             log.AppendLine("FEHLER Upload: " + bgError.Message);
                         }
 
-                        // Progressbar beenden BEVOR der Dialog erscheint
+                        // End progress bar BEFORE the dialog appears
                         if (progress != null)
                         {
                             progress.EndPart(true);
@@ -243,7 +243,7 @@ public class DataExportAction
 
 
     // =====================================================================
-    //  Vollst�ndiger Projekt-Export (Funktionen, Verbindungen, Kabel)
+    //  Full project export (functions, connections, cables)
     // =====================================================================
     private string ExportFullProjectData(object project, Type projectType,
         Assembly dataModelAsm, string baseUrl, string timestamp, string token, StringBuilder log)
@@ -259,12 +259,12 @@ public class DataExportAction
         ConstructorInfo finderCtor = finderType.GetConstructor(new Type[] { projectType });
         object finder = finderCtor.Invoke(new object[] { project });
 
-        // Alle Verbindungen
+        // All connections
         object conFilter = Activator.CreateInstance(conFilterType);
         MethodInfo getConns = finderType.GetMethod("GetConnections", new Type[] { conFilterType });
         Array connections = (Array)getConns.Invoke(finder, new object[] { conFilter });
 
-        // Alle Funktionen
+        // All functions
         object funcFilter = Activator.CreateInstance(funcFilterType);
         MethodInfo getFuncs = finderType.GetMethod("GetFunctions", new Type[] { funcFilterType });
         Array functions = (Array)getFuncs.Invoke(finder, new object[] { funcFilter });
@@ -272,7 +272,7 @@ public class DataExportAction
         log.AppendLine("Verbindungen: " + (connections != null ? connections.Length.ToString() : "0"));
         log.AppendLine("Funktionen: " + (functions != null ? functions.Length.ToString() : "0"));
 
-        // CDP Property-Enum-Werte
+        // CDP property enum values
         object propCrossSection = SafeEnumParse(cdpPropsEnumType, "CONNECTION_WIRECROSSSECTION", "CDP_CON_WIRECROSSSECTION");
         object propLength = SafeEnumParse(cdpPropsEnumType, "CONNECTION_WIRELENGTH_VALUE", "CDP_CON_WIRELENGTH");
         object propWireNumber = SafeEnumParse(cdpPropsEnumType, "CONNECTION_WIRENUMBER", "CDP_CON_WIRENUMBER");
@@ -282,26 +282,26 @@ public class DataExportAction
         object propSignalName = SafeEnumParse(cdpPropsEnumType, "CONNECTION_SIGNALNAME", "CDP_CON_SIGNALNAME");
         object propConnectionType = SafeEnumParse(cdpPropsEnumType, "CONNECTION_TYPE", "CDP_CON_TYPE");
 
-        // Kabel-Funktions-Properties
+        // Cable function properties
         object propCableWireCrossSection = SafeEnumParse(funcPropsEnumType, "FUNC_CABLEWIRECROSSSECTION", "FUNC_CABLEWIRECROSSSECTION");
         object propCableWireCountAndCrossSection = SafeEnumParse(funcPropsEnumType, "FUNC_CABLEWIRECOUNTANDCROSSSECTION", "FUNC_CABLEWIRECOUNTANDCROSSSECTION");
         object propCableLength = SafeEnumParse(funcPropsEnumType, "FUNC_CABLELENGTH", "FUNC_CABLELENGTH");
 
-        // Kabel-Properties
+        // Cable properties
         object propCableCountOfUsedWires = SafeEnumParse(cablePropsEnumType, "CABLE_COUNTOFUSEDWIRES", "CABLE_COUNTOFUSEDWIRES");
 
-        // Artikel-Properties
+        // Article properties
         object propArticleCurrentCapacity = SafeEnumParse(articlePropsEnumType, "ARTICLE_CURRENT_CARRYING_CAPACITY", "ARTICLE_CURRENT_CARRYING_CAPACITY");
         object propArticleRatedVoltage = SafeEnumParse(articlePropsEnumType, "ARTICLE_RATED_VOLTAGE", "ARTICLE_RATED_VOLTAGE");
         object propArticleDescr1 = SafeEnumParse(articlePropsEnumType, "ARTICLE_DESCR1", "ARTICLE_DESCR1");
         object propArticlePartNr = SafeEnumParse(articlePropsEnumType, "ARTICLE_PARTNR", "ARTICLE_PARTNR");
 
-        // Projekt-Info
+        // Project info
         string projectPath = SafeGetPropertyString(project, "ProjectLinkFilePath");
         if (string.IsNullOrEmpty(projectPath)) projectPath = SafeGetPropertyString(project, "ProjectDirectoryPath");
         string projectName = SafeGetPropertyString(project, "ProjectName");
 
-        // Kabel-Map fuer gruppierten Export
+        // Cable map for grouped export
         Dictionary<string, List<string[]>> cableMap = new Dictionary<string, List<string[]>>();
         Dictionary<string, string[]> cableInfo = new Dictionary<string, string[]>();
 
@@ -367,7 +367,7 @@ public class DataExportAction
                 string connName = SafeGetPropertyString(conn, "Name");
                 string connIdName = SafeGetPropertyString(conn, "IdentifyingName");
 
-                // --- Kabel-Daten ---
+                // --- Cable data ---
                 string cableName = "";
                 string cableTypeName = "";
                 string cableCrossSection = "";
@@ -391,7 +391,7 @@ public class DataExportAction
                             cableName = SafeGetPropertyString(cable, "Name");
                             cableTypeName = SafeGetPropertyString(cable, "PartNr");
 
-                            // Kabel-Properties ueber Funktions-Enum
+                            // Cable properties via function enum
                             try
                             {
                                 PropertyInfo cablePropsProp = cable.GetType().GetProperty("Properties", DeclaredPublic)
@@ -417,7 +417,7 @@ public class DataExportAction
                             }
                             catch { }
 
-                            // Artikel-Daten
+                            // Article data
                             SafeReadArticleProperties(cable, articlePropsEnumType,
                                 propArticleCurrentCapacity, propArticleRatedVoltage,
                                 propArticleDescr1, propArticlePartNr,
@@ -427,7 +427,7 @@ public class DataExportAction
                 }
                 catch { }
 
-                // --- CDPs auslesen ---
+                // --- Read CDPs ---
                 PropertyInfo cdpPropInfo = connType.GetProperty("ConnectionDefPoints", DeclaredPublic)
                     ?? connType.GetProperty("ConnectionDefPoints");
                 Array cdpArr = null;
@@ -444,7 +444,7 @@ public class DataExportAction
                         : source;
                 }
 
-                // Verbindungsdaten aus erstem CDP
+                // Connection data from first CDP
                 string wireNumber = "";
                 string crossSection = "";
                 string wireLength = "";
@@ -480,7 +480,7 @@ public class DataExportAction
                     }
                 }
 
-                // Kabel-Map befuellen
+                // Populate cable map
                 if (!string.IsNullOrEmpty(cableName))
                 {
                     if (!cableMap.ContainsKey(cableName))
@@ -498,7 +498,7 @@ public class DataExportAction
                         });
                 }
 
-                // --- JSON fuer diese Verbindung ---
+                // --- JSON for this connection ---
                 json.AppendLine("    {");
                 json.AppendLine("      \"name\": " + JsonEscape(connName) + ",");
                 json.AppendLine("      \"identifyingName\": " + JsonEscape(connIdName) + ",");
@@ -515,7 +515,7 @@ public class DataExportAction
                 json.AppendLine("      \"cable\": " + JsonEscape(cableName) + ",");
                 json.AppendLine("      \"cableType\": " + JsonEscape(cableTypeName) + ",");
 
-                // Alle CDPs einzeln
+                // All CDPs individually
                 json.AppendLine("      \"connectionDefPoints\": [");
                 if (cdpArr != null)
                 {
@@ -576,7 +576,7 @@ public class DataExportAction
         json.AppendLine("  ],");
 
         // =================================================================
-        //  KABEL (gruppiert)
+        //  CABLES (grouped)
         // =================================================================
         json.AppendLine("  \"cableCount\": " + cableMap.Count + ",");
         json.AppendLine("  \"cables\": [");
@@ -636,7 +636,7 @@ public class DataExportAction
     }
 
     // =====================================================================
-    //  Hilfsmethoden
+    //  Helper methods
     // =====================================================================
 
 
@@ -888,14 +888,14 @@ public class CopilotForm : Form
                 return;
             }
 
-            // Dynamisches Laden der WebView2 (umgeht Compiler-Fehler im EPLAN-Skript)
+            // Dynamically load WebView2 (avoids compiler errors in EPLAN script)
             Assembly wvAsm = Assembly.LoadFrom(dllPath);
             Type wvType = wvAsm.GetType("Microsoft.Web.WebView2.WinForms.WebView2");
             webView = (Control)Activator.CreateInstance(wvType);
             webView.Dock = DockStyle.Fill;
             this.Controls.Add(webView);
             
-            // Initialisierung vorbereiten (UserDataFolder auf Temp setzen f�r Schreibrechte)
+            // Prepare initialization (set UserDataFolder to temp for write permissions)
             Type propsType = wvAsm.GetType("Microsoft.Web.WebView2.WinForms.CoreWebView2CreationProperties");
             object props = Activator.CreateInstance(propsType);
             
@@ -904,7 +904,7 @@ public class CopilotForm : Form
             
             wvType.GetProperty("CreationProperties").SetValue(webView, props);
             
-            // Durch das Setzen der Source startet die WebView2 ihr Setup
+            // Setting the Source triggers WebView2 initialization
             string baseUrl = GetApiBaseUrl();
             Uri targetUri = new Uri(baseUrl + "/copilot?embedded=true");
             wvType.GetProperty("Source").SetValue(webView, targetUri);
