@@ -1966,7 +1966,7 @@
           if (optionsCache.has(baseProductCode)) return optionsCache.get(baseProductCode);
 
           try {
-            const resp = await fetch('/api/shop/product/' + encodeURIComponent(baseProductCode) + '/cable-options');
+            const resp = await fetch('/api/shop/product/' + encodeURIComponent(baseProductCode) + '/cable-options-direct');
             if (!resp.ok) {
               optionsCache.set(baseProductCode, []);
               return [];
@@ -2452,7 +2452,7 @@
           this.optOptionsLoading = true;
           this.optOptions = [];
           try {
-            const resp = await fetch('/api/shop/product/' + encodeURIComponent(baseProductCode) + '/cable-options');
+            const resp = await fetch('/api/shop/product/' + encodeURIComponent(baseProductCode) + '/cable-options-direct');
             if (!resp.ok) throw new Error('Kabelvarianten konnten nicht geladen werden.');
             const opts = await resp.json();
             this.optOptions = opts.length > 0 ? opts : DEFAULT_OPTIONS.map(o => ({ ...o }));

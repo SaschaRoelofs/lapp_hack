@@ -1070,51 +1070,22 @@
           this.shopLoadingMessage = 'Verbinde mit LAPP...';
           
           try {
-            const response = await fetch('/api/shop/product/' + encodeURIComponent(product.base_product_code) + '/cable-options');
+            const response = await fetch('/api/shop/product/' + encodeURIComponent(product.base_product_code) + '/cable-options-direct');
+            if (!response.ok) throw new Error(await response.text());
             
-            // Wait, we need to handle SSE stream if Content-Type is text/event-stream
-            if (response.headers.get('content-type')?.includes('text/event-stream')) {
-              const reader = response.body.getReader();
-              const decoder = new TextDecoder();
-              let buffer = '';
-              
-              while (true) {
-                const { done, value } = await reader.read();
-                if (value) buffer += decoder.decode(value, { stream: true });
-                if (done) {
-                  buffer += decoder.decode();
-                }
-                
-                const parts = buffer.split('\n\n');
-                buffer = parts.pop(); 
-                
-                for (const part of parts) {
-                  const line = part.split('\n').find(l => l.startsWith('data: '));
-                  if (line) {
-                    const dataStr = line.substring(6);
-                    try {
-                      const data = JSON.parse(dataStr);
-                      if (data.error) throw new Error(data.error);
-                      if (data.progress !== undefined) this.shopLoadingProgress = data.progress;
-                      if (data.message !== undefined) this.shopLoadingMessage = data.message;
-                      if (data.options) {
-                        this.options = data.options;
-                        this.optionsPage = 0;
-                      }
-                    } catch(e) {
-                      console.error('SSE JSON error', e);
-                    }
-                  }
-                }
-                if (done) break;
-              }
+            this.shopLoadingProgress = 50;
+            this.shopLoadingMessage = 'Lade Produktdaten...';
+            
+            const opts = await response.json();
+            
+            this.shopLoadingProgress = 100;
+            this.shopLoadingMessage = 'Fertig.';
+            
+            if (Array.isArray(opts) && opts.length > 0) {
+              this.options = opts;
+              this.optionsPage = 0;
             } else {
-              if (!response.ok) throw new Error(await response.text());
-              const opts = await response.json();
-              if (opts.length > 0) {
-                this.options = opts;
-                this.optionsPage = 0;
-              }
+               console.warn('Empty options returned, using fallback fallback/default rules if needed');
             }
           } catch (e) {
             console.error('Failed to load cable options:', e);

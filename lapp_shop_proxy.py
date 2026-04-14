@@ -292,7 +292,7 @@ async def get_variant_detail(article_code: str) -> dict:
         resp.raise_for_status()
         data = resp.json()
     except httpx.HTTPStatusError as exc:
-        if exc.response.status_code not in (404, 410):
+        if exc.response.status_code not in (400, 404, 410):
             raise  # Re-raise non-404 errors (rate limiting, server errors) so callers can retry
         search_data = await search_lapp(article_code, page=0, page_size=20)
         products = search_data.get("products", [])
