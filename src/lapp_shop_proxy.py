@@ -480,7 +480,7 @@ async def get_cable_options_from_shop(base_product_code: str) -> list[dict]:
     tech_data = await get_variant_prices_and_tech([c for c in article_codes if c])
     tech_map = {d["article_number"]: d for d in tech_data if "error" not in d}
 
-    from app import STANDARD_RESISTANCE_OHM_PER_KM, STANDARD_AMPACITY_A
+    from src.app import STANDARD_RESISTANCE_OHM_PER_KM, STANDARD_AMPACITY_A
 
     options = []
     for v in valid_variants:
@@ -771,7 +771,7 @@ async def shop_cable_options(base_product_code: str):
     async def sse_generator():
         try:
             if base_product_code == "fallback_product":
-                from app import DEFAULT_OPTIONS
+                from src.app import DEFAULT_OPTIONS
                 yield f"data: {json.dumps({'progress': 100, 'message': 'Fertig.', 'options': DEFAULT_OPTIONS})}\n\n"
                 return
             
@@ -819,7 +819,7 @@ async def shop_cable_options(base_product_code: str):
             yield f"data: {json.dumps({'progress': 95, 'message': 'Erstelle Optimierungs-Modell...'})}\n\n"
             
             tech_map = {d["article_number"]: d for d in tech_data if "error" not in d}
-            from app import STANDARD_RESISTANCE_OHM_PER_KM, STANDARD_AMPACITY_A
+            from src.app import STANDARD_RESISTANCE_OHM_PER_KM, STANDARD_AMPACITY_A
 
             options = []
             for v in valid_variants:
@@ -862,10 +862,10 @@ async def shop_cable_options(base_product_code: str):
             if exc.response.status_code == 404:
                 yield f"data: {json.dumps({'error': 'Product not found in Lapp shop'})}\n\n"
             else:
-                from app import DEFAULT_OPTIONS
+                from src.app import DEFAULT_OPTIONS
                 yield f"data: {json.dumps({'progress': 100, 'message': 'API-Limit, benutze Fallback.', 'options': DEFAULT_OPTIONS})}\n\n"
         except Exception as e:
-            from app import DEFAULT_OPTIONS
+            from src.app import DEFAULT_OPTIONS
             yield f"data: {json.dumps({'progress': 100, 'message': 'Fehler, benutze Fallback.', 'options': DEFAULT_OPTIONS})}\n\n"
 
     return StreamingResponse(sse_generator(), media_type="text/event-stream")
@@ -878,7 +878,7 @@ async def shop_cable_options_direct(base_product_code: str):
     Used by the optimizer page and cable wizard for a simple fetch.
     """
     if base_product_code == "fallback_product":
-        from app import DEFAULT_OPTIONS
+        from src.app import DEFAULT_OPTIONS
         return {"options": DEFAULT_OPTIONS}
 
     try:
@@ -888,10 +888,10 @@ async def shop_cable_options_direct(base_product_code: str):
         if exc.response.status_code == 404:
             raise HTTPException(status_code=404, detail="Product not found in Lapp shop")
         # Fallback on API errors
-        from app import DEFAULT_OPTIONS
+        from src.app import DEFAULT_OPTIONS
         return {"options": DEFAULT_OPTIONS}
     except Exception:
-        from app import DEFAULT_OPTIONS
+        from src.app import DEFAULT_OPTIONS
         return {"options": DEFAULT_OPTIONS}
 
 

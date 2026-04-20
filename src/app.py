@@ -17,16 +17,16 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Any
 
-from optimizer import (
+from src.optimizer import (
     CableOption,
     InputParams,
     evaluate_all,
     find_optimum,
     payback_years,
 )
-from machine_db import build_machine_graph_from_json, build_machine_graph_from_data
-from lapp_shop_proxy import router as shop_router
-from copilot import router as copilot_router
+from src.machine_db import build_machine_graph_from_json, build_machine_graph_from_data
+from src.lapp_shop_proxy import router as shop_router
+from src.copilot import router as copilot_router
 
 from typing import Any
 
@@ -38,15 +38,15 @@ class CableReplacement(BaseModel):
     reason: Optional[str] = None
 
 app = FastAPI(title="Leitungsquerschnitt-Optimierer")
-app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "../static"), name="static")
 app.include_router(shop_router)
 app.include_router(copilot_router)
-templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+templates = Jinja2Templates(directory=Path(__file__).parent / "../templates")
 
 # ---------------------------------------------------------------------------
 # README → HTML (single source of truth for the homepage)
 # ---------------------------------------------------------------------------
-_README_PATH = Path(__file__).parent / "README.md"
+_README_PATH = Path(__file__).parent / "../README.md"
 
 
 def _render_readme() -> str:
@@ -310,7 +310,7 @@ async def api_machine_db():
 # ---------------------------------------------------------------------------
 # Token store – graphs are persisted as <token>.json on disk
 # ---------------------------------------------------------------------------
-_GRAPH_STORE_DIR = Path(__file__).parent / "graph_store"
+_GRAPH_STORE_DIR = Path(__file__).parent / "../graph_store"
 _GRAPH_STORE_DIR.mkdir(exist_ok=True)
 
 

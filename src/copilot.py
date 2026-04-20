@@ -17,7 +17,7 @@ from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
-from lapp_shop_proxy import (
+from src.lapp_shop_proxy import (
     search_lapp,
     get_product_clean,
     get_variant_detail,
