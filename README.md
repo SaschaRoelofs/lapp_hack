@@ -38,16 +38,6 @@ Ergänzt wird das Ganze durch **lokal speicherbare Einstellungen**, einen **desk
 
 ---
 
-## End-to-End Workflow
-
-1. **Produkt recherchieren**: Im LAPP Shop nach Kabeln oder Artikelnummern suchen.
-2. **Kabel bewerten**: Varianten in den Optimierer übernehmen und wirtschaftlich wie ökologisch vergleichen.
-3. **Maschine analysieren**: EPLAN-Export laden oder per Token wieder aufrufen.
-4. **Verbindungen optimieren**: Im Cable Wizard einzelne Kabelstrecken mit realen Maschinenkontexten prüfen.
-5. **Ergebnisse sichern**: PDF-Report, CSV-Export und gespeicherte Ersatzvorschläge weiterverwenden.
-
----
-
 ## Features
 
 ### Leitungsquerschnitt-Optimierer
