@@ -10,7 +10,7 @@ from typing import Optional
 
 import markdown
 import uvicorn
-from fastapi import FastAPI, Header, Request
+from fastapi import FastAPI, Header, Request, Body
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -27,6 +27,15 @@ from optimizer import (
 from machine_db import build_machine_graph_from_json, build_machine_graph_from_data
 from lapp_shop_proxy import router as shop_router
 from copilot import router as copilot_router
+
+from typing import Any
+
+class CableReplacement(BaseModel):
+    cable_name: str
+    original_mm2: Optional[Any] = None
+    recommended_mm2: Optional[Any] = None
+    recommended_article_nr: Optional[str] = None
+    reason: Optional[str] = None
 
 app = FastAPI(title="Leitungsquerschnitt-Optimierer")
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
@@ -349,6 +358,60 @@ async def api_machine_db_by_token(token: str):
     if not path.exists():
         raise HTTPException(status_code=404, detail="Token nicht gefunden.")
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+@app.post("/api/machine-db/{token}/replacements")
+async def api_machine_db_save_replacements(token: str, request: Request):
+    from fastapi import HTTPException
+    
+    if not token.isalnum():
+        raise HTTPException(status_code=400, detail="Ungültiger Token.")
+    
+    raw = await request.json()
+    if not isinstance(raw, list):
+        raw = [raw]
+        
+    path = _GRAPH_STORE_DIR / f"{token}_replacements.json"
+    
+    # Bestehende Replacements laden und mergen (by cable_name)
+    existing = []
+    if path.exists():
+        existing = json.loads(path.read_text(encoding="utf-8"))
+    
+    existing_map = {r["cable_name"]: r for r in existing}
+    for item in raw:
+        if "cable_name" in item:
+            existing_map[item["cable_name"]] = item
+    
+    data = list(existing_map.values())
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    
+    return {"status": "success", "count": len(data)}
+
+@app.get("/api/machine-db/{token}/replacements")
+async def api_machine_db_get_replacements(token: str):
+    from fastapi import HTTPException
+    
+    if not token.isalnum():
+        raise HTTPException(status_code=400, detail="Ungültiger Token.")
+        
+    path = _GRAPH_STORE_DIR / f"{token}_replacements.json"
+    if not path.exists():
+        return []
+        
+    return json.loads(path.read_text(encoding="utf-8"))
+
+@app.delete("/api/machine-db/{token}/replacements")
+async def api_machine_db_delete_replacements(token: str):
+    from fastapi import HTTPException
+    
+    if not token.isalnum():
+        raise HTTPException(status_code=400, detail="Ungültiger Token.")
+        
+    path = _GRAPH_STORE_DIR / f"{token}_replacements.json"
+    if path.exists():
+        path.unlink()
+    return {"status": "success"}
 
 
 if __name__ == "__main__":

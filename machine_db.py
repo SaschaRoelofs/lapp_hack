@@ -202,28 +202,33 @@ def _parse_german_float(raw: str | None) -> float | None:
         return None
 
 
-def _parse_wires_and_cross_section(spec: str) -> tuple[int | None, list[float]]:
+def _parse_wires_and_cross_section(spec: str) -> tuple[int | None, list[float], bool | None]:
     """Parse ``wiresAndCrossSection`` like ``3G1,5`` or ``6G2,5/0,75``.
 
-    Returns (conductor_count_hint, cross_section_hints).
+    Returns (conductor_count_hint, cross_section_hints, has_protective_conductor).
+    ``has_protective_conductor`` is True for 'G' designator, False for 'X', None if unknown.
     """
     if not spec:
-        return None, []
+        return None, [], None
     # Split on '/' for multi-section cables like "6G2,5/0,75"
     segments = spec.split("/")
     conductor_count: int | None = None
     hints: list[float] = []
+    has_protective_conductor: bool | None = None
 
     for seg in segments:
         seg = seg.strip()
         if not seg:
             continue
-        m = re.match(r"(\d+)\s*[GgXx]\s*(.+)", seg)
+        m = re.match(r"(\d+)\s*([GgXx])\s*(.+)", seg)
         if m:
             count = int(m.group(1))
-            cs_raw = m.group(2).replace(",", ".")
+            designator = m.group(2).upper()
+            cs_raw = m.group(3).replace(",", ".")
             if conductor_count is None:
                 conductor_count = count
+            if has_protective_conductor is None:
+                has_protective_conductor = (designator == "G")
             try:
                 hints.append(float(cs_raw))
             except ValueError:
@@ -235,7 +240,7 @@ def _parse_wires_and_cross_section(spec: str) -> tuple[int | None, list[float]]:
                 hints.append(float(cs_raw))
             except ValueError:
                 pass
-    return conductor_count, hints
+    return conductor_count, hints, has_protective_conductor
 
 
 def _parse_cable_json(raw: dict[str, Any]) -> dict[str, Any]:
@@ -244,7 +249,7 @@ def _parse_cable_json(raw: dict[str, Any]) -> dict[str, Any]:
     length_m = _parse_german_float(raw.get("length"))
     wire_count = raw.get("wireCount", 0) or 0
 
-    conductor_count_hint, cross_section_hints = _parse_wires_and_cross_section(
+    conductor_count_hint, cross_section_hints, has_protective_conductor = _parse_wires_and_cross_section(
         raw.get("wiresAndCrossSection", "")
     )
 
@@ -272,9 +277,13 @@ def _parse_cable_json(raw: dict[str, Any]) -> dict[str, Any]:
         "length_m": length_m,
         "article_description": raw.get("articleDescription", ""),
         "article_part_nr": raw.get("articlePartNr", ""),
+        "article_ref_part_nr": raw.get("articleRefPartNr", ""),
+        "article_ref_variant_nr": raw.get("articleRefVariantNr", ""),
+        "article_ref_reference_pos": raw.get("articleRefReferencePos", ""),
         "wire_count": wire_count,
         "conductor_count_hint": conductor_count_hint,
         "cross_section_hints": cross_section_hints,
+        "has_protective_conductor": has_protective_conductor,
         "used_wires": used_wires,
     }
 
@@ -437,8 +446,12 @@ def build_machine_graph_from_data(data: dict[str, Any], source_label: str = "upl
             "cross_section_mm2": row.get("cross_section_mm2"),
             "num_cores": row.get("conductor_count_hint") or row.get("wire_count"),
             "used_wires": row.get("used_wires"),
+            "has_protective_conductor": row.get("has_protective_conductor"),
             "length_m": row.get("length_m"),
             "article_part_nr": row.get("article_part_nr") or "",
+            "article_ref_part_nr": row.get("article_ref_part_nr") or "",
+            "article_ref_variant_nr": row.get("article_ref_variant_nr") or "",
+            "article_ref_reference_pos": row.get("article_ref_reference_pos") or "",
             "src_loc": src_loc,
             "dst_loc": dst_loc,
         })
@@ -493,6 +506,7 @@ def build_machine_graph_from_data(data: dict[str, Any], source_label: str = "upl
             "cross_section_mm2": cable["cross_section_mm2"],
             "num_cores": cable["num_cores"],
             "used_wires": cable["used_wires"],
+            "has_protective_conductor": cable.get("has_protective_conductor"),
             "from_component": from_id,
             "to_component": to_id,
             "from_location": src_loc,
@@ -501,6 +515,9 @@ def build_machine_graph_from_data(data: dict[str, Any], source_label: str = "upl
             "function_de": cable["cable_type"],
             "function_en": cable["cable_type"],
             "sap_number": cable["article_part_nr"],
+            "article_ref_part_nr": cable.get("article_ref_part_nr") or "",
+            "article_ref_variant_nr": cable.get("article_ref_variant_nr") or "",
+            "article_ref_reference_pos": cable.get("article_ref_reference_pos") or "",
             "length_m": cable["length_m"],
             "page_ref": "",
         })
@@ -517,6 +534,9 @@ def build_machine_graph_from_data(data: dict[str, Any], source_label: str = "upl
             "used_wires": cable["used_wires"],
             "length_m": cable["length_m"],
             "sap_number": cable["article_part_nr"],
+            "article_ref_part_nr": cable.get("article_ref_part_nr") or "",
+            "article_ref_variant_nr": cable.get("article_ref_variant_nr") or "",
+            "article_ref_reference_pos": cable.get("article_ref_reference_pos") or "",
             "function_de": cable["cable_type"],
             "function_en": cable["cable_type"],
         }

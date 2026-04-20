@@ -752,6 +752,7 @@
                                     <th class="px-2 py-2 text-right">ΔTCO €</th>
                                     <th class="px-2 py-2 text-right">ΔCO₂ kg</th>
                                     <th class="px-2 py-2 text-left">Hinweis</th>
+                                    <th class="px-2 py-2 text-center">Aktion</th>
                                   </tr>
                                 </thead>
                               <tbody>
@@ -767,6 +768,21 @@
                                     <td class="px-2 py-1 text-right" x-text="row.delta_tco != null ? (row.delta_tco > 0 ? '+' : '') + optFmt(row.delta_tco) : '-'"></td>
                                     <td class="px-2 py-1 text-right" x-text="row.delta_co2 != null ? (row.delta_co2 > 0 ? '+' : '') + optFmt(row.delta_co2) : '-'"></td>
                                     <td class="px-2 py-1 text-slate-500" x-text="row.reason || '-'"></td>
+                                    <td class="px-2 py-1 text-center">
+                                      <template x-if="row.status === 'changed'">
+                                        <button @click="markAsReplaced(row.cable_name, row.original_mm2, row.recommended_mm2, row.recommended_article_nr)"
+                                          class="text-[10px] font-semibold text-white bg-blue-600 rounded px-2 py-1 hover:bg-blue-700 transition-colors"
+                                          :class="{'opacity-50 cursor-not-allowed': replacedCables[row.cable_name]}"
+                                          :disabled="!!replacedCables[row.cable_name]">
+                                          <template x-if="replacedCables[row.cable_name]">
+                                            <svg class="w-3 h-3 inline-block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                          </template>
+                                          <template x-if="!replacedCables[row.cable_name]">
+                                            <span>Replace</span>
+                                          </template>
+                                        </button>
+                                      </template>
+                                    </td>
                                   </tr>
                                 </template>
                               </tbody>
@@ -1019,7 +1035,7 @@
                               <div class="rounded-lg border-l-3 border-emerald-500 bg-emerald-50 p-2">
                                 <div class="text-[10px] font-semibold text-emerald-700 uppercase">TCO-Opt.</div>
                                 <div class="text-sm font-bold text-emerald-900" x-text="optResult.optimum.tco.cross_section_mm2 + ' mm²'"></div>
-                                <div class="text-xs text-emerald-700" x-text="optFmt(optResult.optimum.tco.tco_eur) + ' ₂'"></div>
+                                <div class="text-xs text-emerald-700" x-text="optFmt(optResult.optimum.tco.tco_eur) + ' €'"></div>
                               </div>
                             </template>
                             <template x-if="optResult.optimum.co2">
@@ -1054,7 +1070,7 @@
                               <thead class="bg-gray-50 text-gray-500 uppercase">
                                 <tr>
                                   <th class="px-1.5 py-1 text-left">mm²</th>
-                                  <th class="px-1.5 py-1 text-right">TCO ₂</th>
+                                  <th class="px-1.5 py-1 text-right">TCO €</th>
                                   <th class="px-1.5 py-1 text-right">CO₂ kg</th>
                                   <th class="px-1.5 py-1 text-right">ΔU %</th>
                                 </tr>
@@ -1086,14 +1102,32 @@
                             <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded ring-1 ring-lapp-600"></span>Aktuell</span>
                           </div>
 
-                          <!-- Open in full optimizer -->
-                          <button @click="openInOptimizer()"
-                            class="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-lapp-600 border border-lapp-600 rounded-lg px-3 py-1.5 hover:bg-lapp-600 hover:text-white transition-colors">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                            </svg>
-                            Details im Optimierer
-                          </button>
+                          <div class="grid grid-cols-2 gap-2 mt-2">
+                            <!-- Open in full optimizer -->
+                            <button @click="openInOptimizer()"
+                              class="col-span-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-lapp-600 border border-lapp-600 rounded-lg px-2 py-1.5 hover:bg-lapp-600 hover:text-white transition-colors">
+                              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                              </svg>
+                              Im Optimierer
+                            </button>
+
+                            <!-- Replace Button (Phase 2) -->
+                            <template x-if="optResult.optimum.tco && optResult.optimum.tco.cross_section_mm2 !== selectedCable?.cross_section_mm2">
+                              <button @click="markAsReplaced(selectedCable.cable_name, selectedCable.cross_section_mm2, optResult.optimum.tco.cross_section_mm2, (optOptions.find(o => Number(o.cross_section_mm2) === Number(optResult.optimum.tco.cross_section_mm2)) || {}).article_number)"
+                                class="col-span-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg px-2 py-1.5 hover:bg-blue-700 transition-colors shadow-sm"
+                                :class="{'opacity-50 cursor-not-allowed': replacedCables[selectedCable?.cable_name]}"
+                                :disabled="!!replacedCables[selectedCable?.cable_name]">
+                                <template x-if="replacedCables[selectedCable?.cable_name]">
+                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                </template>
+                                <template x-if="!replacedCables[selectedCable?.cable_name]">
+                                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                </template>
+                                <span x-text="replacedCables[selectedCable?.cable_name] ? 'Ersetzt' : 'Replace'"></span>
+                              </button>
+                            </template>
+                          </div>
                         </div>
                       </template>
 
@@ -1351,6 +1385,67 @@
           delta_co2_total: 0,
         },
         wizardError: '',
+
+        // Phase 2: Cable Replacements
+        replacedCables: {}, // map of cable_name -> { recommended_mm2, recommended_article_nr, timestamp }
+
+        async markAsReplaced(cableName, current_mm2, recommended_mm2, recommended_article_nr) {
+          const token = new URLSearchParams(window.location.search).get('token') || 'example';
+          const rec = {
+            cable_name: cableName,
+            original_mm2: current_mm2,
+            recommended_mm2: recommended_mm2 || null,
+            recommended_article_nr: recommended_article_nr || null,
+            reason: 'optimizer_manual'
+          };
+          
+          try {
+            const res = await fetch(`/api/machine-db/${encodeURIComponent(token)}/replacements`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify([rec])
+            });
+            if (!res.ok) throw new Error('Replace failed');
+            
+            // Assuming successful
+            this.replacedCables = { ...this.replacedCables, [cableName]: rec };
+            this.$nextTick(() => { if (typeof this.renderGraph === 'function') this.renderGraph(); });
+          } catch (e) {
+            console.error('Failed to save replacement:', e);
+            alert('Failed to mark as replaced. Please try again.');
+          }
+        },
+
+        async replaceBulk(cablesToReplace) {
+          const token = new URLSearchParams(window.location.search).get('token') || 'example';
+          
+          try {
+            const payload = cablesToReplace.map(c => ({
+              cable_name: c.cableName,
+              original_mm2: c.original_mm2,
+              recommended_mm2: c.recommended_mm2,
+              recommended_article_nr: c.recommended_article_nr,
+              reason: 'wizard_bulk'
+            }));
+
+            const res = await fetch(`/api/machine-db/${encodeURIComponent(token)}/replacements`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error('Bulk replace failed');
+            
+            let newMap = { ...this.replacedCables };
+            payload.forEach(r => {
+              newMap[r.cable_name] = r;
+            });
+            this.replacedCables = newMap;
+            this.$nextTick(() => { if (typeof this.renderGraph === 'function') this.renderGraph(); });
+          } catch (e) {
+            console.error('Failed to bulk save replacements:', e);
+            alert('Failed to mark cables as replaced.');
+          }
+        },
 
         // Type color mapping
         TYPE_COLORS: {
@@ -1932,11 +2027,22 @@
           return rows.find(r => Math.abs(Number(r.cross_section_mm2) - installed) < 1e-9) || null;
         },
 
-        _wizardFilterOptions(options, params) {
+        _wizardFilterOptions(options, params, cable) {
+          // Check if the original cable has a protective conductor (G) or not (X)
+          const hasProtConductor = cable?.has_protective_conductor;
           return options.filter(o => {
             const cores = parseInt(o.num_cores, 10);
             if (!isNaN(cores) && cores < params.loaded_cores) return false;
             if (o.ampacity_a != null && params.current_a > 0 && Number(o.ampacity_a) < params.current_a) return false;
+            // Filter by protective conductor: if original cable has G, only allow G variants and vice versa
+            if (hasProtConductor !== null && hasProtConductor !== undefined && o.protective_conductor != null) {
+              const pcVal = String(o.protective_conductor).trim().toLowerCase();
+              if (pcVal) {
+                const optionHasPC = (pcVal === 'ja' || pcVal === 'yes' || pcVal === 'g');
+                if (hasProtConductor && !optionHasPC) return false;
+                if (!hasProtConductor && optionHasPC) return false;
+              }
+            }
             return true;
           });
         },
@@ -2070,7 +2176,8 @@
           };
 
           const resolved = await this._wizardResolveOptionsForCable(cable, variantCache, optionsCache);
-          const filteredOptions = this._wizardFilterOptions(resolved.options || [], params);
+          const allShopOptions = resolved.options || [];
+          const filteredOptions = this._wizardFilterOptions(allShopOptions, params, cable);
           if (filteredOptions.length === 0) {
             return {
               ...baseRow,
@@ -2114,10 +2221,12 @@
             }
 
             const changed = Number(recommended.cross_section_mm2) !== Number(baseline.cross_section_mm2);
+            const matchingOption = allShopOptions.find(o => Number(o.cross_section_mm2) === Number(recommended.cross_section_mm2));
             return {
               ...baseRow,
               original_mm2: baseline.cross_section_mm2 ?? baseRow.original_mm2,
               recommended_mm2: recommended.cross_section_mm2 ?? null,
+              recommended_article_nr: matchingOption?.article_number || null,
               status: changed ? 'changed' : 'unchanged',
               reason: changed ? 'Optimierungspotenzial erkannt.' : 'Verbaute Variante bereits optimal.',
               tco_before: baseline.tco_eur ?? null,
@@ -2199,9 +2308,16 @@
           
           let changedCount = 0;
           const reportMap = new Map();
+          const toReplace = [];
           this.wizardReport.forEach(r => {
             if (r.status === 'changed' && r.recommended_mm2 != null) {
               reportMap.set(r.cable_name, r);
+              toReplace.push({
+                cableName: r.cable_name,
+                original_mm2: r.original_mm2,
+                recommended_mm2: r.recommended_mm2,
+                recommended_article_nr: r.recommended_article_nr || null,
+              });
             }
           });
           
@@ -2216,6 +2332,10 @@
             this.clearGraphHighlight();
             if (typeof this.renderGraph === 'function') {
               this.renderGraph();
+            }
+            // Persist replacements to backend
+            if (toReplace.length > 0) {
+              this.replaceBulk(toReplace);
             }
             alert(`${changedCount} Kabelverbindungen wurden in der Maschine aktualisiert.`);
           }
@@ -2331,6 +2451,7 @@
           this.selectedCableShop = null;
           this.selectedCableShopError = '';
           this.selectedCableShopLoading = false;
+          this.replacedCables = {};
           this._wizardResetState();
           try {
             const resp = await fetch('/api/machine-db/' + encodeURIComponent(token));
@@ -2339,6 +2460,22 @@
               throw new Error(err.detail || 'Maschine konnte nicht geladen werden.');
             }
             this.graphData = await resp.json();
+            
+            // Phase 2: Load Replacements
+            try {
+              const r_resp = await fetch('/api/machine-db/' + encodeURIComponent(token) + '/replacements');
+              if (r_resp.ok) {
+                const replacements = await r_resp.json();
+                const map = {};
+                for (const r of replacements) {
+                  map[r.cable_name] = r;
+                }
+                this.replacedCables = map;
+              }
+            } catch (e) {
+              console.warn('Could not load replacements', e);
+            }
+            
             this.$nextTick(() => this.renderGraph());
           } catch (e) {
             this.error = e.message;
@@ -2981,9 +3118,17 @@
                   textEl.setAttribute('text-anchor', 'middle');
                   textEl.setAttribute('font-size', '10');
                   textEl.setAttribute('font-weight', '600');
-                  textEl.setAttribute('fill', '#475569');
                   textEl.setAttribute('class', 'cable-label-text');
-                  textEl.textContent = line;
+                  
+                  const isReplaced = !!self.replacedCables[line];
+                  if (isReplaced) {
+                    textEl.textContent = line + ' 🔄';
+                    textEl.setAttribute('fill', '#2563eb'); // blue for replaced
+                  } else {
+                    textEl.textContent = line;
+                    textEl.setAttribute('fill', '#475569');
+                  }
+                  
                   group.appendChild(textEl);
                   edgeLabelTextEls.push(textEl);
 
