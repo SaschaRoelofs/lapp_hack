@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -264,6 +265,25 @@
         margin-left: 0.45rem;
       }
     }
+
+    /* Embedded Copilot Chat */
+    .copilot-panel { display: flex; flex-direction: column; height: 100%; }
+    .copilot-messages { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+    .copilot-msg-content { word-break: break-word; }
+    .copilot-msg-content p { margin-bottom: 0.4rem; }
+    .copilot-msg-content p:last-child { margin-bottom: 0; }
+    .copilot-msg-content ul, .copilot-msg-content ol { margin: 0.2rem 0 0.4rem 1.1rem; }
+    .copilot-msg-content ul { list-style-type: disc; }
+    .copilot-msg-content ol { list-style-type: decimal; }
+    .copilot-msg-content li { margin-bottom: 0.1rem; }
+    .copilot-msg-content strong { font-weight: 600; }
+    .copilot-msg-content code { background: rgba(0,0,0,0.08); padding: 0.1em 0.3em; border-radius: 3px; font-size: 0.85em; }
+    .copilot-msg-content pre { background: rgba(0,0,0,0.06); padding: 0.5rem; border-radius: 6px; overflow-x: auto; margin: 0.4rem 0; font-size: 0.8em; }
+    .copilot-msg-content pre code { background: none; padding: 0; }
+    .copilot-typing-dot { animation: typingBounce 1.4s infinite ease-in-out both; }
+    .copilot-typing-dot:nth-child(1) { animation-delay: 0s; }
+    .copilot-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .copilot-typing-dot:nth-child(3) { animation-delay: 0.4s; }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen antialiased transition-colors" x-data="machineViz()" x-init="init()" x-cloak :class="{'ekanban-mode': ekanbanMode}">
@@ -534,8 +554,161 @@
         </div>
 
         <!-- Right sidebar: Component detail or FG Group detail -->
-        <aside x-show="wizardOpen || selectedComponent || selectedFgGroup || selectedCable"
+        <aside x-show="copilotOpen || wizardOpen || selectedComponent || selectedFgGroup || selectedCable"
           class="md:w-1/3 md:flex-shrink-0 md:min-w-72 md:overflow-y-auto">
+
+          <!-- Embedded Copilot Chat panel -->
+          <template x-if="copilotOpen">
+            <div>
+              <div class="detail-panel-overlay md:hidden" @click="closeCopilotPanel()"></div>
+              <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel copilot-panel" style="max-height: calc(100vh - 200px);">
+                <!-- Header -->
+                <div class="detail-panel-header px-4 py-3 flex items-start justify-between gap-3 flex-shrink-0">
+                  <div class="min-w-0">
+                    <div class="detail-label mb-1">Cable Copilot</div>
+                    <h3 class="font-semibold text-slate-800 leading-tight text-sm truncate" x-text="copilotCableContext ? 'Ersatz für ' + (copilotCableContext.cable_name || 'Kabel') : 'Kabelberatung'"></h3>
+                  </div>
+                  <button @click="closeCopilotPanel()" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+
+                <!-- Cable context chip -->
+                <div x-show="copilotCableContext" class="px-4 py-2 border-b border-gray-100 bg-amber-50 flex-shrink-0">
+                  <div class="flex items-center gap-2 text-xs">
+                    <span class="info-chip info-chip--amber" x-text="copilotCableContext?.cable_type || 'Kabel'"></span>
+                    <span class="font-mono text-slate-600" x-text="copilotCableContext?.cable_spec || ''"></span>
+                  </div>
+                </div>
+
+                <!-- Messages area -->
+                <div class="copilot-messages px-3 py-3 space-y-3" x-ref="copilotMsgContainer" style="min-height: 200px;">
+                  <!-- Welcome / empty state -->
+                  <template x-if="copilotMessages.length === 0 && !copilotIsStreaming">
+                    <div class="text-center text-xs text-gray-400 py-6">
+                      <p>Beschreibe, was du brauchst – ich helfe dir, ein passendes LAPP-Kabel zu finden.</p>
+                    </div>
+                  </template>
+
+                  <!-- Message list -->
+                  <template x-for="(msg, idx) in copilotMessages" :key="idx">
+                    <div>
+                      <!-- User message -->
+                      <template x-if="msg.role === 'user'">
+                        <div class="flex justify-end">
+                          <div class="max-w-[85%] bg-lapp-600 text-white rounded-xl rounded-br-sm px-3 py-2 shadow-sm">
+                            <p class="text-xs whitespace-pre-wrap break-words" x-text="msg.content"></p>
+                          </div>
+                        </div>
+                      </template>
+                      <!-- Assistant message -->
+                      <template x-if="msg.role === 'assistant'">
+                        <div class="flex justify-start gap-2">
+                          <div class="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center mt-0.5">
+                            <svg class="w-3 h-3 text-orange-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                          </div>
+                          <div class="max-w-[85%] min-w-0">
+                            <div class="bg-gray-50 border border-gray-200 rounded-xl rounded-tl-sm px-3 py-2 shadow-sm overflow-hidden">
+                              <div class="text-xs copilot-msg-content text-gray-700 leading-relaxed overflow-x-auto" x-html="copilotRenderMarkdown(msg.content)"></div>
+                            </div>
+                            <!-- Product cards with Replace button -->
+                            <template x-if="msg.products && msg.products.length > 0">
+                              <div class="mt-2 space-y-2">
+                                <template x-for="(product, pidx) in msg.products" :key="pidx">
+                                  <div class="bg-white border border-gray-200 rounded-lg p-2.5 shadow-sm hover:shadow-md transition-shadow">
+                                    <div class="flex items-center gap-2">
+                                      <div class="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
+                                        <template x-if="product.image_url">
+                                          <img :src="product.image_url" :alt="product.name" class="w-full h-full object-contain" loading="lazy"/>
+                                        </template>
+                                        <template x-if="!product.image_url">
+                                          <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"/></svg>
+                                        </template>
+                                      </div>
+                                      <div class="min-w-0 flex-1">
+                                        <h4 class="text-xs font-semibold text-gray-800 truncate" x-text="product.name"></h4>
+                                        <div class="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[10px] text-gray-500">
+                                          <span x-show="product.from_price" x-text="product.from_price" class="font-medium text-lapp-600"></span>
+                                          <span x-show="product.variant_count > 1" x-text="product.variant_count + ' Varianten'"></span>
+                                          <span x-show="product.cross_section" x-text="product.cross_section"></span>
+                                          <span x-show="product.num_cores" x-text="product.num_cores + ' Adern'"></span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="flex gap-1.5 mt-2 pt-2 border-t border-gray-100">
+                                      <a :href="product.url" target="_blank" rel="noopener"
+                                         class="flex-1 inline-flex items-center justify-center gap-1 text-[10px] font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-md px-2 py-1.5 transition-colors">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                                        Shop
+                                      </a>
+                                      <button @click="copilotOptimizeProduct(product)"
+                                        class="flex-1 inline-flex items-center justify-center gap-1 text-[10px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md px-2 py-1.5 transition-colors shadow-sm">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6"/></svg>
+                                        Optimieren
+                                      </button>
+                                    </div>
+                                  </div>
+                                </template>
+                              </div>
+                            </template>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+
+                  <!-- Streaming indicator -->
+                  <div x-show="copilotIsStreaming" class="flex justify-start gap-2">
+                    <div class="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center mt-0.5">
+                      <svg class="w-3 h-3 text-orange-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    </div>
+                    <div class="max-w-[85%] min-w-0">
+                      <div class="bg-gray-50 border border-gray-200 rounded-xl rounded-tl-sm px-3 py-2 shadow-sm overflow-hidden">
+                        <template x-if="copilotStreamingContent">
+                          <div class="text-xs copilot-msg-content text-gray-700 leading-relaxed overflow-x-auto" x-html="copilotRenderMarkdown(copilotStreamingContent)"></div>
+                        </template>
+                        <template x-if="!copilotStreamingContent">
+                          <div class="flex items-center gap-1.5 py-1">
+                            <template x-if="copilotToolCallInfo">
+                              <span class="text-[10px] text-gray-400 mr-1" x-text="copilotToolCallInfo"></span>
+                            </template>
+                            <div class="copilot-typing-dot w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                            <div class="copilot-typing-dot w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                            <div class="copilot-typing-dot w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Input area -->
+                <div class="border-t border-gray-200 px-3 py-2 flex-shrink-0">
+                  <form @submit.prevent="sendCopilotMessage()" class="flex gap-2 items-end">
+                    <div class="flex-1 relative min-w-0">
+                      <textarea
+                        x-ref="copilotInput"
+                        x-model="copilotInputText"
+                        @keydown.enter="if(!$event.shiftKey){ $event.preventDefault(); sendCopilotMessage() }"
+                        :disabled="copilotIsStreaming"
+                        rows="1"
+                        placeholder="Kabelanforderungen beschreiben..."
+                        class="w-full block resize-none rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lapp-600/30 focus:border-lapp-600 disabled:opacity-50 transition-colors"
+                        style="max-height:80px"
+                        @input="$event.target.style.height = 'auto'; $event.target.style.height = Math.min($event.target.scrollHeight, 80) + 'px'"
+                      ></textarea>
+                    </div>
+                    <button type="submit" :disabled="copilotIsStreaming || !copilotInputText.trim()"
+                      class="flex-shrink-0 bg-lapp-600 hover:bg-lapp-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg p-2 transition-colors shadow-sm">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
+                      </svg>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </template>
 
           <!-- Cable Wizard panel -->
           <template x-if="wizardOpen">
@@ -770,7 +943,7 @@
                                     <td class="px-2 py-1 text-slate-500" x-text="row.reason || '-'"></td>
                                     <td class="px-2 py-1 text-center">
                                       <template x-if="row.status === 'changed'">
-                                        <button @click="markAsReplaced(row.cable_name, row.original_mm2, row.recommended_mm2, row.recommended_article_nr)"
+                                        <button @click="markAsReplaced(row.cable_name, row.original_mm2, row.recommended_mm2, row.recommended_article_nr, row.recommended_cable_type)"
                                           class="text-[10px] font-semibold text-white bg-blue-600 rounded px-2 py-1 hover:bg-blue-700 transition-colors"
                                           :class="{'opacity-50 cursor-not-allowed': replacedCables[row.cable_name]}"
                                           :disabled="!!replacedCables[row.cable_name]">
@@ -855,7 +1028,7 @@
           </template>
 
           <!-- Cable detail panel -->
-          <template x-if="!wizardOpen && selectedCable && !selectedComponent && !selectedFgGroup">
+          <template x-if="!copilotOpen && !wizardOpen && selectedCable && !selectedComponent && !selectedFgGroup">
             <div>
               <div class="detail-panel-overlay md:hidden" @click="selectedCable = null; selectedCableShop = null; selectedCableShopError = ''; selectedCableShopLoading = false"></div>
               <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
@@ -918,7 +1091,16 @@
                     </template>
 
                     <template x-if="selectedCableShopError">
-                      <div class="mt-3 detail-muted text-red-700 bg-red-50 border border-red-200 rounded-md px-2 py-1" x-text="selectedCableShopError"></div>
+                      <div>
+                        <div class="mt-3 detail-muted text-red-700 bg-red-50 border border-red-200 rounded-md px-2 py-1" x-text="selectedCableShopError"></div>
+                        <button @click="openCopilotForCable(selectedCable)"
+                          class="mt-3 w-full flex items-center justify-center gap-2 bg-gradient-to-r from-lapp-600 to-orange-500 hover:from-lapp-700 hover:to-orange-600 text-white text-sm font-semibold rounded-lg px-4 py-2.5 transition-all shadow-sm">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/>
+                          </svg>
+                          Mit Copilot Ersatz finden
+                        </button>
+                      </div>
                     </template>
 
                     <template x-if="selectedCableShop && !selectedCableShopLoading">
@@ -1114,7 +1296,7 @@
 
                             <!-- Replace Button (Phase 2) -->
                             <template x-if="optResult.optimum.tco && optResult.optimum.tco.cross_section_mm2 !== selectedCable?.cross_section_mm2">
-                              <button @click="markAsReplaced(selectedCable.cable_name, selectedCable.cross_section_mm2, optResult.optimum.tco.cross_section_mm2, (optOptions.find(o => Number(o.cross_section_mm2) === Number(optResult.optimum.tco.cross_section_mm2)) || {}).article_number)"
+                              <button @click="(() => { const cs = Number(optResult.optimum.tco.cross_section_mm2); const nc = selectedCable?.num_cores; const opt = optOptions.find(o => Number(o.cross_section_mm2) === cs && String(o.num_cores) === String(nc)) || optOptions.find(o => Number(o.cross_section_mm2) === cs) || {}; markAsReplaced(selectedCable.cable_name, selectedCable.cross_section_mm2, optResult.optimum.tco.cross_section_mm2, opt.article_number, opt.name || selectedCableShop?.name) })()"
                                 class="col-span-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg px-2 py-1.5 hover:bg-blue-700 transition-colors shadow-sm"
                                 :class="{'opacity-50 cursor-not-allowed': replacedCables[selectedCable?.cable_name]}"
                                 :disabled="!!replacedCables[selectedCable?.cable_name]">
@@ -1142,7 +1324,7 @@
           </template>
 
           <!-- FG Group detail panel -->
-          <template x-if="!wizardOpen && selectedFgGroup && !selectedComponent">
+          <template x-if="!copilotOpen && !wizardOpen && selectedFgGroup && !selectedComponent">
             <div>
               <div class="detail-panel-overlay md:hidden" @click="selectedFgGroup = null"></div>
               <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
@@ -1195,7 +1377,7 @@
           </template>
 
           <!-- Single component detail panel -->
-          <div x-show="!wizardOpen && selectedComponent">
+          <div x-show="!copilotOpen && !wizardOpen && selectedComponent">
             <div class="detail-panel-overlay md:hidden" @click="selectedComponent = null"></div>
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 detail-panel">
               <div class="detail-panel-header px-4 py-3 flex items-start justify-between gap-3">
@@ -1389,13 +1571,23 @@
         // Phase 2: Cable Replacements
         replacedCables: {}, // map of cable_name -> { recommended_mm2, recommended_article_nr, timestamp }
 
-        async markAsReplaced(cableName, current_mm2, recommended_mm2, recommended_article_nr) {
+        // Embedded Copilot Chat state
+        copilotOpen: false,
+        copilotMessages: [],
+        copilotInputText: '',
+        copilotIsStreaming: false,
+        copilotStreamingContent: '',
+        copilotToolCallInfo: null,
+        copilotCableContext: null, // the cable we're finding a replacement for
+
+        async markAsReplaced(cableName, current_mm2, recommended_mm2, recommended_article_nr, recommended_cable_type) {
           const token = new URLSearchParams(window.location.search).get('token') || 'example';
           const rec = {
             cable_name: cableName,
             original_mm2: current_mm2,
             recommended_mm2: recommended_mm2 || null,
             recommended_article_nr: recommended_article_nr || null,
+            recommended_cable_type: recommended_cable_type || null,
             reason: 'optimizer_manual'
           };
           
@@ -1425,6 +1617,7 @@
               original_mm2: c.original_mm2,
               recommended_mm2: c.recommended_mm2,
               recommended_article_nr: c.recommended_article_nr,
+              recommended_cable_type: c.recommended_cable_type || null,
               reason: 'wizard_bulk'
             }));
 
@@ -1444,6 +1637,192 @@
           } catch (e) {
             console.error('Failed to bulk save replacements:', e);
             alert('Failed to mark cables as replaced.');
+          }
+        },
+
+        // --------------- Embedded Copilot Chat ---------------
+
+        openCopilotForCable(cable) {
+          this.copilotCableContext = cable;
+          this.copilotMessages = [];
+          this.copilotInputText = '';
+          this.copilotIsStreaming = false;
+          this.copilotStreamingContent = '';
+          this.copilotToolCallInfo = null;
+          this.copilotOpen = true;
+
+          // Build context message and auto-send
+          const parts = [];
+          parts.push('Ich brauche ein Ersatzkabel von LAPP für folgendes Kabel:');
+          if (cable.cable_name) parts.push('- Name: ' + cable.cable_name);
+          if (cable.cable_type) parts.push('- Typ: ' + cable.cable_type);
+          if (cable.cable_spec) parts.push('- Spezifikation: ' + cable.cable_spec);
+          if (cable.cross_section_mm2) parts.push('- Querschnitt: ' + cable.cross_section_mm2 + ' mm²');
+          if (cable.num_cores) parts.push('- Aderanzahl: ' + cable.num_cores);
+          if (cable.length_m) parts.push('- Länge: ' + cable.length_m + ' m');
+          if (cable.sap_number) parts.push('- Artikelnummer: ' + cable.sap_number);
+          parts.push('');
+          parts.push('Bitte hilf mir, ein passendes LAPP-Kabel als Ersatz zu finden.');
+
+          this.$nextTick(() => {
+            this.sendCopilotMessage(parts.join('\n'));
+          });
+        },
+
+        closeCopilotPanel() {
+          this.copilotOpen = false;
+          this.copilotIsStreaming = false;
+          this.copilotStreamingContent = '';
+          this.copilotToolCallInfo = null;
+        },
+
+        copilotRenderMarkdown(text) {
+          if (!text) return '';
+          if (typeof marked !== 'undefined') {
+            try {
+              return marked.parse(text, { breaks: true, gfm: true });
+            } catch (_e) { /* fall through */ }
+          }
+          return text.replace(/\n/g, '<br>');
+        },
+
+        copilotScrollToBottom() {
+          this.$nextTick(() => {
+            const container = this.$refs.copilotMsgContainer;
+            if (container) container.scrollTop = container.scrollHeight;
+          });
+        },
+
+        copilotReplaceWithProduct(product) {
+          if (!this.copilotCableContext) return;
+          const cable = this.copilotCableContext;
+          const articleNr = product.code || product.base_product_code || '';
+          this.markAsReplaced(
+            cable.cable_name,
+            cable.cross_section_mm2,
+            null, // recommended_mm2 unknown from copilot search
+            articleNr
+          );
+        },
+
+        async copilotOptimizeProduct(product) {
+          if (!this.copilotCableContext) return;
+
+          // Close copilot panel to show the cable detail view
+          this.copilotOpen = false;
+
+          // Set shop info from the copilot product so the detail panel shows it
+          this.selectedCableShop = {
+            name: product.name,
+            image_url: product.image_url,
+            base_product_code: product.base_product_code || product.code,
+            description: product.description,
+            price_formatted: product.from_price,
+          };
+          this.selectedCableShopError = '';
+          this.selectedCableShopLoading = false;
+
+          // Load cable options for this product into the optimizer
+          const baseCode = product.base_product_code;
+          if (baseCode) {
+            await this.loadOptCableOptions(baseCode);
+          }
+
+          // Open optimizer panel
+          this.optShowPanel = true;
+        },
+
+        async sendCopilotMessage(prefill) {
+          const text = (prefill || this.copilotInputText).trim();
+          if (!text || this.copilotIsStreaming) return;
+
+          this.copilotMessages.push({ role: 'user', content: text });
+          this.copilotInputText = '';
+          this.copilotIsStreaming = true;
+          this.copilotStreamingContent = '';
+          this.copilotToolCallInfo = null;
+          this.copilotScrollToBottom();
+
+          try {
+            const payload = {
+              messages: this.copilotMessages.map(m => ({ role: m.role, content: m.content }))
+            };
+
+            const response = await fetch('/api/copilot/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let collectedProducts = [];
+            let streamedText = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              let eventType = null;
+              for (const line of lines) {
+                if (line.startsWith('event: ')) {
+                  eventType = line.slice(7).trim();
+                } else if (line.startsWith('data: ')) {
+                  try {
+                    const data = JSON.parse(line.slice(6));
+                    if (eventType === 'token' && data.token) {
+                      streamedText += data.token;
+                      this.copilotStreamingContent = streamedText;
+                      this.copilotToolCallInfo = null;
+                      this.copilotScrollToBottom();
+                    } else if (eventType === 'tool_call') {
+                      const toolNames = {
+                        'search_cables': '🔍 Suche im Shop',
+                        'get_product_details': '📋 Lade Details',
+                        'get_variant_info': '🔧 Lade Variante'
+                      };
+                      this.copilotToolCallInfo = toolNames[data.tool] || ('⚙️ ' + data.tool);
+                      this.copilotScrollToBottom();
+                    } else if (eventType === 'products' && data.products) {
+                      collectedProducts = data.products;
+                    } else if (eventType === 'error' && data.error) {
+                      streamedText += '\n\n⚠️ ' + data.error;
+                      this.copilotStreamingContent = streamedText;
+                    }
+                  } catch (_e) { /* ignore parse errors */ }
+                  eventType = null;
+                }
+              }
+            }
+
+            if (streamedText) {
+              this.copilotMessages.push({
+                role: 'assistant',
+                content: streamedText,
+                products: collectedProducts.length > 0 ? collectedProducts : null,
+              });
+            }
+          } catch (error) {
+            this.copilotMessages.push({
+              role: 'assistant',
+              content: '⚠️ Verbindungsfehler: ' + error.message,
+              products: null,
+            });
+          } finally {
+            this.copilotIsStreaming = false;
+            this.copilotStreamingContent = '';
+            this.copilotToolCallInfo = null;
+            this.copilotScrollToBottom();
+            this.$nextTick(() => {
+              if (this.$refs.copilotInput) this.$refs.copilotInput.focus();
+            });
           }
         },
 
@@ -2090,19 +2469,21 @@
         async _wizardResolveOptionsForCable(cable, variantCache, optionsCache) {
           const shopState = this._wizardShopStateForCable(cable);
           let baseProductCode = shopState.base_product_code || '';
+          let productName = '';
           if (!baseProductCode) {
             const variant = await this._wizardFetchVariant(cable?.sap_number || cable?.article_part_nr || '', variantCache);
             baseProductCode = variant?.base_product_code || '';
+            productName = variant?.name || '';
           }
           if (!baseProductCode) {
-            return { options: [], usedFallback: false };
+            return { options: [], usedFallback: false, productName: '' };
           }
 
           const shopOptions = await this._wizardFetchOptions(baseProductCode, optionsCache);
           if (!shopOptions || shopOptions.length === 0) {
-            return { options: [], usedFallback: false };
+            return { options: [], usedFallback: false, productName };
           }
-          return { options: shopOptions, usedFallback: false };
+          return { options: shopOptions, usedFallback: false, productName };
         },
 
         _wizardBuildParams(input) {
@@ -2165,6 +2546,8 @@
             sap_number: cable.sap_number || '',
             original_mm2: cable.cross_section_mm2 ?? null,
             recommended_mm2: null,
+            recommended_cable_type: null,
+            shop_product_name: null,
             status: 'error',
             reason: '',
             tco_before: null,
@@ -2176,6 +2559,7 @@
           };
 
           const resolved = await this._wizardResolveOptionsForCable(cable, variantCache, optionsCache);
+          baseRow.shop_product_name = resolved.productName || cable.cable_type || null;
           const allShopOptions = resolved.options || [];
           const filteredOptions = this._wizardFilterOptions(allShopOptions, params, cable);
           if (filteredOptions.length === 0) {
@@ -2221,12 +2605,15 @@
             }
 
             const changed = Number(recommended.cross_section_mm2) !== Number(baseline.cross_section_mm2);
-            const matchingOption = allShopOptions.find(o => Number(o.cross_section_mm2) === Number(recommended.cross_section_mm2));
+            const nc = String(cable.num_cores || '');
+            const matchingOption = allShopOptions.find(o => Number(o.cross_section_mm2) === Number(recommended.cross_section_mm2) && String(o.num_cores || '') === nc)
+              || allShopOptions.find(o => Number(o.cross_section_mm2) === Number(recommended.cross_section_mm2));
             return {
               ...baseRow,
               original_mm2: baseline.cross_section_mm2 ?? baseRow.original_mm2,
               recommended_mm2: recommended.cross_section_mm2 ?? null,
               recommended_article_nr: matchingOption?.article_number || null,
+              recommended_cable_type: matchingOption?.name || baseRow.shop_product_name || null,
               status: changed ? 'changed' : 'unchanged',
               reason: changed ? 'Optimierungspotenzial erkannt.' : 'Verbaute Variante bereits optimal.',
               tco_before: baseline.tco_eur ?? null,
@@ -2317,6 +2704,7 @@
                 original_mm2: r.original_mm2,
                 recommended_mm2: r.recommended_mm2,
                 recommended_article_nr: r.recommended_article_nr || null,
+                recommended_cable_type: r.recommended_cable_type || null,
               });
             }
           });

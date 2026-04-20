@@ -35,6 +35,7 @@ class CableReplacement(BaseModel):
     original_mm2: Optional[Any] = None
     recommended_mm2: Optional[Any] = None
     recommended_article_nr: Optional[str] = None
+    recommended_cable_type: Optional[str] = None
     reason: Optional[str] = None
 
 app = FastAPI(title="Leitungsquerschnitt-Optimierer")

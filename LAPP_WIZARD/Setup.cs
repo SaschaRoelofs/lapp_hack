@@ -1053,7 +1053,7 @@ public class ReplaceSyncAction
                 var mCable = System.Text.RegularExpressions.Regex.Match(block.Value, @"\""cable_name\""\s*:\s*\""([^\""]+)\""");
                 var mArt = System.Text.RegularExpressions.Regex.Match(block.Value, @"\""recommended_article_nr\""\s*:\s*(?:null|\""([^\""]+)\"")");
                 var mMm2 = System.Text.RegularExpressions.Regex.Match(block.Value, @"\""recommended_mm2\""\s*:\s*([0-9.]+)");
-                // Add more fields as needed
+                var mType = System.Text.RegularExpressions.Regex.Match(block.Value, @"\""recommended_cable_type\""\s*:\s*(?:null|\""([^\""]+)\"")");
 
                 if (mCable.Success && mArt.Success && mArt.Groups[1].Success)
                 {
@@ -1066,7 +1066,7 @@ public class ReplaceSyncAction
                         var dict = new Dictionary<string, object>();
                         dict["recommended_article_nr"] = artValue;
                         if (mMm2.Success) dict["recommended_mm2"] = mMm2.Groups[1].Value;
-                        // Add more fields as needed
+                        if (mType.Success && mType.Groups[1].Success) dict["recommended_cable_type"] = mType.Groups[1].Value;
                         replacements[cableName] = dict;
                     }
                 }
@@ -1395,10 +1395,66 @@ public class ReplaceSyncAction
                                         {
                                             deviceUpdateInfo = "Fehler: " + (devEx.InnerException != null ? devEx.InnerException.Message : devEx.Message);
                                         }
+
+                                        // 4. Kabeltyp-Bezeichnung setzen (FUNC_CABLETYPE auf dem Cable-Objekt)
+                                        //    Property #20040 = "Cable / Conduit: Type" – das ist was die Kabelübersicht als "Kabeltyp" zeigt
+                                        string typeDebug = "";
+                                        string cableType = repl.ContainsKey("recommended_cable_type") ? (string)repl["recommended_cable_type"] : "";
+                                        if (!string.IsNullOrEmpty(cableType))
+                                        {
+                                            try
+                                            {
+                                                PropertyInfo cablePropsProp2 = cable.GetType().GetProperty("Properties", DeclaredPublic)
+                                                    ?? cable.GetType().GetProperty("Properties");
+                                                if (cablePropsProp2 != null)
+                                                {
+                                                    object cableProps2 = cablePropsProp2.GetValue(cable, null);
+                                                    if (cableProps2 != null)
+                                                    {
+                                                        Type funcPropsEnumType2 = cable.GetType().Assembly.GetType("Eplan.EplApi.DataModel.Properties+Function");
+                                                        object propCableType = SafeEnumParse(funcPropsEnumType2, "FUNC_CABLETYPE", "FUNC_CABLETYPE");
+                                                        PropertyInfo funcIndexer2 = FindIndexer(cableProps2, funcPropsEnumType2);
+                                                        if (funcIndexer2 != null && propCableType != null)
+                                                        {
+                                                            object propValue = funcIndexer2.GetValue(cableProps2, new object[] { propCableType });
+                                                            if (propValue != null)
+                                                            {
+                                                                MethodInfo setStr = propValue.GetType().GetMethod("Set", new Type[] { typeof(string) });
+                                                                if (setStr != null)
+                                                                {
+                                                                    setStr.Invoke(propValue, new object[] { cableType });
+                                                                    typeDebug = "FUNC_CABLETYPE gesetzt: " + cableType;
+                                                                }
+                                                                else
+                                                                {
+                                                                    typeDebug = "Set(string) nicht gefunden auf FUNC_CABLETYPE. Methoden: " +
+                                                                        string.Join(", ", Array.ConvertAll(propValue.GetType().GetMethods(), m => m.Name));
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                typeDebug = "PropertyValue null für FUNC_CABLETYPE";
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            typeDebug = string.Format("FUNC_CABLETYPE: Enum={0} Indexer={1}",
+                                                                propCableType != null ? "OK" : "null", funcIndexer2 != null ? "OK" : "null");
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            catch (Exception typeEx)
+                                            {
+                                                typeDebug = "Fehler: " + (typeEx.InnerException != null ? typeEx.InnerException.Message : typeEx.Message);
+                                            }
+                                        }
                                         
                                         updateCount++;
-                                        report.AppendLine(string.Format("{0}: {1} -> {2} [Artikel: {3}] [DeviceUpdate: {4}] [Tech: {5}]", 
-                                            cblName, oldArt, newArt, articleCheckInfo, deviceUpdateInfo, techDebug));
+                                        report.AppendLine(string.Format("{0}: {1} -> {2}{3} [Artikel: {4}] [DeviceUpdate: {5}] [Tech: {6}] [Type: {7}]", 
+                                            cblName, oldArt, newArt, 
+                                            !string.IsNullOrEmpty(cableType) ? " (" + cableType + ")" : "",
+                                            articleCheckInfo, deviceUpdateInfo, techDebug, typeDebug));
                                     }
                                 }
                             }
