@@ -57,3 +57,4 @@ Thumbs.db
 # Project specific
 *.json
 !example.json
+!example_raw.json
