@@ -44,12 +44,21 @@ public class LappWizardRibbon
             "<text x=\"16\" y=\"21\" font-family=\"Arial\" font-size=\"14\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"#F39200\">AI</text>" +
             "</svg>";
 
+        string svgSyncIcon =
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\">" +
+            "<rect width=\"32\" height=\"32\" rx=\"4\" ry=\"4\" fill=\"#1E90FF\" />" +
+            "<text x=\"16\" y=\"21\" font-family=\"Arial\" font-size=\"14\" font-weight=\"bold\" text-anchor=\"middle\" fill=\"white\">SYNC</text>" +
+            "</svg>";
+
         // Add icon to RibbonBar and render as large button (\n forces icon on top, text below)
         RibbonIcon lappIcon = ribbonBar.AddIcon(svgIcon);
         group.AddCommand("Lapp Wizard", "DataExportAction", lappIcon);
 
         RibbonIcon aiIcon = ribbonBar.AddIcon(svgCopilotIcon);
         group.AddCommand("Copilot", "CopilotAction", aiIcon);
+
+        RibbonIcon syncIcon = ribbonBar.AddIcon(svgSyncIcon);
+        group.AddCommand("Replace Sync", "ReplaceSyncAction", syncIcon);
     }
 
     // Remove tab
@@ -61,6 +70,7 @@ public class LappWizardRibbon
 
         ribbonBar.RemoveCommand("DataExportAction");
         ribbonBar.RemoveCommand("CopilotAction");
+        ribbonBar.RemoveCommand("ReplaceSyncAction");
 
         var tab = ribbonBar.Tabs.FirstOrDefault(t => t.Name == tabName);
         if (tab != null) tab.Remove();
@@ -378,6 +388,9 @@ public class DataExportAction
                 string systemVoltage = "";
                 string articleDescr = "";
                 string articlePartNr = "";
+                string artRefPartNr = "";
+                string artRefVariantNr = "";
+                string artRefReferencePos = "";
 
                 try
                 {
@@ -421,7 +434,8 @@ public class DataExportAction
                             SafeReadArticleProperties(cable, articlePropsEnumType,
                                 propArticleCurrentCapacity, propArticleRatedVoltage,
                                 propArticleDescr1, propArticlePartNr,
-                                out operatingCurrent, out systemVoltage, out articleDescr, out articlePartNr);
+                                out operatingCurrent, out systemVoltage, out articleDescr, out articlePartNr,
+                                out artRefPartNr, out artRefVariantNr, out artRefReferencePos);
                         }
                     }
                 }
@@ -489,7 +503,7 @@ public class DataExportAction
                         cableInfo[cableName] = new string[] {
                                 cableTypeName, cableCrossSection, cableCrossSectionWithCount,
                                 cableLen, usedWiresCount, operatingCurrent, systemVoltage,
-                                articleDescr, articlePartNr
+                                articleDescr, articlePartNr, artRefPartNr, artRefVariantNr, artRefReferencePos
                             };
                     }
                     cableMap[cableName].Add(new string[] {
@@ -601,6 +615,9 @@ public class DataExportAction
                 json.AppendLine("      \"ratedVoltage\": " + JsonEscape(SafeIdx(ci, 6)) + ",");
                 json.AppendLine("      \"articleDescription\": " + JsonEscape(SafeIdx(ci, 7)) + ",");
                 json.AppendLine("      \"articlePartNr\": " + JsonEscape(SafeIdx(ci, 8)) + ",");
+                json.AppendLine("      \"articleRefPartNr\": " + JsonEscape(SafeIdx(ci, 9)) + ",");
+                json.AppendLine("      \"articleRefVariantNr\": " + JsonEscape(SafeIdx(ci, 10)) + ",");
+                json.AppendLine("      \"articleRefReferencePos\": " + JsonEscape(SafeIdx(ci, 11)) + ",");
                 json.AppendLine("      \"wireCount\": " + kvp.Value.Count + ",");
                 json.AppendLine("      \"wires\": [");
 
@@ -655,12 +672,16 @@ public class DataExportAction
         object propCurrentCapacity, object propRatedVoltage,
         object propDescr1, object propPartNr,
         out string currentCapacity, out string ratedVoltage,
-        out string description, out string partNr)
+        out string description, out string partNr,
+        out string artRefPartNr, out string artRefVariantNr, out string artRefReferencePos)
     {
         currentCapacity = "";
         ratedVoltage = "";
         description = "";
         partNr = "";
+        artRefPartNr = "";
+        artRefVariantNr = "";
+        artRefReferencePos = "";
         try
         {
             if (articlePropsEnumType == null) return;
@@ -670,6 +691,10 @@ public class DataExportAction
 
             object firstArtRef = artArr.GetValue(0);
             if (firstArtRef == null) return;
+
+            artRefPartNr = SafeGetPropertyString(firstArtRef, "PartNr");
+            artRefVariantNr = SafeGetPropertyString(firstArtRef, "VariantNr");
+            artRefReferencePos = SafeGetPropertyString(firstArtRef, "ReferencePos");
 
             object article = SafeGetPropertyValue(firstArtRef, "Article");
             if (article == null) return;
@@ -700,7 +725,7 @@ public class DataExportAction
         return null;
     }
 
-    private static object SafeGetPropertyValue(object obj, string propertyName)
+    public static object SafeGetPropertyValue(object obj, string propertyName)
     {
         if (obj == null) return null;
         try
@@ -715,7 +740,7 @@ public class DataExportAction
         return null;
     }
 
-    private static string SafeGetPropertyString(object obj, string propertyName)
+    public static string SafeGetPropertyString(object obj, string propertyName)
     {
         if (obj == null) return "";
         try
@@ -932,5 +957,575 @@ public class CopilotForm : Form
         {
             return "https://lapp-hack.de";
         }
+    }
+}
+
+public class ReplaceSyncAction
+{
+    // Hilfsfunktion für Enum-Parsing (aus dem unteren Bereich kopiert)
+    private static object SafeEnumParse(Type enumType, string primary, string fallback)
+    {
+        if (enumType == null) return null;
+        try { return Enum.Parse(enumType, primary); }
+        catch
+        {
+            try { return Enum.Parse(enumType, fallback); }
+            catch { return null; }
+        }
+    }
+
+    // Hilfsfunktion für Indexer-Findung (aus dem unteren Bereich kopiert)
+    private static PropertyInfo FindIndexer(object propsObj, Type enumType)
+    {
+        if (propsObj == null || enumType == null) return null;
+        foreach (PropertyInfo pi in propsObj.GetType().GetProperties())
+        {
+            ParameterInfo[] idxParams = pi.GetIndexParameters();
+            if (idxParams.Length == 1 && idxParams[0].ParameterType == enumType)
+                return pi;
+        }
+        return null;
+    }
+
+    private static readonly BindingFlags DeclaredPublic = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
+
+    [DeclareAction("ReplaceSyncAction")]
+    public void Execute()
+    {
+        string token = "";
+        using (Form prompt = new Form())
+        {
+            prompt.Width = 400;
+            prompt.Height = 150;
+            prompt.FormBorderStyle = FormBorderStyle.FixedDialog;
+            prompt.Text = "Token eingeben";
+            prompt.StartPosition = FormStartPosition.CenterScreen;
+
+            Label textLabel = new Label() { Left = 20, Top = 20, Width = 350, Text = "Bitte den Token der Maschine eingeben:" };
+            TextBox textBox = new TextBox() { Left = 20, Top = 45, Width = 340 };
+            
+            // Try to pre-fill from clipboard
+            if (Clipboard.ContainsText()) {
+                string cb = Clipboard.GetText().Trim();
+                if (cb.Length == 32) textBox.Text = cb; // Guid format
+            }
+
+            Button confirmation = new Button() { Text = "OK", Left = 260, Top = 75, Width = 100, DialogResult = DialogResult.OK };
+            
+            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(confirmation);
+            prompt.Controls.Add(textLabel);
+            prompt.AcceptButton = confirmation;
+
+            if (prompt.ShowDialog() == DialogResult.OK)
+            {
+                token = textBox.Text.Trim();
+            }
+        }
+
+        if (string.IsNullOrEmpty(token)) return;
+
+        try 
+        {
+            string url = GetApiBaseUrl() + "/api/machine-db/" + token + "/replacements";
+            string json = "";
+            var request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "GET";
+            request.Accept = "application/json";
+
+            try {
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                using (Stream stream = response.GetResponseStream())
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    json = reader.ReadToEnd();
+                }
+            } catch (WebException wex) {
+                new Decider().Decide(EnumDecisionType.eOkDecision, "Fehler beim Abrufen der Ersetzungen (Token falsch?): " + wex.Message, "Lapp Sync", EnumDecisionReturn.eOK, EnumDecisionReturn.eOK, "", false, EnumDecisionIcon.eFATALERROR);
+                return;
+            }
+
+            // Parse replacements as Dictionary<string, Dictionary<string, object>> for all fields
+            var replacements = new Dictionary<string, Dictionary<string, object>>();
+            var blocks = System.Text.RegularExpressions.Regex.Matches(json, @"\{[^{}]+\}");
+            foreach (System.Text.RegularExpressions.Match block in blocks)
+            {
+                var mCable = System.Text.RegularExpressions.Regex.Match(block.Value, @"\""cable_name\""\s*:\s*\""([^\""]+)\""");
+                var mArt = System.Text.RegularExpressions.Regex.Match(block.Value, @"\""recommended_article_nr\""\s*:\s*(?:null|\""([^\""]+)\"")");
+                var mMm2 = System.Text.RegularExpressions.Regex.Match(block.Value, @"\""recommended_mm2\""\s*:\s*([0-9.]+)");
+                // Add more fields as needed
+
+                if (mCable.Success && mArt.Success && mArt.Groups[1].Success)
+                {
+                    string cableName = mCable.Groups[1].Value;
+                    string artValue = mArt.Groups[1].Value.Trim();
+                    if (!string.IsNullOrEmpty(artValue)) {
+                        if (!artValue.StartsWith("LAPP.")) {
+                            artValue = "LAPP." + artValue;
+                        }
+                        var dict = new Dictionary<string, object>();
+                        dict["recommended_article_nr"] = artValue;
+                        if (mMm2.Success) dict["recommended_mm2"] = mMm2.Groups[1].Value;
+                        // Add more fields as needed
+                        replacements[cableName] = dict;
+                    }
+                }
+            }
+
+            if (replacements.Count == 0)
+            {
+                new Decider().Decide(EnumDecisionType.eOkDecision, "Keine offenen zu aktualisierenden Kabel gefunden.\n\nAPI-Antwort:\n" + json, "Lapp Sync", EnumDecisionReturn.eOK, EnumDecisionReturn.eOK, "", false, EnumDecisionIcon.eINFORMATION);
+                return;
+            }
+
+            Eplan.EplApi.Base.Progress progress = new Eplan.EplApi.Base.Progress("SimpleProgress");
+            progress.ShowImmediately();
+            progress.SetAllowCancel(false);
+            progress.SetNeededSteps(3);
+            progress.SetTitle("Lapp Sync");
+            progress.SetActionText("Aktualisiere Kabel...");
+            progress.Step(1);
+            
+            int updateCount = 0;
+            StringBuilder report = new StringBuilder();
+            StringBuilder debugCableNames = new StringBuilder();
+            int debugCableCount = 0;
+            try
+            {
+                Assembly dataModelAsm = null;
+                Assembly heServicesAsm = null;
+                Assembly masterDataAsm = null;
+                foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    string name = asm.GetName().Name;
+                    if (name == "Eplan.EplApi.DataModelu") dataModelAsm = asm;
+                    if (name == "Eplan.EplApi.HEServicesu") heServicesAsm = asm;
+                    if (name == "Eplan.EplApi.MasterDatau") masterDataAsm = asm;
+                }
+
+                // Falls MasterData-Assembly nicht im AppDomain, versuche sie neben den anderen zu finden
+                if (masterDataAsm == null && dataModelAsm != null)
+                {
+                    try
+                    {
+                        string dir = Path.GetDirectoryName(dataModelAsm.Location);
+                        string mdPath = Path.Combine(dir, "Eplan.EplApi.MasterDatau.dll");
+                        if (File.Exists(mdPath))
+                        {
+                            masterDataAsm = Assembly.LoadFrom(mdPath);
+                        }
+                    }
+                    catch { }
+                }
+
+                if (dataModelAsm == null || heServicesAsm == null) return;
+
+                Type projectType = dataModelAsm.GetType("Eplan.EplApi.DataModel.Project");
+                Type lockingStepType = dataModelAsm.GetType("Eplan.EplApi.DataModel.LockingStep");
+                Type selSetType = heServicesAsm.GetType("Eplan.EplApi.HEServices.SelectionSet");
+
+                using (IDisposable lockingStep = (IDisposable)Activator.CreateInstance(lockingStepType))
+                {
+                    object selSet = Activator.CreateInstance(selSetType);
+                    MethodInfo getCurrentProject = selSetType.GetMethod("GetCurrentProject", new Type[] { typeof(bool) });
+                    object project = getCurrentProject.Invoke(selSet, new object[] { true });
+
+                    if (project == null) return;
+
+                    Type finderType = dataModelAsm.GetType("Eplan.EplApi.DataModel.DMObjectsFinder");
+                    Type conFilterType = dataModelAsm.GetType("Eplan.EplApi.DataModel.ConnectionsFilter");
+
+                    ConstructorInfo finderCtor = finderType.GetConstructor(new Type[] { projectType });
+                    object finder = finderCtor.Invoke(new object[] { project });
+
+                    object conFilter = Activator.CreateInstance(conFilterType);
+                    MethodInfo getConns = finderType.GetMethod("GetConnections", new Type[] { conFilterType });
+                    Array connections = (Array)getConns.Invoke(finder, new object[] { conFilter });
+
+                    HashSet<string> processedCables = new HashSet<string>();
+
+                    if (connections != null)
+                    {
+                        foreach (object conn in connections)
+                        {
+                            Type connType = conn.GetType();
+                            PropertyInfo cableProp = connType.GetProperty("CableDefinitionLine", DeclaredPublic) ?? connType.GetProperty("CableDefinitionLine");
+                            if (cableProp != null)
+                            {
+                                object cable = cableProp.GetValue(conn, null);
+                                if (cable != null)
+                                {
+                                    string cblName = SafeGetPropertyString(cable, "Name");
+                                    if (!string.IsNullOrEmpty(cblName) && !processedCables.Contains(cblName))
+                                    {
+                                        if (debugCableCount < 20)
+                                        {
+                                            debugCableNames.AppendLine(cblName);
+                                            debugCableCount++;
+                                        }
+                                    }
+                                    if (!string.IsNullOrEmpty(cblName) && !processedCables.Contains(cblName) && replacements.ContainsKey(cblName))
+                                    {
+                                        processedCables.Add(cblName);
+                                        var repl = replacements[cblName];
+                                        string newArt = repl.ContainsKey("recommended_article_nr") ? (string)repl["recommended_article_nr"] : null;
+                                        
+                                        // Prüfen ob neuer Artikel in Stammdaten existiert
+                                        bool articleExists = true;
+                                        string articleCheckInfo = "";
+                                        if (masterDataAsm != null)
+                                        {
+                                            try
+                                            {
+                                                Type pmType = masterDataAsm.GetType("Eplan.EplApi.MasterData.MDPartsManagement");
+                                                if (pmType != null)
+                                                {
+                                                    object pm = Activator.CreateInstance(pmType);
+                                                    MethodInfo openDb = pmType.GetMethod("OpenDatabase", Type.EmptyTypes);
+                                                    if (openDb != null)
+                                                    {
+                                                        object db = openDb.Invoke(pm, null);
+                                                        if (db != null)
+                                                        {
+                                                            Type dbType = db.GetType();
+                                                            MethodInfo getPart = dbType.GetMethod("GetPart", new Type[] { typeof(string) });
+                                                            if (getPart != null)
+                                                            {
+                                                                object part = getPart.Invoke(db, new object[] { newArt });
+                                                                if (part == null)
+                                                                {
+                                                                    articleExists = false;
+                                                                    articleCheckInfo = "nicht in Stammdaten";
+                                                                    
+                                                                    // User fragen ob Artikel angelegt werden soll
+                                                                    EnumDecisionReturn userChoice = new Decider().Decide(
+                                                                        EnumDecisionType.eYesNoDecision,
+                                                                        string.Format(
+                                                                            "Der Artikel \"{0}\" existiert nicht in der Stammdatenbank.\n\n" +
+                                                                            "Soll er jetzt als leerer Artikel angelegt werden?\n" +
+                                                                            "(Die Artikeldaten können danach manuell gepflegt werden.)",
+                                                                            newArt),
+                                                                        "Artikel nicht gefunden",
+                                                                        EnumDecisionReturn.eYES, EnumDecisionReturn.eYES,
+                                                                        "", false, EnumDecisionIcon.eQUESTION);
+                                                                    
+                                                                    if (userChoice == EnumDecisionReturn.eYES)
+                                                                    {
+                                                                        MethodInfo addPart = dbType.GetMethod("AddPart", new Type[] { typeof(string) });
+                                                                        if (addPart != null)
+                                                                        {
+                                                                            addPart.Invoke(db, new object[] { newArt });
+                                                                            articleExists = true;
+                                                                            articleCheckInfo = "neu angelegt (leer)";
+                                                                        }
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    articleCheckInfo = "in Stammdaten gefunden";
+                                                                }
+                                                            }
+                                                            
+                                                            // DB schließen
+                                                            MethodInfo closeDb = dbType.GetMethod("Close", Type.EmptyTypes);
+                                                            if (closeDb != null)
+                                                            {
+                                                                closeDb.Invoke(db, null);
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            articleCheckInfo = "DB konnte nicht geöffnet werden";
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            catch (Exception mdEx)
+                                            {
+                                                articleCheckInfo = "Stammdaten-Fehler: " + (mdEx.InnerException != null ? mdEx.InnerException.Message : mdEx.Message);
+                                                // Bei Fehler trotzdem fortfahren
+                                                articleExists = true;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            articleCheckInfo = "MasterData-Assembly nicht geladen";
+                                        }
+                                        
+                                        if (!articleExists)
+                                        {
+                                            report.AppendLine(string.Format("{0}: Übersprungen (Artikel {1} nicht angelegt)", cblName, newArt));
+                                            continue;
+                                        }
+                                        
+                                        // Alten Artikel merken für Report
+                                        string oldArt = "";
+                                        Array artArr = SafeGetPropertyValue(cable, "ArticleReferences") as Array;
+                                        
+                                        // 1. Alle bestehenden ArticleReferences entfernen
+                                        if (artArr != null && artArr.Length > 0)
+                                        {
+                                            // Erst alte PartNr merken
+                                            object firstArtRef = artArr.GetValue(0);
+                                            if (firstArtRef != null)
+                                            {
+                                                oldArt = SafeGetPropertyString(firstArtRef, "PartNr");
+                                            }
+                                            
+                                            // Rückwärts iterieren und alle entfernen
+                                            for (int i = artArr.Length - 1; i >= 0; i--)
+                                            {
+                                                object artRef = artArr.GetValue(i);
+                                                if (artRef != null)
+                                                {
+                                                    MethodInfo removeMethod = artRef.GetType().GetMethod("RemoveArticleReference", Type.EmptyTypes);
+                                                    if (removeMethod != null)
+                                                    {
+                                                        removeMethod.Invoke(artRef, null);
+                                                    }
+                                                }
+                                            }
+                                        }
+
+
+                                        // 2. Neuen Artikel hinzufügen via Instanz-Methode auf dem Kabel (Function)
+                                        //    Function.AddArticleReference(String partNr, String variant, UInt32 count, Boolean bClean)
+                                        MethodInfo addArtRefMethod = cable.GetType().GetMethod("AddArticleReference",
+                                            new Type[] { typeof(string), typeof(string), typeof(uint), typeof(bool) });
+                                        if (addArtRefMethod != null)
+                                        {
+                                            addArtRefMethod.Invoke(cable, new object[] { newArt, "", 1u, true });
+                                        }
+                                        else
+                                        {
+                                            // Fallback: Überladung ohne bClean
+                                            MethodInfo addArtRefMethod2 = cable.GetType().GetMethod("AddArticleReference",
+                                                new Type[] { typeof(string), typeof(string), typeof(uint) });
+                                            if (addArtRefMethod2 != null)
+                                            {
+                                                addArtRefMethod2.Invoke(cable, new object[] { newArt, "", 1u });
+                                            }
+                                            else
+                                            {
+                                                // Letzter Fallback: nur PartNr
+                                                MethodInfo addArtRefMethod3 = cable.GetType().GetMethod("AddArticleReference",
+                                                    new Type[] { typeof(string) });
+                                                if (addArtRefMethod3 != null)
+                                                {
+                                                    addArtRefMethod3.Invoke(cable, new object[] { newArt });
+                                                }
+                                            }
+                                        }
+
+                                        // 2b. Technische Felder setzen (z.B. Querschnitt)
+                                        string techDebug = "";
+                                        try {
+                                            if (repl.ContainsKey("recommended_mm2")) {
+                                                double mm2;
+                                                if (double.TryParse(repl["recommended_mm2"].ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out mm2)) {
+                                                    // Setze CableWireCrossSection
+                                                    PropertyInfo propsProp = cable.GetType().GetProperty("Properties", DeclaredPublic) ?? cable.GetType().GetProperty("Properties");
+                                                    if (propsProp != null) {
+                                                        object props = propsProp.GetValue(cable, null);
+                                                        if (props != null) {
+                                                            Type funcPropsEnumType = cable.GetType().Assembly.GetType("Eplan.EplApi.DataModel.Properties+Function");
+                                                            object propCableWireCrossSection = SafeEnumParse(funcPropsEnumType, "FUNC_CABLEWIRECROSSSECTION", "FUNC_CABLEWIRECROSSSECTION");
+                                                            PropertyInfo funcIndexer = FindIndexer(props, funcPropsEnumType);
+                                                            if (funcIndexer != null && propCableWireCrossSection != null) {
+                                                                // Get PropertyValue object via indexer, then set its value
+                                                                object propValue = funcIndexer.GetValue(props, new object[] { propCableWireCrossSection });
+                                                                if (propValue != null) {
+                                                                    // Try Set(double) first, then Set(string)
+                                                                    MethodInfo setDouble = propValue.GetType().GetMethod("Set", new Type[] { typeof(double) });
+                                                                    if (setDouble != null) {
+                                                                        setDouble.Invoke(propValue, new object[] { mm2 });
+                                                                        techDebug = "CableWireCrossSection gesetzt (double): " + mm2;
+                                                                    } else {
+                                                                        MethodInfo setString = propValue.GetType().GetMethod("Set", new Type[] { typeof(string) });
+                                                                        if (setString != null) {
+                                                                            setString.Invoke(propValue, new object[] { mm2.ToString(System.Globalization.CultureInfo.InvariantCulture) });
+                                                                            techDebug = "CableWireCrossSection gesetzt (string): " + mm2;
+                                                                        } else {
+                                                                            techDebug = "PropertyValue.Set-Methode nicht gefunden. Verfügbar: " + string.Join(", ", Array.ConvertAll(propValue.GetType().GetMethods(), m => m.Name));
+                                                                        }
+                                                                    }
+                                                                } else {
+                                                                    techDebug = "PropertyValue ist null für FUNC_CABLEWIRECROSSSECTION.";
+                                                                }
+                                                            } else {
+                                                                techDebug = "Feld FUNC_CABLEWIRECROSSSECTION nicht gefunden.";
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        } catch (Exception techEx) {
+                                            techDebug = "Fehler beim Setzen technischer Felder: " + techEx.Message;
+                                        }
+
+                                        // 3. Gerätedaten aktualisieren (DeviceService.UpdateDevice)
+                                        //    Überträgt Artikeldaten (Querschnitt, Adernzahl, etc.) auf das Kabel
+                                        string deviceUpdateInfo = "";
+                                        try
+                                        {
+                                            Type storableObjectType = dataModelAsm.GetType("Eplan.EplApi.DataModel.StorableObject");
+                                            Type deviceServiceType = heServicesAsm.GetType("Eplan.EplApi.HEServices.DeviceService");
+                                            if (deviceServiceType != null && storableObjectType != null)
+                                            {
+                                                object deviceService = Activator.CreateInstance(deviceServiceType);
+                                                MethodInfo updateMethod = deviceServiceType.GetMethod("UpdateDevice", new Type[] { storableObjectType });
+                                                if (updateMethod != null)
+                                                {
+                                                    updateMethod.Invoke(deviceService, new object[] { cable });
+                                                    deviceUpdateInfo = "OK";
+                                                }
+                                                else
+                                                {
+                                                    deviceUpdateInfo = "UpdateDevice-Methode nicht gefunden";
+                                                }
+                                                if (deviceService is IDisposable)
+                                                    ((IDisposable)deviceService).Dispose();
+                                            }
+                                            else
+                                            {
+                                                deviceUpdateInfo = "DeviceService/StorableObject-Typ nicht gefunden";
+                                            }
+                                        }
+                                        catch (Exception devEx)
+                                        {
+                                            deviceUpdateInfo = "Fehler: " + (devEx.InnerException != null ? devEx.InnerException.Message : devEx.Message);
+                                        }
+                                        
+                                        updateCount++;
+                                        report.AppendLine(string.Format("{0}: {1} -> {2} [Artikel: {3}] [DeviceUpdate: {4}] [Tech: {5}]", 
+                                            cblName, oldArt, newArt, articleCheckInfo, deviceUpdateInfo, techDebug));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // --- Verbindungen programmatisch aktualisieren ---
+                    if (updateCount > 0)
+                    {
+                        try
+                        {
+                            Type generateType = heServicesAsm.GetType("Eplan.EplApi.HEServices.Generate");
+                            if (generateType != null)
+                            {
+                                object generateObj = Activator.CreateInstance(generateType);
+                                MethodInfo genConns = generateType.GetMethod("Connections", new Type[] { project.GetType() });
+                                if (genConns != null)
+                                {
+                                    genConns.Invoke(generateObj, new object[] { project });
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            report.AppendLine("\nFehler beim Aktualisieren der Verbindungen: " + ex.Message);
+                        }
+
+                        // --- Kabelübersicht / Auswertungen regenerieren ---
+                        try
+                        {
+                            Type reportsType = heServicesAsm.GetType("Eplan.EplApi.HEServices.Reports");
+                            if (reportsType != null)
+                            {
+                                object reportsObj = Activator.CreateInstance(reportsType);
+                                MethodInfo genProject = reportsType.GetMethod("GenerateProject", new Type[] { project.GetType() });
+                                if (genProject != null)
+                                {
+                                    genProject.Invoke(reportsObj, new object[] { project });
+                                    report.AppendLine("\nAuswertungen (inkl. Kabelübersicht) wurden regeneriert.");
+                                }
+                                else
+                                {
+                                    report.AppendLine("\nReports.GenerateProject-Methode nicht gefunden.");
+                                }
+                            }
+                            else
+                            {
+                                report.AppendLine("\nReports-Typ nicht gefunden in HEServices.");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            report.AppendLine("\nFehler beim Regenerieren der Auswertungen: " + ex.Message);
+                            if (ex.InnerException != null)
+                                report.AppendLine("  Inner: " + ex.InnerException.Message);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                progress.EndPart(true);
+
+                if (updateCount > 0) {
+                    new Decider().Decide(EnumDecisionType.eOkDecision, 
+                        string.Format("Sync erfolgreich beendet.\nEs wurden {0} Kabel aus der Maschine aktualisiert:\n\n{1}", updateCount, report.ToString()), 
+                        "Lapp Sync", EnumDecisionReturn.eOK, EnumDecisionReturn.eOK, "", false, EnumDecisionIcon.eINFORMATION);
+                } else {
+                    StringBuilder searchedFor = new StringBuilder();
+                    foreach (string k in replacements.Keys) { if (searchedFor.Length > 0) searchedFor.Append(", "); searchedFor.Append(k); }
+                    new Decider().Decide(EnumDecisionType.eOkDecision, 
+                        string.Format("Sync beendet, aber keine passenden Kabelnamen im Projekt gefunden.\n\nGesucht: {0}\n\nGefundene Kabel im Projekt (erste 20):\n{1}", searchedFor.ToString(), debugCableNames.ToString()), 
+                        "Lapp Sync", EnumDecisionReturn.eOK, EnumDecisionReturn.eOK, "", false, EnumDecisionIcon.eINFORMATION);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            new Decider().Decide(EnumDecisionType.eOkDecision, "Fehler: " + ex.Message, "Lapp Sync", EnumDecisionReturn.eOK, EnumDecisionReturn.eOK, "", false, EnumDecisionIcon.eFATALERROR);
+        }
+    }
+
+    private static string GetApiBaseUrl()
+    {
+        try
+        {
+            var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8000/health");
+            request.Timeout = 500;
+            request.Method = "HEAD";
+            using (request.GetResponse()) { }
+            return "http://127.0.0.1:8000";
+        }
+        catch
+        {
+            return "https://lapp-hack.de";
+        }
+    }
+
+    private static object SafeGetPropertyValue(object obj, string propertyName)
+    {
+        if (obj == null) return null;
+        try
+        {
+            PropertyInfo prop = obj.GetType().GetProperty(propertyName, DeclaredPublic) ?? obj.GetType().GetProperty(propertyName);
+            if (prop != null)
+            {
+                return prop.GetValue(obj, null);
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    private static string SafeGetPropertyString(object obj, string propertyName)
+    {
+        if (obj == null) return "";
+        try
+        {
+            PropertyInfo prop = obj.GetType().GetProperty(propertyName, DeclaredPublic)
+                ?? obj.GetType().GetProperty(propertyName);
+            if (prop != null && prop.GetIndexParameters().Length == 0)
+            {
+                object val = prop.GetValue(obj, null);
+                if (val != null) return val.ToString().Trim();
+            }
+        }
+        catch { }
+        return "";
     }
 }
