@@ -991,8 +991,6 @@
             // Filter by total number of cores
             const cores = parseInt(o.num_cores);
             if (!isNaN(cores) && cores !== this.params.total_cores) return false;
-            // Filter by ampacity: variant must handle the operating current
-            if (o.ampacity_a != null && this.params.current_a > 0 && o.ampacity_a < this.params.current_a) return false;
             return true;
           });
         },
