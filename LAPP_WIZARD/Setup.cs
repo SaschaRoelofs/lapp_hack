@@ -848,10 +848,25 @@ public class DataExportAction
         string url = baseUrl + "/api/machine-db";
         try
         {
+            // Globale Defaults nur einmal setzen; vermeidet vor allem den "Expect: 100-Continue"-
+            // Hänger gegenüber Reverse-Proxies (lapp-hack.de), der sonst pro Request mehrere
+            // Sekunden Wartezeit verursacht.
+            ServicePointManager.Expect100Continue = false;
+            ServicePointManager.SecurityProtocol =
+                (SecurityProtocolType)3072 /* Tls12 */ | (SecurityProtocolType)768 /* Tls11 */;
+            ServicePointManager.DefaultConnectionLimit = 20;
+
             var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "POST";
             request.ContentType = "application/json; charset=utf-8";
             request.Headers["Authorization"] = "Bearer " + token;
+            request.ServicePoint.Expect100Continue = false;
+            request.KeepAlive = true;
+            request.Timeout = 120000;
+            request.ReadWriteTimeout = 120000;
+            request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+            request.Headers["Accept-Encoding"] = "gzip";
+
             byte[] data = Encoding.UTF8.GetBytes(json);
             request.ContentLength = data.Length;
             using (Stream stream = request.GetRequestStream())
