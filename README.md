@@ -34,7 +34,7 @@ Die Anwendung kombiniert **fünf produktive Module** in einem durchgängigen Wor
 - **Cable Wizard** für geführte Kabelbewertung direkt aus dem Maschinengraphen
 - **Cable Copilot** als KI-gestützter LAPP Kabelberater mit Live-Shop-Recherche
 
-Ergänzt wird das Ganze durch **lokal speicherbare Einstellungen**, einen **desktop-orientierten eKanban-Modus** und Exportfunktionen für **PDF-Reports** und **CSV-Ergebnisse**.
+Ergänzt wird das Ganze durch **lokal speicherbare Einstellungen**, einen **desktop-orientierten eKanban-Modus** und **PDF-Reports**.
 
 ---
 
@@ -51,9 +51,9 @@ Ergänzt wird das Ganze durch **lokal speicherbare Einstellungen**, einen **desk
 - **PDF-Report-Export** inklusive Management Summary und Diagrammen
 
 ### Maschinenvisualisierung
-- Import von **EPLAN-Projektexporten** per JSON-Upload
+- Import von **Lapp EPLAN-Projektexport Script** per JSON-Upload
 - Alternativ Wiederaufruf vorhandener Daten über **Token-basierte Graph-Speicherung**
-- Interaktiver Schaltplan-Graph mit **Dagre-Layout**, Zoom, Pan und Detailpanel
+- Interaktiver Topology-Graph mit **Dagre-Layout**, Zoom, Pan und Detailpanel
 - Darstellung von **Subsystemen, Komponenten, Kabeln und Verbindungen**
 - Typbasierte Farbcodierung für Motor, Sensor, Schutz, Steuerung, Schalter, Transformator und weitere Komponenten
 - Kabel-Detailansicht mit Länge, Aderzahl, Querschnitt, Artikelnummer und Routinginformationen
@@ -61,9 +61,8 @@ Ergänzt wird das Ganze durch **lokal speicherbare Einstellungen**, einen **desk
 ### Cable Wizard
 - Geführter Workflow zur Bewertung einzelner Kabelverbindungen aus dem Maschinengraphen
 - Vorbelegung technischer Parameter aus dem importierten EPLAN-Datensatz
-- Shop-Abgleich für erkannte Kabeltypen und Artikelnummern
 - Speicherung von **Ersatz- und Optimierungsvorschlägen pro Token**
-- **CSV-Export** der Wizard-Ergebnisse für weitere Auswertung
+- **PDF-Export** der Wizard-Ergebnisse für weitere Auswertung
 
 ### LAPP Shop Integration
 - Volltextsuche über LAPP-Produkte wie **ÖLFLEX**, **UNITRONIC**, **ETHERLINE** und weitere Familien
@@ -74,11 +73,11 @@ Ergänzt wird das Ganze durch **lokal speicherbare Einstellungen**, einen **desk
 - Direkter Zugriff auf Varianteninformationen per Artikelnummer
 
 ### Cable Copilot
-- KI-gestützter Kabelberater mit **Streaming-Antworten**
+- KI-gestützter Kabelberater mit **Antworten**
 - Nutzt den LAPP Shop aktiv über **Function Calling** statt nur generischer Textantworten
 - Kann Produkte suchen, Produktdetails laden und einzelne Varianten analysieren
 - Speichert Chat-Verläufe lokal im Browser
-- Unterstützt auch einen **embedded Modus** für Einbettung in andere Ansichten
+- Unterstützt auch einen **embedded Modus** für Einbettung in ePlan
 
 ### Einstellungen und UI
 - Konfigurierbare Werte für **Strompreis**, **maximalen Spannungsfall** sowie **CO₂-Faktoren** von Strom und Kupfer
@@ -126,7 +125,7 @@ $$\Delta U = 2 \cdot I \cdot R_{total}$$
 | Backend | Python · FastAPI |
 | Frontend | HTML · Tailwind CSS · Alpine.js |
 | Visualisierung | Chart.js · Dagre |
-| Dokumente | jsPDF · jsPDF-AutoTable · Markdown · KaTeX |
+| Dokumente | jsPDF · Markdown · KaTeX |
 | Datenquellen | LAPP OCC REST API · EPLAN JSON Export |
 | KI | OpenRouter / OpenAI-kompatibles API für Cable Copilot |
 
@@ -162,7 +161,7 @@ Für die Seite `/copilot` muss ein gültiger **OPENROUTER_API_KEY** als Umgebung
 |---|---|
 | `/` | Startseite mit Hero, Schnellzugriffen und gerendertem README |
 | `/optimizer` | Leitungsquerschnitt-Optimierer mit Szenarien, Charts und PDF-Report |
-| `/machine` | Maschinenvisualisierung mit EPLAN-Import, Detailpanel und Cable Wizard |
+| `/machine` | Maschinenvisualisierung mit EPLAN-Import, Detailpanel, Cable Wizard und PDF-Export |
 | `/search` | LAPP Shop Suche mit Produktdetails, Varianten und Live-Preisen |
 | `/copilot` | KI-gestützter Cable Copilot mit Streaming-Chat |
 | `/settings` | Einstellungen für Energie-, Spannungsfall- und CO₂-Parameter |
