@@ -867,7 +867,20 @@ public class DataExportAction
             request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
             request.Headers["Accept-Encoding"] = "gzip";
 
-            byte[] data = Encoding.UTF8.GetBytes(json);
+            // Body gzip-komprimieren – schrumpft den ~1 MB JSON auf ~50–100 KB
+            // und reduziert den Upload über DSL/4G drastisch.
+            byte[] raw = Encoding.UTF8.GetBytes(json);
+            byte[] data;
+            using (var ms = new MemoryStream())
+            {
+                using (var gz = new System.IO.Compression.GZipStream(ms, System.IO.Compression.CompressionMode.Compress, true))
+                {
+                    gz.Write(raw, 0, raw.Length);
+                }
+                data = ms.ToArray();
+            }
+            request.Headers["Content-Encoding"] = "gzip";
+            log.AppendLine("Payload: " + raw.Length + " B -> " + data.Length + " B (gzip)");
             request.ContentLength = data.Length;
             using (Stream stream = request.GetRequestStream())
             {

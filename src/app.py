@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gzip
 import json
 import uuid
 from dataclasses import asdict
@@ -319,8 +320,9 @@ _GRAPH_STORE_DIR.mkdir(exist_ok=True)
 
 @app.post("/api/machine-db")
 async def api_machine_db_upload(
-    data: dict[str, Any],
+    request: Request,
     authorization: Optional[str] = Header(default=None),
+    content_encoding: Optional[str] = Header(default=None),
 ):
     from fastapi import HTTPException
 
@@ -332,6 +334,19 @@ async def api_machine_db_upload(
             token = candidate
     if not token:
         token = uuid.uuid4().hex
+
+    raw_body = await request.body()
+    if content_encoding and "gzip" in content_encoding.lower():
+        try:
+            raw_body = gzip.decompress(raw_body)
+        except OSError as exc:
+            raise HTTPException(status_code=400, detail=f"invalid gzip body: {exc}") from exc
+    try:
+        data = json.loads(raw_body)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"invalid json: {exc}") from exc
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=400, detail="expected JSON object")
 
     # Rohdaten vor der Verarbeitung speichern
     (_GRAPH_STORE_DIR / f"{token}_raw.json").write_text(
