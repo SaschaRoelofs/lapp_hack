@@ -286,12 +286,14 @@ STANDARD_AMPACITY_A: dict[float, int] = {
 
 @app.get("/machine", response_class=HTMLResponse)
 async def machine_page(request: Request):
+    embedded = request.query_params.get("embedded") == "true"
     return templates.TemplateResponse(
         request=request,
         name="machine.html",
         context={
             "default_params": DEFAULT_PARAMS,
             "default_options": DEFAULT_OPTIONS,
+            "embedded": embedded,
         },
     )
 

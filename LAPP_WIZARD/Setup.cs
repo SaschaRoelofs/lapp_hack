@@ -211,14 +211,14 @@ public class DataExportAction
                             "Export erfolgreich!\n\n" +
                             "Token: " + token + "\n" +
                             "(Token wurde in die Zwischenablage kopiert)\n\n" +
-                            "Machine-Seite öffnen?",
+                            "Ergebnis in EPLAN öffnen?",
                             "Export abgeschlossen",
                             EnumDecisionReturn.eYES, EnumDecisionReturn.eYES,
                             "", false, EnumDecisionIcon.eINFORMATION);
 
                         if (result == EnumDecisionReturn.eYES)
                         {
-                            System.Diagnostics.Process.Start(machineUrl);
+                            new LappWizardForm(machineUrl).ShowDialog();
                         }
                     }
                     else
@@ -955,6 +955,101 @@ public class CopilotForm : Form
         catch
         {
             return "https://lapp-hack.de";
+        }
+    }
+}
+
+public class LappWizardForm : Form
+{
+    private Control webView;
+
+    public LappWizardForm(string url)
+    {
+        this.Text = "Lapp Wizard";
+        this.Size = new Size(1400, 900);
+        this.StartPosition = FormStartPosition.CenterScreen;
+        this.WindowState = FormWindowState.Maximized;
+
+        // TableLayoutPanel splits the form into toolbar row + webview row.
+        // WebView2 is an Air-space (HWND) control and always paints over WinForms siblings,
+        // so we must keep it in its own non-overlapping container cell.
+        TableLayoutPanel layout = new TableLayoutPanel();
+        layout.Dock = DockStyle.Fill;
+        layout.RowCount = 2;
+        layout.ColumnCount = 1;
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 80f));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        layout.Padding = new System.Windows.Forms.Padding(0);
+        layout.Margin = new System.Windows.Forms.Padding(0);
+        this.Controls.Add(layout);
+
+        // Toolbar row
+        Panel toolbar = new Panel();
+        toolbar.Dock = DockStyle.Fill;
+        toolbar.BackColor = System.Drawing.Color.FromArgb(243, 146, 0); // Lapp orange
+        toolbar.Padding = new System.Windows.Forms.Padding(10, 6, 10, 6);
+
+        Button closeBtn = new Button();
+        closeBtn.Text = "\u2190  Zurück zu EPLAN";
+        closeBtn.FlatStyle = FlatStyle.Flat;
+        closeBtn.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(220, 120, 0);
+        closeBtn.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(220, 120, 0);
+        closeBtn.BackColor = System.Drawing.Color.FromArgb(220, 120, 0);
+        closeBtn.ForeColor = System.Drawing.Color.White;
+        closeBtn.Font = new System.Drawing.Font("Segoe UI", 10f, System.Drawing.FontStyle.Bold);
+        closeBtn.AutoSize = true;
+        closeBtn.Cursor = Cursors.Hand;
+        closeBtn.Location = new System.Drawing.Point(10, 8);
+        closeBtn.Padding = new System.Windows.Forms.Padding(8, 2, 8, 2);
+        closeBtn.Click += (s, e) => this.Close();
+        toolbar.Controls.Add(closeBtn);
+
+        layout.Controls.Add(toolbar, 0, 0);
+
+        // WebView2 row – isolated in its own panel so its HWND can't bleed into the toolbar
+        Panel webViewContainer = new Panel();
+        webViewContainer.Dock = DockStyle.Fill;
+        layout.Controls.Add(webViewContainer, 0, 1);
+
+        try
+        {
+            string eplanBin = AppDomain.CurrentDomain.BaseDirectory;
+            string dllPath = Path.Combine(eplanBin, "Microsoft.Web.WebView2.WinForms.dll");
+
+            if (!File.Exists(dllPath))
+            {
+                Label err = new Label();
+                err.Text = "WebView2 DLL nicht gefunden in: " + dllPath;
+                err.Dock = DockStyle.Fill;
+                webViewContainer.Controls.Add(err);
+                return;
+            }
+
+            Assembly wvAsm = Assembly.LoadFrom(dllPath);
+            Type wvType = wvAsm.GetType("Microsoft.Web.WebView2.WinForms.WebView2");
+            webView = (Control)Activator.CreateInstance(wvType);
+            webView.Dock = DockStyle.Fill;
+
+            Type propsType = wvAsm.GetType("Microsoft.Web.WebView2.WinForms.CoreWebView2CreationProperties");
+            object props = Activator.CreateInstance(propsType);
+
+            string tempFolder = Path.Combine(Path.GetTempPath(), "EplanWebView2LappWizard");
+            propsType.GetProperty("UserDataFolder").SetValue(props, tempFolder);
+
+            wvType.GetProperty("CreationProperties").SetValue(webView, props);
+            // embedded=true hides the header in machine.html
+            string embeddedUrl = url.Contains("?") ? url + "&embedded=true" : url + "?embedded=true";
+            wvType.GetProperty("Source").SetValue(webView, new Uri(embeddedUrl));
+
+            webViewContainer.Controls.Add(webView);
+        }
+        catch (Exception ex)
+        {
+            Label lbl = new Label();
+            lbl.Text = "Fehler beim Laden von WebView2:\n\n" + ex.ToString();
+            lbl.Dock = DockStyle.Fill;
+            webViewContainer.Controls.Add(lbl);
         }
     }
 }
