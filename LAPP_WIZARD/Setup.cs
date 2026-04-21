@@ -1,22 +1,21 @@
-﻿using Eplan.EplApi.Scripting;
-using Eplan.EplApi.Base;
-using Eplan.EplApi.Gui;
-using System;
+﻿using Eplan.EplApi.Gui;
+using Decider = Eplan.EplApi.Base.Decider;
+using EnumDecisionIcon = Eplan.EplApi.Base.EnumDecisionIcon;
+using EnumDecisionReturn = Eplan.EplApi.Base.EnumDecisionReturn;
+using EnumDecisionType = Eplan.EplApi.Base.EnumDecisionType;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Text;
-using System.Windows.Forms;
-using System.Linq;
 using System.Threading.Tasks;
 
 
 public class LappWizardRibbon
 {
     // Register tab and button
-    [DeclareRegister]
+    [Eplan.EplApi.Scripting.DeclareRegister]
     public void RegisterRibbon()
     {
         RibbonBar ribbonBar = new RibbonBar();
@@ -62,7 +61,7 @@ public class LappWizardRibbon
     }
 
     // Remove tab
-    [DeclareUnregister]
+    [Eplan.EplApi.Scripting.DeclareUnregister]
     public void UnregisterRibbon()
     {
         RibbonBar ribbonBar = new RibbonBar();
@@ -81,7 +80,7 @@ public class DataExportAction
 {
     private static readonly BindingFlags DeclaredPublic = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
 
-    [DeclareAction("DataExportAction")]
+    [Eplan.EplApi.Scripting.DeclareAction("DataExportAction")]
     public void Execute()
     {
         Eplan.EplApi.Base.Progress progress = null;
@@ -131,7 +130,7 @@ public class DataExportAction
                 if (project == null)
                 {
                     new Decider().Decide(EnumDecisionType.eOkDecision,
-                        "Kein Projekt ge�ffnet.", "DataExportAction",
+                        "Kein Projekt geöffnet.", "DataExportAction",
                         EnumDecisionReturn.eOK, EnumDecisionReturn.eOK,
                         "", false, EnumDecisionIcon.eEXCLAMATION);
                     return;
@@ -149,7 +148,7 @@ public class DataExportAction
 
 
                     // --- Export 2: Full project export ---
-                    log.AppendLine("--- 2. Vollst�ndiger Projekt-Export (JSON) ---");
+                    log.AppendLine("--- 2. Vollständiger Projekt-Export (JSON) ---");
                     string jsonPayload = "";
 
                     // Run export on background thread to prevent EPLAN from freezing
@@ -881,7 +880,7 @@ public class DataExportAction
 
 public class CopilotAction
 {
-    [DeclareAction("CopilotAction")]
+    [Eplan.EplApi.Scripting.DeclareAction("CopilotAction")]
     public void Execute()
     {
         CopilotForm form = new CopilotForm();
@@ -989,41 +988,103 @@ public class ReplaceSyncAction
 
     private static readonly BindingFlags DeclaredPublic = BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly;
 
-    [DeclareAction("ReplaceSyncAction")]
+    [Eplan.EplApi.Scripting.DeclareAction("ReplaceSyncAction")]
     public void Execute()
     {
         string token = "";
-        using (Form prompt = new Form())
+        if (System.Windows.Forms.Clipboard.ContainsText())
         {
-            prompt.Width = 400;
-            prompt.Height = 150;
-            prompt.FormBorderStyle = FormBorderStyle.FixedDialog;
-            prompt.Text = "Token eingeben";
-            prompt.StartPosition = FormStartPosition.CenterScreen;
-
-            Label textLabel = new Label() { Left = 20, Top = 20, Width = 350, Text = "Bitte den Token der Maschine eingeben:" };
-            TextBox textBox = new TextBox() { Left = 20, Top = 45, Width = 340 };
-            
-            // Try to pre-fill from clipboard
-            if (Clipboard.ContainsText()) {
-                string cb = Clipboard.GetText().Trim();
-                if (cb.Length == 32) textBox.Text = cb; // Guid format
-            }
-
-            Button confirmation = new Button() { Text = "OK", Left = 260, Top = 75, Width = 100, DialogResult = DialogResult.OK };
-            
-            prompt.Controls.Add(textBox);
-            prompt.Controls.Add(confirmation);
-            prompt.Controls.Add(textLabel);
-            prompt.AcceptButton = confirmation;
-
-            if (prompt.ShowDialog() == DialogResult.OK)
-            {
-                token = textBox.Text.Trim();
-            }
+            string cb = System.Windows.Forms.Clipboard.GetText().Trim();
+            if (cb.Length == 32) token = cb;
         }
 
-        if (string.IsNullOrEmpty(token)) return;
+        using (System.Windows.Forms.Form prompt = new System.Windows.Forms.Form())
+        {
+            prompt.Text = "Lapp Sync - Token eingeben";
+            prompt.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            prompt.MaximizeBox = false;
+            prompt.MinimizeBox = false;
+            prompt.ShowIcon = false;
+            prompt.ShowInTaskbar = false;
+            prompt.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            prompt.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            prompt.AutoSize = true;
+            prompt.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            prompt.Padding = new System.Windows.Forms.Padding(16);
+            prompt.MinimumSize = new Size(560, 220);
+
+            System.Windows.Forms.TableLayoutPanel layout = new System.Windows.Forms.TableLayoutPanel();
+            layout.AutoSize = true;
+            layout.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            layout.ColumnCount = 1;
+            layout.RowCount = 3;
+            layout.Dock = System.Windows.Forms.DockStyle.Top;
+            layout.Margin = new System.Windows.Forms.Padding(0);
+
+            System.Windows.Forms.Label label = new System.Windows.Forms.Label();
+            label.AutoSize = true;
+            label.Text = "Bitte den 32-stelligen Maschinen-Token eingeben:";
+            label.MaximumSize = new Size(500, 0);
+            label.Margin = new System.Windows.Forms.Padding(0, 0, 0, 12);
+
+            System.Windows.Forms.TextBox textBox = new System.Windows.Forms.TextBox();
+            textBox.Width = 500;
+            textBox.Text = token;
+            textBox.Margin = new System.Windows.Forms.Padding(0, 0, 0, 20);
+
+            System.Windows.Forms.Button okButton = new System.Windows.Forms.Button();
+            okButton.Text = "OK";
+            okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
+            okButton.Size = new Size(75, 27);
+
+            System.Windows.Forms.Button cancelButton = new System.Windows.Forms.Button();
+            cancelButton.Text = "Abbrechen";
+            cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            cancelButton.Size = new Size(75, 27);
+
+            System.Windows.Forms.FlowLayoutPanel buttonPanel = new System.Windows.Forms.FlowLayoutPanel();
+            buttonPanel.AutoSize = true;
+            buttonPanel.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            buttonPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            buttonPanel.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
+            buttonPanel.WrapContents = false;
+            buttonPanel.Margin = new System.Windows.Forms.Padding(0);
+
+            buttonPanel.Controls.Add(cancelButton);
+            buttonPanel.Controls.Add(okButton);
+
+            layout.Controls.Add(label, 0, 0);
+            layout.Controls.Add(textBox, 0, 1);
+            layout.Controls.Add(buttonPanel, 0, 2);
+            prompt.Controls.Add(layout);
+            prompt.AcceptButton = okButton;
+            prompt.CancelButton = cancelButton;
+
+            if (prompt.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return;
+
+            token = textBox.Text.Trim();
+        }
+
+        if (token.Length != 32)
+        {
+            new Decider().Decide(
+                EnumDecisionType.eOkDecision,
+                "Der Token muss genau 32 Zeichen lang sein.",
+                "Lapp Sync - Ungültiger Token",
+                EnumDecisionReturn.eOK, EnumDecisionReturn.eOK,
+                "", false, EnumDecisionIcon.eFATALERROR);
+            return;
+        }
+
+        EnumDecisionReturn conf = new Decider().Decide(
+            EnumDecisionType.eOkCancelDecision,
+            "Soll der eingegebene Token verwendet werden?\n\nToken: " + token,
+            "Lapp Sync - Token bestätigen",
+            EnumDecisionReturn.eOK, EnumDecisionReturn.eOK,
+            "", false, EnumDecisionIcon.eQUESTION);
+
+        if (conf != EnumDecisionReturn.eOK) return;
 
         try 
         {
