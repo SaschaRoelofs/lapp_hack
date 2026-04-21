@@ -84,7 +84,6 @@ Ergänzt wird das Ganze durch **lokal speicherbare Einstellungen**, einen **desk
 - Konfigurierbare Werte für **Strompreis**, **maximalen Spannungsfall** sowie **CO₂-Faktoren** von Strom und Kupfer
 - Speicherung dieser Werte in **localStorage**
 - Optionaler **eKanban UI Modus** für Desktop-Ansichten mit alternativer Navigation und Layoutstruktur
-- Verstecktes **Snake-Easter-Egg** im eKanban-Layout
 
 ---
 
@@ -167,7 +166,6 @@ Für die Seite `/copilot` muss ein gültiger **OPENROUTER_API_KEY** als Umgebung
 | `/search` | LAPP Shop Suche mit Produktdetails, Varianten und Live-Preisen |
 | `/copilot` | KI-gestützter Cable Copilot mit Streaming-Chat |
 | `/settings` | Einstellungen für Energie-, Spannungsfall- und CO₂-Parameter |
-| `/snake` | Verstecktes Snake-Easter-Egg aus dem eKanban-Modus |
 
 ---
 
@@ -226,7 +224,6 @@ templates/
   search.html                # Shop-Suche
   copilot.html               # Cable Copilot
   settings.html              # Einstellungen
-  snake.html                 # Easter Egg
   _header.html               # Hauptnavigation
   _footer.html               # Footer
   _ekanban_skin.html         # Alternativer eKanban-Look
