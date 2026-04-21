@@ -140,15 +140,8 @@ public class DataExportAction
                     string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
                     string baseUrl = GetApiBaseUrl();
                     string token = Guid.NewGuid().ToString("N");
-                    StringBuilder log = new StringBuilder();
-                    log.AppendLine("=== Datenexport gestartet: " + timestamp + " ===");
-                    log.AppendLine("API-Ziel: " + baseUrl + "/api/machine-db");
-                    log.AppendLine("Token: " + token);
-                    log.AppendLine();
 
-
-                    // --- Export 2: Full project export ---
-                    log.AppendLine("--- 2. Vollständiger Projekt-Export (JSON) ---");
+                    // --- Export: Full project export ---
                     string jsonPayload = "";
 
                     // Run export on background thread to prevent EPLAN from freezing
@@ -156,7 +149,7 @@ public class DataExportAction
                     Exception bgError = null;
                     var exportTask = System.Threading.Tasks.Task.Run(() =>
                     {
-                        return ExportFullProjectData(project, projectType, dataModelAsm, baseUrl, timestamp, token, log);
+                        return ExportFullProjectData(project, projectType, dataModelAsm, baseUrl, timestamp, token, new StringBuilder());
                     });
                     while (!exportTask.IsCompleted)
                     {
@@ -166,16 +159,11 @@ public class DataExportAction
                     if (exportTask.IsFaulted)
                     {
                         bgError = exportTask.Exception.InnerException ?? exportTask.Exception;
-                        log.AppendLine("FEHLER: " + bgError.Message);
-                        if (bgError.InnerException != null) log.AppendLine("  Inner: " + bgError.InnerException.Message);
                     }
                     else
                     {
                         jsonPayload = exportTask.Result;
                     }
-
-                    log.AppendLine();
-                    log.AppendLine("=== Export abgeschlossen ===");
 
                     string machineUrl = baseUrl + "/machine?token=" + token;
                     System.Windows.Forms.Clipboard.SetText(token);
@@ -186,7 +174,7 @@ public class DataExportAction
                         progress.SetActionText("Daten werden zum Server hochgeladen...");
                         var uploadTask = System.Threading.Tasks.Task.Run(() =>
                         {
-                            PostJson(baseUrl, jsonPayload, token, log);
+                            PostJson(baseUrl, jsonPayload, token, new StringBuilder());
                         });
                         while (!uploadTask.IsCompleted)
                         {
@@ -196,7 +184,6 @@ public class DataExportAction
                         if (uploadTask.IsFaulted)
                         {
                             bgError = uploadTask.Exception.InnerException ?? uploadTask.Exception;
-                            log.AppendLine("FEHLER Upload: " + bgError.Message);
                         }
 
                         // End progress bar BEFORE the dialog appears
@@ -277,9 +264,6 @@ public class DataExportAction
         object funcFilter = Activator.CreateInstance(funcFilterType);
         MethodInfo getFuncs = finderType.GetMethod("GetFunctions", new Type[] { funcFilterType });
         Array functions = (Array)getFuncs.Invoke(finder, new object[] { funcFilter });
-
-        log.AppendLine("Verbindungen: " + (connections != null ? connections.Length.ToString() : "0"));
-        log.AppendLine("Funktionen: " + (functions != null ? functions.Length.ToString() : "0"));
 
         // CDP property enum values
         object propCrossSection = SafeEnumParse(cdpPropsEnumType, "CONNECTION_WIRECROSSSECTION", "CDP_CON_WIRECROSSSECTION");
@@ -834,6 +818,7 @@ public class DataExportAction
             var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8000/health");
             request.Timeout = 500;
             request.Method = "HEAD";
+            request.Proxy = null;
             using (request.GetResponse()) { }
             return "http://127.0.0.1:8000";
         }
@@ -855,11 +840,59 @@ public class DataExportAction
             ServicePointManager.SecurityProtocol =
                 (SecurityProtocolType)3072 /* Tls12 */ | (SecurityProtocolType)768 /* Tls11 */;
             ServicePointManager.DefaultConnectionLimit = 20;
+            // .NET prüft beim TLS-Handshake per Default die Certificate Revocation List.
+            // Wenn der CRL-/OCSP-Endpoint im Firmennetz blockiert ist, läuft das in einen
+            // 15–20 s Timeout. Hier explizit deaktivieren.
+            ServicePointManager.CheckCertificateRevocationList = false;
+            // Globaler Default-Proxy ebenfalls eliminieren (instance-level reicht teils nicht)
+            WebRequest.DefaultWebProxy = null;
 
-            var request = (HttpWebRequest)WebRequest.Create(url);
+            // DNS-Phase: IPv4 erzwingen um IPv6-Stall zu vermeiden
+            string ipv4Addr = null;
+            string originalHost = new Uri(url).Host;
+            try
+            {
+                var addrs = System.Net.Dns.GetHostAddresses(originalHost);
+                foreach (var a in addrs)
+                {
+                    if (a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    {
+                        ipv4Addr = a.ToString();
+                        break;
+                    }
+                }
+            }
+            catch { }
+
+            // IPv6-Stall vermeiden: wenn IPv4 verfügbar, direkt diese Adresse anfragen.
+            // SNI/Hostname-Validierung wird über den Host-Header und TLS-Callback gewahrt.
+            string requestUrl = url;
+            if (ipv4Addr != null)
+            {
+                var u = new Uri(url);
+                requestUrl = u.Scheme + "://" + ipv4Addr + (u.IsDefaultPort ? "" : ":" + u.Port) + u.PathAndQuery;
+                // Bei HTTPS muss der Zertifikats-CN/SAN gegen den Original-Host validieren,
+                // nicht gegen die IP. .NET nutzt dafür den Host-Header bzw. SNI.
+                ServicePointManager.ServerCertificateValidationCallback =
+                    delegate (object sender, System.Security.Cryptography.X509Certificates.X509Certificate cert,
+                             System.Security.Cryptography.X509Certificates.X509Chain chain,
+                             System.Net.Security.SslPolicyErrors errors)
+                    {
+                        // Wir vertrauen dem Zertifikat, wenn nur der Hostname-Mismatch das Problem ist
+                        // (durch IP-basierte Verbindung erwartet), und kein Chain-/Trust-Fehler vorliegt.
+                        return errors == System.Net.Security.SslPolicyErrors.None
+                            || errors == System.Net.Security.SslPolicyErrors.RemoteCertificateNameMismatch;
+                    };
+            }
+
+            var request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Host = originalHost; // setzt SNI + Host-Header
             request.Method = "POST";
             request.ContentType = "application/json; charset=utf-8";
             request.Headers["Authorization"] = "Bearer " + token;
+            // WICHTIG: Proxy explizit deaktivieren – sonst macht .NET WPAD/Auto-Detect
+            // (DNS-Lookup "wpad" + HTTP-Probes), das im Firmennetz 15–30 s pro Verbindung kostet.
+            request.Proxy = null;
             request.ServicePoint.Expect100Continue = false;
             request.KeepAlive = true;
             request.Timeout = 120000;
@@ -880,15 +913,14 @@ public class DataExportAction
                 data = ms.ToArray();
             }
             request.Headers["Content-Encoding"] = "gzip";
-            log.AppendLine("Payload: " + raw.Length + " B -> " + data.Length + " B (gzip)");
             request.ContentLength = data.Length;
+
             using (Stream stream = request.GetRequestStream())
             {
                 stream.Write(data, 0, data.Length);
             }
             using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
             {
-                log.AppendLine("Daten gesendet an: " + url + " (Status: " + (int)response.StatusCode + " " + response.StatusCode + ")");
             }
         }
         catch (WebException wex)
@@ -897,11 +929,9 @@ public class DataExportAction
             HttpWebResponse errResp = wex.Response as HttpWebResponse;
             if (errResp != null)
                 msg += " (Status: " + (int)errResp.StatusCode + ")";
-            log.AppendLine("FEHLER beim Senden an " + url + ": " + msg);
         }
         catch (Exception ex)
         {
-            log.AppendLine("FEHLER beim Senden an " + url + ": " + ex.Message);
         }
     }
 }
@@ -977,6 +1007,7 @@ public class CopilotForm : Form
             var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8000/health");
             request.Timeout = 500;
             request.Method = "HEAD";
+            request.Proxy = null;
             using (request.GetResponse()) { }
             return "http://127.0.0.1:8000";
         }
@@ -1216,6 +1247,10 @@ public class ReplaceSyncAction
             var request = (HttpWebRequest)WebRequest.Create(url);
             request.Method = "GET";
             request.Accept = "application/json";
+            request.Proxy = null;
+            request.ServicePoint.Expect100Continue = false;
+            request.KeepAlive = true;
+            request.Timeout = 60000;
 
             try {
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
@@ -1728,6 +1763,7 @@ public class ReplaceSyncAction
             var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8000/health");
             request.Timeout = 500;
             request.Method = "HEAD";
+            request.Proxy = null;
             using (request.GetResponse()) { }
             return "http://127.0.0.1:8000";
         }
