@@ -4,10 +4,18 @@ from __future__ import annotations
 
 import gzip
 import json
+import logging
+import time
 import uuid
 from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s  %(levelname)-8s  %(message)s",
+    datefmt="%H:%M:%S",
+)
 
 import markdown
 import uvicorn
@@ -43,6 +51,25 @@ app = FastAPI(title="Leitungsquerschnitt-Optimierer")
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "../static"), name="static")
 app.include_router(shop_router)
 app.include_router(copilot_router)
+
+_logger = logging.getLogger("lapp")
+
+
+@app.middleware("http")
+async def _request_timer(request: Request, call_next):
+    t0 = time.perf_counter()
+    response = await call_next(request)
+    elapsed = (time.perf_counter() - t0) * 1000
+    content_length = response.headers.get("content-length", "-")
+    _logger.info(
+        "%s %s  -> %s  %.0f ms  (response bytes: %s)",
+        request.method,
+        request.url.path,
+        response.status_code,
+        elapsed,
+        content_length,
+    )
+    return response
 templates = Jinja2Templates(directory=Path(__file__).parent / "../templates")
 
 # ---------------------------------------------------------------------------
@@ -326,6 +353,13 @@ async def api_machine_db_upload(
 ):
     from fastapi import HTTPException
 
+    t_start = time.perf_counter()
+    _logger.info(
+        "UPLOAD start  content-encoding=%s  content-length=%s",
+        content_encoding or "none",
+        request.headers.get("content-length", "unknown"),
+    )
+
     # Accept client-provided token from "Authorization: Bearer <token>" header
     token: Optional[str] = None
     if authorization and authorization.lower().startswith("bearer "):
@@ -335,32 +369,49 @@ async def api_machine_db_upload(
     if not token:
         token = uuid.uuid4().hex
 
+    t_read_start = time.perf_counter()
     raw_body = await request.body()
+    t_read = (time.perf_counter() - t_read_start) * 1000
+    _logger.info("UPLOAD body read  %.0f ms  compressed_bytes=%d", t_read, len(raw_body))
+
     if content_encoding and "gzip" in content_encoding.lower():
+        t_gz = time.perf_counter()
         try:
             raw_body = gzip.decompress(raw_body)
         except OSError as exc:
             raise HTTPException(status_code=400, detail=f"invalid gzip body: {exc}") from exc
+        _logger.info("UPLOAD gzip decompress  %.0f ms  uncompressed_bytes=%d", (time.perf_counter() - t_gz) * 1000, len(raw_body))
+
+    t_json = time.perf_counter()
     try:
         data = json.loads(raw_body)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=f"invalid json: {exc}") from exc
     if not isinstance(data, dict):
         raise HTTPException(status_code=400, detail="expected JSON object")
+    _logger.info("UPLOAD json.loads  %.0f ms", (time.perf_counter() - t_json) * 1000)
 
     # Rohdaten vor der Verarbeitung speichern
+    t_disk = time.perf_counter()
     (_GRAPH_STORE_DIR / f"{token}_raw.json").write_text(
         json.dumps(data, ensure_ascii=False), encoding="utf-8"
     )
+    _logger.info("UPLOAD write raw  %.0f ms", (time.perf_counter() - t_disk) * 1000)
 
+    t_graph = time.perf_counter()
     try:
         graph = build_machine_graph_from_data(data, source_label=data.get("projectName", "upload"))
     except (KeyError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    _logger.info("UPLOAD build_graph  %.0f ms", (time.perf_counter() - t_graph) * 1000)
 
+    t_disk2 = time.perf_counter()
     (_GRAPH_STORE_DIR / f"{token}.json").write_text(
         json.dumps(graph, ensure_ascii=False), encoding="utf-8"
     )
+    _logger.info("UPLOAD write graph  %.0f ms", (time.perf_counter() - t_disk2) * 1000)
+
+    _logger.info("UPLOAD total server  %.0f ms  token=%s", (time.perf_counter() - t_start) * 1000, token)
     return {"token": token}
 
 
