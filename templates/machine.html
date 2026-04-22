@@ -1013,7 +1013,7 @@
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      <template x-for="row in optResult.rows" :key="row.cross_section_mm2">
+                                      <template x-for="row in optRowsByCrossSection" :key="row.cross_section_mm2">
                                         <tr class="border-t border-gray-100"
                                             :class="{
                                               'bg-emerald-50 font-semibold': optResult.optimum.tco && row.cross_section_mm2 === optResult.optimum.tco.cross_section_mm2,
@@ -1446,7 +1446,7 @@
                                 </tr>
                               </thead>
                               <tbody>
-                                <template x-for="row in optResult.rows" :key="row.cross_section_mm2">
+                                <template x-for="row in optRowsByCrossSection" :key="row.cross_section_mm2">
                                   <tr class="border-t border-gray-100"
                                       :class="{
                                         'bg-emerald-50 font-semibold': optResult.optimum.tco && row.cross_section_mm2 === optResult.optimum.tco.cross_section_mm2,
@@ -3930,6 +3930,27 @@
         },
 
         optFmt(v) { return optNumFmt.format(v); },
+
+        // Aggregate optResult.rows to one row per cross-section so the table
+        // matches the "TCO-Opt." card. The backend evaluates every shop variant
+        // (e.g. 4G2.5, 5G2.5, 7G2.5 ... different prices), but the table only
+        // has one slot per mm². Pick the cheapest admissible variant per
+        // cross-section (admissible preferred, then lowest TCO).
+        get optRowsByCrossSection() {
+          if (!this.optResult?.rows) return [];
+          const buckets = new Map();
+          for (const row of this.optResult.rows) {
+            const cs = row.cross_section_mm2;
+            const current = buckets.get(cs);
+            if (!current) { buckets.set(cs, row); continue; }
+            const currentBetter = current.admissible && !row.admissible;
+            const rowBetter = row.admissible && !current.admissible;
+            if (rowBetter) { buckets.set(cs, row); continue; }
+            if (currentBetter) continue;
+            if (row.tco_eur < current.tco_eur) buckets.set(cs, row);
+          }
+          return [...buckets.values()].sort((a, b) => a.cross_section_mm2 - b.cross_section_mm2);
+        },
 
         openInOptimizer() {
           const prefill = {
